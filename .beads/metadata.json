@@ -1,0 +1,7 @@
+{
+  "database": "dolt",
+  "backend": "dolt",
+  "dolt_mode": "embedded",
+  "dolt_database": "HYUNDAI_AI",
+  "project_id": "436cd70e-a91c-4fae-8290-9ced10b63ef8"
+}
