@@ -1,0 +1,510 @@
+후속 읽기전용 검수. 실제 Haiku5.5. 400단어 이내, 도구 없음. 이전 지적 대응: P1-1 new 버튼을 !unavailable && state?.status !== ended로 수정, 초기network failure와ended회귀추가 총17시험통과. P1-2 작은화면의 중복 설명만 숨기고 이전 승차지점·현재 미확인/이전 제안·현재 미확인/준비상태 현재미확인은 항상 표시. 실제480x720서버중단 AX와 화면에서 세 라벨 모두 확인, 모든변경잠금. 이 짧은 라벨 대체가 요구 충족하는지 판단. P1-3 기존8크기 실제측정 overflow없음. 오류문구발생시480버튼겹침 발견하여 gap/padding축소. 최종 재실측 아래. 추가 P2 lastEvent 동일문자반복쓰기 제거. 390px보조화면16px은 차량480이상기준과 구분, footer Gleo차량미연결+주행금지 충분, 운전자 역할 사용자기능명 보존. 별도뷰 포커스관리/비JSON오류표시 등 P2는 후속 개선으로 문서화. 본 검수는 실행결과를 보고받은 정적검수임. 마지막CSS와app최종소스 포함. P0/P1 잔여만 구체 보고.
+
+FILE app.mjs
+const $ = id => document.getElementById(id);
+let session = null, state = null, received = 0, online = false, busy = false, polling = false, unavailable = false;
+const requestTimes = new WeakMap();
+let editing = false, ending = false;
+const invitation = new URLSearchParams(location.hash.slice(1));
+const incoming = invitation.has('invite') ? { id: invitation.get('room'), invite: invitation.get('invite') } : null;
+if (incoming) { history.replaceState(null, '', '/'); $('create').hidden = true; $('joinBox').hidden = false; }
+else { try { session = JSON.parse(sessionStorage.getItem('pickupSession')); } catch {} }
+const save = value => { session = value; sessionStorage.setItem('pickupSession', JSON.stringify(value)); };
+async function api(path, body, authenticated = true) {
+  const started = performance.now();
+  let response;
+  try { response = await fetch(path, { method: body ? 'POST' : 'GET', cache: 'no-store', signal: AbortSignal.timeout(4000),
+    headers: { ...(body ? { 'Content-Type': 'application/json' } : {}), ...(authenticated && session ? { Authorization: `Bearer ${session.token}` } : {}) }, ...(body ? { body: JSON.stringify(body) } : {}) }); }
+  catch { throw new Error('서버에 연결할 수 없습니다.'); }
+  const data = await response.json(); if (!response.ok) { const e = new Error(data.error); e.status = response.status; throw e; } requestTimes.set(data, started); return data;
+}
+function adopt(data) { if (!state || data.version >= state.version) { state = data; received = requestTimes.get(data); online = true; unavailable = false; } render(); }
+function fresh() { return online && navigator.onLine && !document.hidden && state && performance.now() - received < 6000; }
+function render() {
+  if (!session) return;
+  $('welcome').hidden = true;
+  const valid = fresh(), active = state?.status === 'active', can = valid && active && !busy;
+  if (!active || state?.proposal || !state?.joined) editing = false;
+  if (!active) ending = false;
+  $('board').hidden = editing || ending;
+  $('editPlace').hidden = !editing;
+  $('endConfirm').hidden = !ending;
+  $('role').textContent = session.role === 'driver' ? '운전자 화면' : '탑승자 화면';
+  $('connection').textContent = valid ? '방금 서버에서 확인' : '연결 확인 필요 · 이전 기록';
+  $('connection').classList.toggle('stale', !valid); $('facts').classList.toggle('stale', !valid);
+  $('headline').textContent = !valid ? '현재 약속을 다시 확인해 주세요.' : !active ? '이번 약속을 마쳤어요.' : !state.joined ? '함께할 사람을 기다려요.' : state.ready ? '준비됐어요. 약속을 확인해요.' : '아직 준비 중이에요.';
+  $('placeLabel').textContent = valid ? '확정 승차지점' : '이전 승차지점 · 현재 미확인';
+  $('place').textContent = state?.place || '확인 전';
+  $('readyText').textContent = !valid ? '현재 미확인' : !active ? '약속 종료' : !state.joined ? '참여 대기' : state.ready ? '준비 완료' : '아직 준비 중';
+  $('inviteBox').hidden = !valid || !active || state?.joined || !session.invite;
+  if (session.invite) { const url = `${location.origin}/#room=${session.id}&invite=${session.invite}`; $('inviteLink').href = url; $('inviteText').value = url; }
+  $('readyButtons').hidden = session.role !== 'rider' || !active;
+  document.querySelectorAll('[data-ready]').forEach(b => { b.disabled = !can; b.setAttribute('aria-pressed', String(state?.ready === (b.dataset.ready === 'true'))); });
+  $('proposal').hidden = !state?.proposal;
+  if (state?.proposal) {
+    $('proposedPlace').textContent = state.proposal.place;
+    const own = state.proposal.by === session.role;
+    $('proposalLabel').textContent = !valid ? '이전 제안 · 현재 미확인' : own ? '내 제안 · 응답 대기' : '상대 제안 · 아직 미확정';
+    $('proposalText').textContent = !valid ? '마지막 확인 당시 제안입니다. 현재 상태는 미확인입니다.' : own ? '상대의 응답을 기다리고 있어요. 기존 승차지점은 그대로입니다.' : '상대가 이 장소를 제안했어요. 수락할까요?';
+    $('withdraw').hidden = !own; $('withdraw').disabled = !can;
+    $('decisions').hidden = own; $('accept').disabled = $('reject').disabled = !can;
+  }
+  $('normalActions').hidden = !active || !state?.joined || !!state?.proposal;
+  $('openPlace').disabled = !can;
+  $('editingCurrent').textContent = `${valid ? '현재 장소' : '이전 장소 · 현재 미확인'}: ${state?.place || '확인 전'}`;
+  document.querySelectorAll('[data-place]').forEach(b => { b.disabled = !can || b.dataset.place === state?.place; b.textContent = b.dataset.place + (b.dataset.place === state?.place ? ' · 현재' : ''); });
+  $('nextPlace').disabled = !can;
+  $('end').hidden = !active; $('end').disabled = !can;
+  $('confirmEnd').disabled = !can;
+  $('new').hidden = !unavailable && state?.status !== 'ended';
+  const eventText = state ? `${valid ? '' : '마지막 확인 기록 · 현재 미확인: '}${state.lastEvent}` : '';
+  if ($('lastEvent').textContent !== eventText) $('lastEvent').textContent = eventText;
+}
+async function refresh() {
+  if (!session || polling || busy) return;
+  polling = true;
+  try { adopt(await api(`/api/rooms/${session.id}`)); }
+  catch (e) { online = false; unavailable = [401,403,404].includes(e.status); $('error').textContent = `${e.message} 최신 상태를 확인할 수 없습니다.`; render(); }
+  finally { polling = false; }
+}
+async function act(type, extra = {}) {
+  if (!fresh() || busy || !state) return;
+  busy = true; $('error').textContent = ''; render();
+  try { adopt(await api(`/api/rooms/${session.id}/actions`, { type, ...extra, version: state.version, view: state.view, requestId: crypto.randomUUID() })); }
+  catch (e) { online = false; $('error').textContent = `${e.message} 다시 확인 후 선택해 주세요.`; }
+  finally { busy = false; render(); await refresh(); }
+}
+$('create').onsubmit = async e => { e.preventDefault(); const button = e.submitter; button.disabled = true;
+  try { save(await api('/api/rooms', { place: $('initialPlace').value }, false)); await refresh(); }
+  catch (e) { $('error').textContent = e.message; } finally { button.disabled = false; } };
+$('join').onclick = async () => { $('join').disabled = true;
+  try { save(await api(`/api/rooms/${incoming.id}/join`, { invite: incoming.invite }, false)); await refresh(); }
+  catch (e) { $('error').textContent = e.message; } finally { $('join').disabled = false; } };
+document.querySelectorAll('[data-ready]').forEach(b => b.onclick = () => act('ready', { ready: b.dataset.ready === 'true' }));
+$('openPlace').onclick = () => { if (fresh() && !busy) { editing = true; render(); } };
+$('cancelPlace').onclick = () => { editing = false; render(); };
+document.querySelectorAll('[data-initial]').forEach(b => b.onclick = () => {
+  $('initialPlace').value = b.dataset.initial;
+  document.querySelectorAll('[data-initial]').forEach(other => other.setAttribute('aria-pressed', String(other === b)));
+});
+$('propose').onsubmit = async e => { e.preventDefault(); if (!e.submitter?.dataset.place) return; $('nextPlace').value = e.submitter.dataset.place; await act('propose', { place: $('nextPlace').value }); };
+$('accept').onclick = () => act('accept', { proposalId: state.proposal.id });
+$('reject').onclick = () => act('reject', { proposalId: state.proposal.id });
+$('withdraw').onclick = () => act('withdraw', { proposalId: state.proposal.id });
+$('end').onclick = () => { if (fresh() && !busy) { ending = true; render(); } };
+$('cancelEnd').onclick = () => { ending = false; render(); };
+$('confirmEnd').onclick = () => act('end');
+$('refresh').onclick = () => { $('error').textContent = ''; refresh(); };
+$('new').onclick = () => { sessionStorage.removeItem('pickupSession'); location.assign('/'); };
+addEventListener('offline', () => { online = false; render(); });
+addEventListener('online', refresh);
+document.addEventListener('visibilitychange', () => { online = false; render(); if (!document.hidden) refresh(); });
+setInterval(() => { if (!document.hidden) refresh(); }, 2000);
+setInterval(render, 500);
+render(); refresh();
+
+FILE style.css
+@font-face{font-family:Asta;src:url('/fonts/AstaSans.ttf') format('truetype');font-weight:100 900;font-display:swap}
+:root{font-family:Asta,'Malgun Gothic',sans-serif;color-scheme:dark;color:#f4f4f4;background:#121212;font-synthesis:none;--surface:#202020;--raised:#363636;--muted:#bdbdbd;--gap:24px;--button:88px}*{box-sizing:border-box}body{margin:0}h1,h2,h3,p{margin:0}h1{font-size:26px;font-weight:650}h2{font-size:34px;line-height:1.3;font-weight:650;word-break:keep-all;letter-spacing:-.5px}h3{font-size:22px;font-weight:500}p{line-height:1.5;color:var(--muted);font-size:20px}button,.button{font:inherit;font-size:24px;font-weight:600;min-height:var(--button);padding:16px 24px;border:2px solid transparent;border-radius:12px;background:var(--raised);color:#f4f4f4;cursor:pointer;touch-action:manipulation;display:flex;align-items:center;justify-content:center;text-align:center;text-decoration:none;line-height:1.3;word-break:keep-all}button:hover:not(:disabled),.button:hover{background:#474747}button:active:not(:disabled),.button:active{background:#555}button:focus-visible,a:focus-visible{outline:3px solid #fff;outline-offset:4px}button:disabled{background:#272727;color:#a5a5a5;cursor:default}.primary{background:#e7e7e7;color:#161616}.primary:hover:not(:disabled){background:#fff}.secondary{background:transparent;border-color:#626262}.secondary:hover:not(:disabled){background:#303030}.place-options [aria-pressed=true]{border-color:#e7e7e7;background:#383838}.place-options [aria-pressed=true]:after{content:'✓';margin-left:auto;padding-left:16px}.cockpit{height:100dvh;min-height:600px;display:grid;grid-template-rows:76px minmax(0,1fr) 52px;padding:0 40px;max-width:1920px;margin:auto}header{display:flex;justify-content:space-between;align-items:center;gap:24px}.demo,.section-label{font-size:20px;color:var(--muted)}main{position:relative;min-height:0;padding:12px 0 8px;display:flex;flex-direction:column}footer{display:flex;align-items:center;justify-content:space-between;gap:24px;font-size:18px;color:var(--muted)}.storage-note{font-size:18px}.welcome,.edit-place,.end-confirm{display:grid;grid-template-columns:minmax(0,1fr) minmax(360px,1fr);gap:48px;height:100%;align-items:center}.welcome-copy h2,.edit-place h2,.end-confirm h2{font-size:42px;margin:16px 0 24px}.welcome-copy p:not(.section-label),.edit-place p,.end-confirm p{font-size:22px}.create-panel,.join-panel{max-width:650px;width:100%;justify-self:end}.create-panel h3{margin-bottom:16px}.place-options{display:grid;gap:16px}.place-options button{width:100%;text-align:left;justify-content:flex-start}.create-action{width:100%;margin-top:24px}.join-panel{background:var(--surface);padding:32px;border-radius:16px}.join-panel p{margin:24px 0}.join-panel button{width:100%}
+/* 1280: 80px outer gutters + 24px gap + two fluid columns = 1280. */
+#board{display:flex;flex-direction:column;flex:1;min-height:0}.topline{display:flex;justify-content:space-between;gap:16px;font-size:20px;margin-bottom:20px;color:var(--muted)}#connection.stale{color:#f0c580}.workgrid{display:grid;grid-template-columns:minmax(0,1.65fr) minmax(330px,1fr);gap:var(--gap);flex:1;min-height:0}.panel{border-radius:16px;background:var(--surface);padding:28px}.facts{display:flex;flex-direction:column;gap:var(--gap);min-width:0}.readiness{display:flex;flex-direction:column;justify-content:center;gap:12px;flex:1}.readiness strong{font-size:44px;line-height:1.2;font-weight:600}.place{flex:1;display:flex;flex-direction:column;justify-content:center}.place h2{margin-top:12px;font-size:36px}.place-help{margin-top:12px;font-size:18px}#readyButtons{display:flex;gap:16px;margin-top:8px}#readyButtons button{flex:1;font-size:22px;min-height:76px}#readyButtons [aria-pressed=true]{background:#e7e7e7;color:#161616}.action-area{min-width:0;display:flex}.action-area>.panel{width:100%;display:flex;flex-direction:column}.action-area h2{font-size:28px}.normal-actions p,.invite p{margin-top:20px}.normal-actions button,.invite a,#withdraw{margin-top:auto}.proposal h2{margin-top:12px}.proposal p{font-size:18px;margin-top:12px}#decisions{display:flex;flex-direction:column;gap:24px;margin-top:auto;padding-top:20px}#decisions button{width:100%}.bottom{display:flex;gap:24px;margin-top:12px;flex-shrink:0}.bottom button{min-width:200px}#refresh{margin-left:auto}.event{font-size:18px;margin-top:16px;min-height:27px}.facts.stale .place{color:#bdbdbd}.facts.stale .readiness strong{color:#f0c580}.edit-place form{display:grid;gap:24px;max-width:650px;width:100%;justify-self:end}.edit-place #editingCurrent{margin:16px 0}.confirm-actions{display:grid;gap:24px}.end-confirm{position:absolute;inset:0;background:#121212;z-index:2}#error:empty{display:none}#error{font-size:18px;color:#f0c580;padding:8px 0;line-height:1.35;flex-shrink:0}#error:not(:empty){position:relative;z-index:3}.sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}[hidden]{display:none!important}
+@media(min-width:1600px){.workgrid{grid-template-columns:minmax(0,1fr) 520px}.cockpit{padding:0 48px}.readiness strong{font-size:48px}}
+@media(max-height:650px) and (min-width:900px){:root{--gap:16px;--button:76px}.cockpit{grid-template-rows:64px minmax(0,1fr) 42px;padding:0 32px}.panel{padding:20px}.readiness strong{font-size:36px}.place h2{font-size:30px}.place-help{display:none}.event{margin-top:8px}.topline{margin-bottom:12px}#decisions{gap:16px;padding-top:12px}.create-panel h3{margin-bottom:12px}.place-options{gap:12px}.create-action{margin-top:16px}.storage-note{display:none}}
+@media(max-width:899px){:root{--gap:16px;--button:88px}.cockpit{min-height:720px;padding:0 24px;grid-template-rows:64px minmax(0,1fr) 48px}header{gap:12px}h1{font-size:24px}.demo{font-size:18px;max-width:135px;text-align:right}.storage-note{display:none}footer{font-size:18px}.welcome,.edit-place,.end-confirm{display:flex;flex-direction:column;justify-content:center;align-items:stretch;gap:24px}.welcome-copy h2,.edit-place h2,.end-confirm h2{font-size:32px;margin:8px 0 12px}.welcome-copy p:not(.section-label){display:none}.welcome-copy .section-label{font-size:18px}.create-panel{max-width:none}.create-panel h3{font-size:20px;margin-bottom:12px}.place-options{gap:16px}.create-action{margin-top:20px}.topline{font-size:18px;margin-bottom:12px}.workgrid{display:flex;flex-direction:column;gap:16px}.facts{gap:12px;flex:none}.panel{padding:18px 20px}.readiness{flex-direction:row;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px}.readiness strong{font-size:30px}.section-label{font-size:18px}.place{padding:16px 20px}.place h2{font-size:28px;margin-top:8px}.place-help{display:none}.action-area{flex:1;min-height:0}.action-area h2{font-size:24px}.proposal{padding:16px 20px}.proposal h2{margin-top:8px}.proposal p{font-size:18px;margin-top:8px}#decisions{gap:16px;padding-top:12px}#decisions button{min-height:76px;font-size:23px}.normal-actions p{margin:8px 0}.normal-actions h2{display:none}.normal-actions button{margin-top:16px}.bottom{gap:16px;margin-top:12px}.bottom button{min-width:0;flex:1;min-height:76px;font-size:22px}.event{font-size:18px;margin-top:8px;min-height:0;line-height:1.3}.confirm-actions{width:100%;gap:24px}.edit-place form{gap:20px}.edit-place p{font-size:18px}#readyButtons{width:100%;margin-top:8px}#readyButtons button{min-height:76px;font-size:22px}.join-panel{padding:24px}.invite p{margin:12px 0}.invite a{min-height:76px}.end-confirm{padding:24px 0}.end-confirm h2{font-size:30px}.end-confirm p{font-size:20px}}
+@media(max-width:899px) and (max-height:780px){.event{display:none}.proposal p{display:none}.readiness strong{font-size:28px}.place h2{font-size:26px}#readyButtons{margin-top:4px}#readyButtons button{min-height:76px;font-size:20px}.normal-actions p{font-size:18px}.normal-actions button{margin-top:8px}.topline{font-size:18px}.readiness{padding:14px 20px}.invite p{font-size:18px}.edit-place{gap:16px}.edit-place p:not(.section-label):not(#editingCurrent){display:none}}
+@media(max-width:479px){.cockpit{padding:0 16px;min-height:720px}.demo{font-size:16px}h1{font-size:22px}.readiness strong{font-size:26px}.panel{padding-left:16px;padding-right:16px}.place h2{font-size:24px}.topline{font-size:16px}.welcome-copy .section-label{font-size:16px}.place-options button{font-size:22px;padding-left:18px}.bottom button{font-size:20px}footer{font-size:16px}}
+.demo{word-break:keep-all}
+@media(max-height:650px) and (min-width:900px){.proposal p{display:none}} @media(max-width:899px) and (min-height:800px){.facts{flex:1}.action-area{flex:none}.readiness strong{font-size:38px}#decisions button{min-height:88px}}
+/* Compact split-screen keeps the error line outside all action hit areas. */
+@media(max-width:899px) and (max-height:780px){.workgrid{gap:12px}.proposal{padding-top:12px;padding-bottom:12px}#decisions{gap:12px;padding-top:8px}}
+
+FILE client.test.mjs
+// Lightweight fake DOM/network regression tests, not a substitute for real browser QA.
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import vm from 'node:vm';
+import { readFile } from 'node:fs/promises';
+const source = await readFile(new URL('./app.mjs', import.meta.url), 'utf8');
+const html = await readFile(new URL('./index.html', import.meta.url), 'utf8');
+async function harness(initialFailure = null) {
+  let now=100, failure=initialFailure;
+  const element=()=>({hidden:false,disabled:false,textContent:'',classList:{toggle(){}},setAttribute(){},querySelector(){return this.child ||= element();}});
+  const nodes=new Map([...html.matchAll(/id="([^"]+)"/g)].map(m=>[m[1],element()]));
+  const buttons=[{...element(),dataset:{ready:'true'}},{...element(),dataset:{ready:'false'}}];
+  const places=[...html.matchAll(/data-place="([^"]+)"/g)].map(m=>({...element(),dataset:{place:m[1]}}));
+  const state={id:'demo',role:'driver',version:1,status:'active',place:'가상 문화센터 정문',ready:true,joined:false,
+    proposal:{id:'proposal',by:'rider',place:'가상 공원 안내소'},lastEvent:'변경 제안',view:'view'};
+  const sandbox={URLSearchParams,AbortSignal,performance:{now:()=>now},navigator:{onLine:true},
+    location:{hash:'',origin:'http://127.0.0.1:4180'},history:{replaceState(){}},
+    sessionStorage:{getItem:()=>JSON.stringify({id:'demo',token:'fake-test-only',role:'driver',invite:'fake-invite'}),setItem(){}},
+    document:{hidden:false,getElementById:id=>nodes.get(id),querySelectorAll:selector=>selector==='[data-ready]'?buttons:selector==='[data-place]'?places:[],addEventListener(){}},
+    addEventListener(){},setInterval(){},
+    fetch:async()=>failure==='network'?Promise.reject(new Error('offline')):{ok:!failure,status:failure||200,json:async()=>failure?{error:'test error'}:{...state}}};
+  vm.createContext(sandbox); vm.runInContext(source,sandbox); await new Promise(setImmediate);
+  return {nodes,buttons,places,state,fail:v=>{failure=v;},advance:n=>{now+=n;},refresh:()=>vm.runInContext('refresh()',sandbox),render:()=>vm.runInContext('render()',sandbox)};
+}
+test('HTTP error then successful refresh removes the accidental new-session escape',async()=>{
+  const h=await harness(); h.fail(403); await h.refresh(); assert.equal(h.nodes.get('new').hidden,false);
+  h.fail(null); await h.refresh(); assert.equal(h.nodes.get('new').hidden,true);
+  assert.equal(h.nodes.get('readyText').textContent,'참여 대기');
+});
+test('connection failure labels every stale fact and locks all mutation controls',async()=>{
+  const h=await harness(); h.fail('network'); await h.refresh();
+  assert.equal(h.nodes.get('readyText').textContent,'현재 미확인');
+  for(const id of ['placeLabel','proposalText','lastEvent']) assert.match(h.nodes.get(id).textContent,/현재.*미확인/);
+  for(const id of ['accept','reject','withdraw','confirmEnd','end','nextPlace']) assert.equal(h.nodes.get(id).disabled,true,id);
+  assert.equal(h.nodes.get('inviteBox').hidden,true);
+  assert.ok(h.buttons.every(b=>b.disabled));
+});
+test('six-second client expiry locks even without a completed network failure',async()=>{
+  const h=await harness(); h.advance(6000); h.render();
+  assert.match(h.nodes.get('connection').textContent,/이전 기록/); assert.equal(h.nodes.get('end').disabled,true);
+  assert.equal(h.nodes.get('readyText').textContent,'현재 미확인');
+});
+test('place editor blocks current place and offline writes; remote proposal closes editor',async()=>{
+  const h=await harness(); h.state.joined=true; h.state.proposal=null; await h.refresh();
+  h.nodes.get('openPlace').onclick(); assert.equal(h.nodes.get('editPlace').hidden,false); assert.equal(h.nodes.get('board').hidden,true);
+  assert.equal(h.places.find(b=>b.dataset.place===h.state.place).disabled,true);
+  h.fail('network'); await h.refresh(); assert.ok(h.places.every(b=>b.disabled));
+  h.fail(null); h.state.version++; h.state.proposal={id:'new',by:'rider',place:'가상 공원 안내소'}; await h.refresh();
+  assert.equal(h.nodes.get('editPlace').hidden,true); assert.equal(h.nodes.get('board').hidden,false);
+});
+test('end confirmation isolates controls and cancellation preserves the shared round',async()=>{
+  const h=await harness(); h.nodes.get('end').onclick(); assert.equal(h.nodes.get('endConfirm').hidden,false); assert.equal(h.nodes.get('board').hidden,true);
+  h.nodes.get('cancelEnd').onclick(); assert.equal(h.nodes.get('endConfirm').hidden,true); assert.equal(h.state.status,'active');
+});
+
+test('initial network failure preserves session; ended rounds offer a new start',async()=>{
+  const h=await harness('network'); assert.equal(h.nodes.get('new').hidden,true);
+  h.fail(null); h.state.status='ended'; h.state.proposal=null; await h.refresh();
+  assert.equal(h.nodes.get('new').hidden,false); assert.equal(h.nodes.get('end').hidden,true);
+  assert.equal(h.nodes.get('proposal').hidden,true); assert.equal(h.nodes.get('readyText').textContent,'약속 종료');
+});
+
+EVIDENCE viewports.json
+[
+  {
+    "controls": [
+      {
+        "bottom": 315,
+        "height": 76,
+        "label": "이 장소로 변경"
+      },
+      {
+        "bottom": 407,
+        "height": 76,
+        "label": "현재 장소 유지"
+      },
+      {
+        "bottom": 550,
+        "height": 76,
+        "label": "약속 종료"
+      },
+      {
+        "bottom": 550,
+        "height": 76,
+        "label": "다시 확인"
+      }
+    ],
+    "scroll": [
+      1024,
+      600
+    ],
+    "size": [
+      1024,
+      600
+    ]
+  },
+  {
+    "controls": [
+      {
+        "bottom": 664.6015625,
+        "height": 88,
+        "label": "이 장소로 변경"
+      },
+      {
+        "bottom": 768.6015625,
+        "height": 88,
+        "label": "현재 장소 유지"
+      },
+      {
+        "bottom": 904,
+        "height": 76,
+        "label": "약속 종료"
+      },
+      {
+        "bottom": 904,
+        "height": 76,
+        "label": "다시 확인"
+      }
+    ],
+    "scroll": [
+      640,
+      960
+    ],
+    "size": [
+      640,
+      960
+    ]
+  },
+  {
+    "controls": [
+      {
+        "bottom": 379.3984375,
+        "height": 88,
+        "label": "이 장소로 변경"
+      },
+      {
+        "bottom": 491.3984375,
+        "height": 88,
+        "label": "현재 장소 유지"
+      },
+      {
+        "bottom": 660,
+        "height": 88,
+        "label": "약속 종료"
+      },
+      {
+        "bottom": 660,
+        "height": 88,
+        "label": "다시 확인"
+      }
+    ],
+    "scroll": [
+      1920,
+      720
+    ],
+    "size": [
+      1920,
+      720
+    ]
+  },
+  {
+    "controls": [
+      {
+        "bottom": 525.203125,
+        "height": 88,
+        "label": "이 장소로 변경"
+      },
+      {
+        "bottom": 629.203125,
+        "height": 88,
+        "label": "현재 장소 유지"
+      },
+      {
+        "bottom": 788,
+        "height": 76,
+        "label": "약속 종료"
+      },
+      {
+        "bottom": 788,
+        "height": 76,
+        "label": "다시 확인"
+      }
+    ],
+    "scroll": [
+      390,
+      844
+    ],
+    "size": [
+      390,
+      844
+    ]
+  },
+  {
+    "controls": [
+      {
+        "bottom": 604.6015625,
+        "height": 88,
+        "label": "이 장소로 변경"
+      },
+      {
+        "bottom": 708.6015625,
+        "height": 88,
+        "label": "현재 장소 유지"
+      },
+      {
+        "bottom": 844,
+        "height": 76,
+        "label": "약속 종료"
+      },
+      {
+        "bottom": 844,
+        "height": 76,
+        "label": "다시 확인"
+      }
+    ],
+    "fontLoaded": true,
+    "scroll": [
+      768,
+      900
+    ],
+    "size": [
+      768,
+      900
+    ]
+  },
+  {
+    "controls": [
+      {
+        "bottom": 557,
+        "height": 88,
+        "label": "이 장소로 변경"
+      },
+      {
+        "bottom": 669,
+        "height": 88,
+        "label": "현재 장소 유지"
+      },
+      {
+        "bottom": 840,
+        "height": 88,
+        "label": "약속 종료"
+      },
+      {
+        "bottom": 840,
+        "height": 88,
+        "label": "다시 확인"
+      }
+    ],
+    "fontLoaded": true,
+    "scroll": [
+      1440,
+      900
+    ],
+    "size": [
+      1440,
+      900
+    ]
+  },
+  {
+    "controls": [
+      {
+        "bottom": 379.3984375,
+        "height": 88,
+        "label": "이 장소로 변경"
+      },
+      {
+        "bottom": 491.3984375,
+        "height": 88,
+        "label": "현재 장소 유지"
+      },
+      {
+        "bottom": 660,
+        "height": 88,
+        "label": "약속 종료"
+      },
+      {
+        "bottom": 660,
+        "height": 88,
+        "label": "다시 확인"
+      }
+    ],
+    "fontLoaded": true,
+    "scroll": [
+      1280,
+      720
+    ],
+    "size": [
+      1280,
+      720
+    ]
+  },
+  {
+    "controls": [
+      {
+        "bottom": 468,
+        "height": 76,
+        "label": "이 장소로 변경"
+      },
+      {
+        "bottom": 560,
+        "height": 76,
+        "label": "현재 장소 유지"
+      },
+      {
+        "bottom": 664,
+        "height": 76,
+        "label": "약속 종료"
+      },
+      {
+        "bottom": 664,
+        "height": 76,
+        "label": "다시 확인"
+      }
+    ],
+    "fontLoaded": true,
+    "scroll": [
+      480,
+      720
+    ],
+    "size": [
+      480,
+      720
+    ]
+  }
+]
+EVIDENCE offline-measurement.json
+{
+  "height": 720,
+  "items": [
+    {
+      "bottom": 535.703125,
+      "text": "이전 제안 · 현재 미확인가상 문화센터 동쪽 입구마지막 확인 당시 제안입니다. 현재 상태는 미확인입니다.제안 철회이 장소로 변경현재 장소 유지",
+      "top": 290.390625
+    },
+    {
+      "bottom": 447.0859375,
+      "text": "이 장소로 변경",
+      "top": 371.0859375
+    },
+    {
+      "bottom": 535.0859375,
+      "text": "현재 장소 유지",
+      "top": 459.0859375
+    },
+    {
+      "bottom": 623.703125,
+      "text": "약속 종료새 약속 시작다시 확인",
+      "top": 547.703125
+    },
+    {
+      "bottom": 664,
+      "text": "서버에 연결할 수 없습니다. 최신 상태를 확인할 수 없습니다.",
+      "top": 623.703125
+    },
+    {
+      "bottom": 720,
+      "text": "Gleo·차량 미연결 · 주행 중 사용 금지서버 재시작 시 약속이 사라집니다.",
+      "top": 672
+    }
+  ],
+  "scrollHeight": 720,
+  "width": 480
+}
+EVIDENCE tests.txt
+✔ two participants share ready, pending, accepted and ended state (2.5888ms)
+✔ self acceptance and driver readiness are forbidden (0.3572ms)
+✔ reject preserves the agreed place; old proposal cannot be accepted (0.3102ms)
+✔ one-use invitation, wrong and cross-room credentials rejected (0.2803ms)
+✔ stale concurrent writes, repeated request IDs and replaced proposals rejected (0.4057ms)
+✔ server-issued read lease expires at boundary and cannot be fabricated (0.2474ms)
+✔ end before join revokes invite and pending proposal is cleared on end (0.3165ms)
+✔ malformed and unsupported commands do not change state (0.3528ms)
+✔ memory lifetime and restart are explicit disappearance, not phantom success (0.4372ms)
+✔ withdraw belongs to proposer; foreign read leases and cross-room writes fail (1.5746ms)
+✔ HTTP integration: create/join/read/write, isolation, input and origin defenses (203.4179ms)
+✔ HTTP error then successful refresh removes the accidental new-session escape (4.4964ms)
+✔ connection failure labels every stale fact and locks all mutation controls (2.7803ms)
+✔ six-second client expiry locks even without a completed network failure (1.7ms)
+✔ place editor blocks current place and offline writes; remote proposal closes editor (1.4904ms)
+✔ end confirmation isolates controls and cancellation preserves the shared round (1.0158ms)
+✔ initial network failure preserves session; ended rounds offer a new start (1.0617ms)
+ℹ tests 17
+ℹ suites 0
+ℹ pass 17
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 343.9981

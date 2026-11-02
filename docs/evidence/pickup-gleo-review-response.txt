@@ -1,0 +1,47 @@
+## Review: Gleo in-process readiness adapter (read-only, fixed snapshot)
+
+I reviewed the inline snapshot without tools or edits. I did not re-run the tests, so the 45/45 result is your evidence, not mine. Plan mode is active, so I did not write a plan file. Nothing here verifies Android, SDK, or Gleo behavior.
+
+**Verdict:** No P0. No P1 under the stated trust model. The issues below are P2 hardening and test gaps.
+
+### What holds (checked against code)
+
+- **Default deny:** `attest` defaults to `null`, and `#authorize` rejects any non-plain grant before any Board access.
+- **Grant one-use:** `#grants` is a `WeakSet` of grant objects. Each phase needs a fresh grant, checked against `checkedAt` within 1000 ms and the monotonic clock.
+- **Mutation requires a dispatch grant:** `arrive` needs a prepare grant and a separate dispatch grant. The dispatch grant is requested only after the ticket matches.
+- **Ticket and binding:** tickets are consumed before `attest` runs. `#binding !== pending.binding` catches rebind, clear, and dispose.
+- **Deadline:** the 5 s TTL uses the monotonic clock, and `#time()` rejects backwards time.
+- **Version capture:** arrival uses the prepare-time `version` and `view`. Any intervening change returns `asking`.
+- **Reentry:** `#busy` blocks nested `prepare` and `dispatch`.
+- **Responses:** only the four public fields and fixed messages are returned. Host exception text is never included.
+
+### P2 findings
+
+| # | Symbol | Evidence | Impact | Minimal fix |
+|---|---|---|---|---|
+| 1 | `dispatch` (name line) | `pending?.ticket === ticket` is `true` when both are `undefined`, then `pending.action` runs outside `try`. | `dispatch()` with no pending ticket throws instead of returning `fail`. No mutation occurs. | `const name = pending && pending.ticket === ticket ? pending.action : 'UNKNOWN_ACTION';`. Add a test. |
+| 2 | `prepare` | `this.#pending = null` runs only after `#authorize` succeeds. | A denied new command leaves an older arrival ticket dispatchable for up to 5 s. The README says "새 인증된 명령", so this matches the documented wording. It is a product choice. | If you want denied commands to cancel pending work, move `this.#pending = null` to just after the busy/closed check. Add a test. |
+| 3 | `parseCommand` / `dispatch` | `ACTIONS.includes(input.action)` and `return input.action` read the property twice. `dispatch` treats any non-GET action as arrival (`else` branch). | Only a live object with accessors could exploit this. JSON input cannot. Still, the `else` path is fail-open. | Read `action` once and return the checked value. In `dispatch`, use `if (pending.action !== ACTIONS[1]) return fail(name);` before any `act` call. |
+| 4 | `#authorize` | `phase` is passed to `attest`, but the grant is never checked for it. The same `invocation` object covers both phases. | Defense-in-depth only. The host is trusted, and one-use grants plus the dispatch-time checks limit the damage. | Require `grant.phase === phase` and add `phase` to the fake fixture. |
+| 5 | constructor | The adapter cannot detect an async `Board` before `act` runs. | A Promise-returning `act` could commit later while the adapter reports `fail`. | Assert `board instanceof Board` in the constructor. Keep the synchronous requirement documented. |
+
+### Test gaps
+
+- **"concurrent dispatch jobs"** uses sequential microtasks. It tests one-use consumption, not concurrency. Rename it, or add a reentry test inside `attest` for `dispatch`, mirroring the prepare test.
+- **Offline test** compares two denial responses from `run()`, so it does not show that the unbound state matches. Assert the exact fail response.
+- **Missing tests:** `dispatch()` with no pending ticket (issue 1), denied prepare after pending arrival (issue 2), getter-based action input (issue 3), phase mismatch (issue 4).
+- **Schema/manifest test** is a text grep on the manifest and Gradle file. It is not evidence about the built APK.
+
+### Operational note (fail-closed)
+
+`Board.read` keeps only the last 9 views per credential. If the same driver credential makes 9 or more reads between `prepare` and `act`, the arrival returns 409 with the "check the agreement" message. This is fail-closed but may hurt UX if the driver's WebView polls on the same token.
+
+### Pre-existing, out of scope (`domain.mjs` unchanged)
+
+`Board` uses `Date.now`. After a backwards wall-clock jump, `now - v.at < VIEW_TTL` stays true for old views. The adapter's monotonic 5 s bound limits this on the adapter path. The HTTP path still trusts the wall clock. This is not introduced by the adapter.
+
+### Blockers, not issues in this snapshot
+
+These are documented production gaps and are not defects here: native session supplier, caller verification, UX/online issuer, Gleo `ACTION_PARAM` encoding (the docs conflict), schema placement and approval, callback transport and receiver target, the 7 s platform timeout (not a rollback guarantee), product package and version, and real device E2E.
+
+**Recommended next step:** apply items 1 and 2 with their tests, plus item 3 if you want the default-branch hardening. Items 4 and 5 can wait. The remaining blockers need product and Gleo inputs that this snapshot does not contain.

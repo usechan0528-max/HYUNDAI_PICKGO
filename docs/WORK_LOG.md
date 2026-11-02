@@ -282,3 +282,28 @@ APK output/J1_Android_Listening_0.1.0_debug.apk, 7865832bytes, SHA256 2fbd894484
 Java/JS364assertion,37경계,기존상태,Node125/125. 최종 debug assemble/시험assemble/lint 성공0오류2경고. Android14/14 159.487초, 추가 분리process prepare1/1→force-stop→restore1/1 (1529→2882ms), 자동출력없음/종료초기화. APK output/J1_Android_Journey_0.2.0_debug.apk 7895236bytes SHA2564411fc89751f37b8834c3b9fa451b392640dfd261e50003c0fc20204d9cddff7. 기존키/음원4개 일치/요청권한없음.
 Opus5.5설계1회,Haiku5.5 timeout1회+정상3회, 중요지적 수정·근거판정 기록. pause중예산저장/복원문구 수정. 최종검수의 명시새듣기 초기화 P1은 render문맥누락으로 일반시작으로 해석한 것으로 코드호출경로/표시문구 대조하여 미채택. 실제SDK/ETA/실차/음성인식/백그라운드/최종release 미검증. 외부UI 클릭시험은 시스템화면과 UI hierarchy 불일치로 실패/중단, 앱 process검증은 별도instrumentation으로 완료. 앱필요성 조사채팅에 기기반환. 상세 J1_ANDROID_JOURNEY_2026-11-02.md 및 evidence/j1-android-journey-*.
 공개/push/외부제출/권한·키변경없음. 다음기능 범위는 사용자 판단; 이 채팅에서 임의 확대하지 않음.
+
+## 2026-11-02 · C02 픽업 약속판 초기 MVP 완료(로컬 웹 범위)
+D-020 사용자구현승인, D-017 새채팅. experiments/pickup-board 신규서버/두역할UI/테스트/README. 기존 J1·주차·SDK 보존. 14시험통과 및 실제 IAB 흐름·서버중단/재시작 확인. 실제 Haiku5.5 2회 읽기검수; stale P1·행위자·철회·신선도 보완, 후속P0/P1없음. 후속 P2복구플래그와 P3초대노출까지 수정·fake DOM회귀추가. 최종2줄에대한3차Claude검수는미실행. DotR007완료 재사용/새조사없음. localhost가아닌127.0.0.1:4180, 메모리저장/합성장소/실제Gleo·SDK·Android·실차·경쟁우위미검증. 초기 native confirm 도구timeout 이력과 최종inline확인 검증은 전용보고서. Git작업은별도담당; 소스·증거를codex/pickup-board통합대상으로전달. 상세 PICKUP_BOARD_MVP_2026-11-02.md/evidence/pickup-board-*. 다음기능을임의로시작하지않음.
+
+## 2026-11-02 · C02 차량 화면 재설계
+사용자 Claude합작/이전시안/현대차톤 요청. actual Opus5.5 설계+Haiku5.5 고정소스검수, 중립Asta/확정과제안 분리/큰장소선택/종료확인. 초기네트워크 세션손실버튼 수정, live지역 중복갱신제거. 17시험통과/실제8크기/480오프라인 겹침수정 재측정. 기존J1보존/main기존변경보존/Git작업없음. 상세 PICKUP_BOARD_DESIGN_2026-11-02.md.
+
+C02 최종: Haiku후속2회 추가, 8크기오류측정/404화면정리/자동조회복구오류해제까지 반영.17/17 재통과. 마지막2줄 후 추가Claude/실제UI복구시험은 IAB동기화timeout으로미실행. 브라우저마무리차단 기록, 서버4180실행유지. 최종보고서와manifest참조.
+
+## 2026-11-02 · C02 각진 디자인·에뮬레이터
+사용자요청으로panel16→0/button12→2px. Pleos emulator5556에기존키로WebView검토앱빌드·설치,reverse4180,실제UI생성/종료확인/취소. 전화전체창겹침은전화재선택→픽업재선택으로해소. Node17/17,Android빌드성공lint0오류1경고. Haiku실제PNG2장읽기검토수행. native제품/SDK실차인증아님. 상세PICKUP_BOARD_EMULATOR_DESIGN_2026-11-02.md.
+
+## 2026-11-03 · C02 수동 도착·탑승 기능
+D-017 이전채팅 인수 후 main 미커밋/미추적보존. domain/app/index/style/시험/README 구현, Opus설계1회·Haiku읽기검수2회 실제모델/exit0확인. P2 오류안내보존/실패시과거라벨가시성/종료행위자, P3 탑승후문구·준비보존시험 반영. 최종27시험·Chrome핵심두역할·오프라인잠금 완료. 선택적 Pleos최종화면과 서버재시작UI복구는 Windows잠금으로차단, 사용자해제요청. 같은기능후속은이채팅, 새기능미착수. 서버4180재시작유지/adb reverse확인,commit/push없음. 전용보고서 PICKUP_BOARD_STATUS_2026-11-03.md, evidence/pickup-status-*.
+
+
+## 2026-11-03 · C02 Gleo 연동 준비
+D-017 인계/원래디자인채팅편집종료확인, main기존미커밋보존. 조회·수동도착 후보schema/엄격파서/실제Board내부어댑터/22신규시험 구현. 준비49회귀통과, 기존Android검토앱빌드/lint만 확인. 실제Gleo·native세션·인증/UX/응답transport·schema승인 미완료. Opus설계·Haiku고정검수 지적반영 및 DotR008수신·직접원문대조·즉시종료회신. 공개/제출/commit/push/권한·키변경없음. 다음은 동일연동범위의공식계약과native세션연결,차단을실연동완료로표시하지않음. 전용보고서 PICKUP_GLEO_READINESS_2026-11-03.md.
+
+
+2026-11-03 잠금 해제 후속: Pleos 현재창 재식별/Raise 후 소실회차 안내→새약속복구→도착알림전→탑승없이취소확인→약속취소·탑승미완료 실제UI 확인. 증거 pickup-status-emulator-{waiting,confirm,cancelled}.png. 앱소스수정없음/최종hash일치,27시험·Claude검수결과유지. 에뮬레이터두역할전체흐름은미실행, 앞선Chrome두역할증거와구분. 기존잠금차단은이후속시각검증범위에서해소.
+
+## 2026-11-03 · J-01 잠정 폐기 공통 지침 반영
+
+사용자 직접 지시에 따라 Codex가 DEVELOPMENT_GUIDE.md, AGENTS.md, CLAUDE.md, README.md, docs/DECISIONS.md, docs/DOTS_COLLABORATION_2026-11-02.md 및 본 로그에 모든 세션의 J-01 제외 기준을 반영했다. main 기존 미커밋 변경을 보존하고 문서만 국소 수정했다. 소스 수정·삭제·commit·push 없음. 작은 지침 문구 변경으로 Claude 검수와 앱 테스트는 미실행. 별도 실행 중인 대화의 자동 재독·수신은 확인하지 않았다.

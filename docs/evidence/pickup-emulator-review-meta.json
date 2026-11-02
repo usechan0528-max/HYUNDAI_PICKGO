@@ -1,0 +1,21 @@
+{
+  "exit": 0,
+  "session_id": "16c08a33-1844-436b-9678-ee8e9a485deb",
+  "is_error": false,
+  "modelUsage": {
+    "claude-haiku-5-5": {
+      "inputTokens": 4,
+      "outputTokens": 4649,
+      "cacheReadInputTokens": 15283,
+      "cacheCreationInputTokens": 13752,
+      "webSearchRequests": 0,
+      "costUSD": 0.00522813,
+      "contextWindow": 1000000,
+      "maxOutputTokens": 128000,
+      "thinkingTokens": 2624,
+      "canonicalModel": "claude-haiku-5-5",
+      "provider": "firstParty",
+      "costBasis": "list"
+    }
+  }
+}

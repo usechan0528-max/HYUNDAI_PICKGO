@@ -1,0 +1,22 @@
+✔ two participants share ready, pending, accepted and ended state (2.3845ms)
+✔ self acceptance and driver readiness are forbidden (0.4876ms)
+✔ reject preserves the agreed place; old proposal cannot be accepted (0.3801ms)
+✔ one-use invitation, wrong and cross-room credentials rejected (0.3915ms)
+✔ stale concurrent writes, repeated request IDs and replaced proposals rejected (0.4811ms)
+✔ server-issued read lease expires at boundary and cannot be fabricated (0.3034ms)
+✔ end before join revokes invite and pending proposal is cleared on end (0.3785ms)
+✔ malformed and unsupported commands do not change state (0.3961ms)
+✔ memory lifetime and restart are explicit disappearance, not phantom success (0.3123ms)
+✔ withdraw belongs to proposer; foreign read leases and cross-room writes fail (1.8124ms)
+✔ HTTP integration: create/join/read/write, isolation, input and origin defenses (178.3739ms)
+✔ HTTP error then successful refresh removes the accidental new-session escape (3.8841ms)
+✔ connection failure labels every stale fact and locks all mutation controls (2.1434ms)
+✔ six-second client expiry locks even without a completed network failure (1.2053ms)
+ℹ tests 14
+ℹ suites 0
+ℹ pass 14
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 313.2499

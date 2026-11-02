@@ -1,5 +1,7 @@
 # Project Instructions for AI Agents
 
+**모든 세션 적용 · 2026-11-03:** J-01(J1/J-1)은 잠정 폐기되어 향후 개발 고려 대상에서 제외한다. 사용자 명시적 재개 전까지 과거 승인·인수인계로 재개하지 않는다. 공통 기준은 `DEVELOPMENT_GUIDE.md` 1절을 따른다.
+
 This file provides instructions and context for AI coding agents working on this project.
 
 장기 기억과 작업 상태는 ai-memory(MCP 도구)로 관리한다. 별도 MEMORY.md 파일 메모리는 쓰지 않는다.

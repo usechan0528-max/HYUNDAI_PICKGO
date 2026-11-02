@@ -124,3 +124,32 @@ Android 기본듣기 담당후속: 구현·검수지적처리·최종8개시험�
 Codex current chat owns experiments/j1-listening JourneyDemo/fixture/generator/tests and ListeningActivity integration, dedicated work/j1-android-journey and evidence. Previous Android chat confirmed idle/completed via wait_threads before edits. Default listening behavior preserved. Recommendation chat owns core.mjs; read-only here. Claude fixed-input review only; Dot R002/R004 reused. No SDK or coordinate-stream edits.
 
 Android synthetic journey integration: implementation/review fixes/14 regression +2 separate process tests/evidence completed. Files: ListeningActivity.java, app/build.gradle, new JourneyDemo/JourneyFixture/generator/JourneyDemoTest/JourneyListeningTest/JourneyProcessTest, README/report/evidence and work/j1-android-journey. ListeningState/base tests/SDK/web recommendation/audio unchanged by this chat. Emulator returned to Gleo gap research chat. No further source or device edits pending.
+
+## 2026-11-02 · C02 초기 MVP
+현재 구현 채팅 Codex: experiments/pickup-board/**, work/pickup-board/**, docs/PICKUP_BOARD_MVP_2026-11-02.md 및 전용 증거. main 기존 변경 보존, 공통 기록은 추가만. Claude Haiku5.5 고정 스냅샷 읽기 검수. 기존 Android/SDK/J1/주차 소스 제외. Dot R007 완료 재사용, 추가 질문 없음.
+
+C02 초기 MVP 담당 최종: experiments/pickup-board/** 구현·14시험·실제브라우저검증·Haiku2회검수/지적처리 완료. docs/PICKUP_BOARD_MVP_2026-11-02.md와 docs/evidence/pickup-board-* 통합대상. Git담당 별도채팅이 main/픽업기획을원격분리; 이채팅은checkout/commit/push없음. 현재실행4180 로컬서버는시연용유지. 다음기능미착수.
+
+## 2026-11-02 · 픽업 차량 UI 재설계
+사용자 현대차 톤/이전시안/Claude합작 요청. 기존 픽업 기능의 UI 수정으로 같은 채팅에서 진행. Codex: pickup-board index/style/app 및 폰트 정적서빙, 전용work/pickup-design·보고서·증거. domain/API 의미는 보존. Claude Opus5.5 구조조율/Haiku5.5 고정검수, 소스수정권한없음. 기존 J1 시안은 읽기만. Git작업없음.
+
+## 2026-11-02 · C02 에뮬레이터 디자인 검토
+동일담당Codex: pickup-board/style.css 모서리와 신규emulator-preview/** 검토용하네스,전용work/pickup-emulator,보고서/증거. 기존domain/서버/API/J1미수정. 실제ClaudeHaiku이미지·고정소스검수완료. Git작업없음.
+
+## 2026-11-03 · C02 수동 도착·탑승 상태
+D-017 인계 수신. 현재 채팅 Codex: experiments/pickup-board 상태/UI/시험과 work/pickup-status, 전용 보고서/증거 담당. 이전 C02 채팅 소스 수정 종료 인계 확인. 기존 디자인·하네스 및 타 작업 보존. Claude Opus5.5 설계/Haiku5.5 고정 읽기 검수, Dot R007 재사용·추가 조사 없음. commit/push 제외.
+
+C02 수동 상태 담당 결과: 구현·27회귀·Chrome 두역할·Claude설계/검수2회·지적처리/기록 완료. 선택적 Pleos UI는 Windows잠금으로 차단이며 이후 같은 채팅에서 확인. Git담당 통합대상은 pickup-board의7변경파일 및 PICKUP_BOARD_STATUS 보고서/evidence/pickup-status-*와 공통추가기록. 현재담당의새기능편집없음, 기존미커밋보존/commit·push미실행.
+
+## 2026-11-03 · C02 Gleo 연동 준비
+인계받은 Codex 채팅이 experiments/pickup-board/gleo/**, gleo.test.mjs, work/pickup-gleo/**, 전용 보고서·증거와 공통 추가 기록을 담당. 원래 디자인 채팅에서 동시 편집/빌드/기기 조작 없음을 회신으로 확인. 기존 domain/server/app/UI/Android 소스는 읽기만, 기존 미커밋 보존, branch main 유지·commit/push 없음. 실제 Claude Opus5.5 설계/Haiku5.5 고정 소스 검수, Dot R008 두 계약 한정 조사·종료. Android 제품 수신기·권한 변경은 이번 준비 구현에서 제외.
+
+## 2026-11-03 · 픽업 위치 병렬 작업 및 통합
+사용자 기능별 병렬 요청과 후속 통합 검수·실행·마무리 지시. 총괄 채팅 01a19cf3-ba76-7350-a2ad-9a58ec57db01은 main의 최종 통합과 공통 기록, work/pickup-integration 및 통합 증거만 담당한다. 기준 파일은 work/pickup-integration/baseline과 baseline-manifest.json에 보존했다.
+- 차량 근접: 채팅 01a19cfa-84e6-73c2-bce5-e6aa2979af16, C:/Users/dldyd/.codex/worktrees/pickup-proximity/HYUNDAI_AI, codex/pickup-proximity. 근접 모듈·시험·전용 보고서. 공유 main 수정 제외.
+- 휴대폰 위치: 채팅 01a19cfa-ae24-7771-8d53-bf88a124868e, C:/Users/dldyd/.codex/worktrees/pickup-phone-location/HYUNDAI_AI, codex/pickup-phone-location. 동의·공유·철회와 전용 시험·보고서. 공유 main 및 차량 근접 수정 제외.
+- 지도 검토: 채팅 01a19cfa-9a42-70d3-97f8-43083776d054, 읽기 조사 전용, 공유 문서 수정 없음. 이번 병렬 작업의 Dot 대화 단독 조율 담당.
+각 담당 편집 종료와 기준 차이를 확인한 뒤 총괄이 순서대로 통합한다. 기존 미커밋 보존, push·공개·계정·권한·서명키 변경 제외. 현재 상태: 진행 중, 완료 아님.
+
+
+2026-11-03 잠금 해제 후속: Pleos 현재창 재식별/Raise 후 소실회차 안내→새약속복구→도착알림전→탑승없이취소확인→약속취소·탑승미완료 실제UI 확인. 증거 pickup-status-emulator-{waiting,confirm,cancelled}.png. 앱소스수정없음/최종hash일치,27시험·Claude검수결과유지. 에뮬레이터두역할전체흐름은미실행, 앞선Chrome두역할증거와구분. 기존잠금차단은이후속시각검증범위에서해소.

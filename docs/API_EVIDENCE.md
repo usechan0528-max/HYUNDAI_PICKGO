@@ -80,3 +80,19 @@ AndroidAPI34 MediaPlayer prepareAsync/onPrepared/seekTo(long,SEEK_CLOSEST)/onSee
 
 ## 2026-11-02 · Android 모의 운행과 MediaPlayer 연결
 실제 위치 SDK/API 추가 없음. 기존 MediaPlayer·AudioFocus·CarUxRestrictions 경계를 유지하고 합성입력 정책만 debug+명시intent에서 연결. elapsedRealtime은 이번 합성 시각의 내부 기준이며 Pleos timestampMillis 계약으로 전이하지 않음. 실제SDK/ETA 상태bridge6필드·UNVERIFIED_CLOCK 변경없음. 위치/인터넷/마이크 신규권한 없음. Android14회귀+프로세스분리2시험은 합성정책/로컬실재생 증거이며 실제주행·SDK추천 인증이 아님. J1_ANDROID_JOURNEY_2026-11-02.md 참조.
+
+## 2026-11-02 · C02 로컬 상태 API
+외부 SDK 호출 없음. 자체 Node HTTP POST rooms/join/actions, GET room 구현·실제 HTTP 시험. 참여자 bearer capability, 회차버전/서버조회TTL8초/요청ID/제안ID/종료 검사. 클라이언트2초조회·요청시작6초신선도·4초요청제한. Gleo/CarUxRestrictions/위치/ETA는 미연동·미검증. 정확한 자체계약과 한계: PICKUP_BOARD_MVP_2026-11-02.md; 증거 evidence/pickup-board-tests.txt.
+
+## 2026-11-02 · C02 디자인 정적 리소스
+기존 HTTP회차/권한/신선도 계약 유지. 서버 정적allowlist에 /fonts/AstaSans.ttf와 /fonts/OFL.txt만 추가. IAB font load 확인. Gleo·차량 SDK 신규 실행증거 없음.
+
+## 2026-11-02 · C02 WebView 검토 하네스
+Android플랫폼WebView/loadUrl/JavaScript/DOMStorage/새창거부,loopback전용NetworkSecurityConfig. API34에뮬레이터설치/실제페이지생성확인. adb reverse4180로기존Host/Origin검증유지. INTERNET normal권한만/기존debug키. 차량SDK/Gleo/CarUxRestrictions새연동증거없음. PICKUP_BOARD_EMULATOR_DESIGN_2026-11-02.md.
+
+## 2026-11-03 · C02 수동 상태 API
+기존 자체 actions에 arrive/board/undoArrival/undoBoarding 추가, 조회 stage/outcome 추가. 기존 역할 capability/version/view TTL/requestId 검사 재사용. 실제HTTP 두역할 상태/오래된종료409/종료후잠금 확인. 외부SDK·새권한 없음. PICKUP_BOARD_STATUS_2026-11-03.md의 계약표와 evidence/pickup-status-tests.txt 참조.
+
+
+## 2026-11-03 · C02 Gleo 후보 계약
+공식 app-capability/action_callback/examples/deliver-schema/core-concepts 원문 재대조. action최대3 중2개, activity=startActivity/service=sendBroadcast, 영어설명·success/asking/fail·JSON객체배열문자열data·7초timeout 확인. 개별extras와 ACTION_PARAM 문서 불일치 및 caller/응답대상 인증 미확인(DotR008 대조). 후보schema는 APK 밖, 실제Board 내부호출/Callback객체 시험만 통과. Android수신·송신·Gleo승인·자연어·SDK/실차 미확인. 정확한URL/심볼/차단은 experiments/pickup-board/gleo/README.md.
