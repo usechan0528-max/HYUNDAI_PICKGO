@@ -1,6 +1,10 @@
-# 현재 주력안: 운행 맥락 기반 콘텐츠·정보 추천
+# J1 개발 보존본
 
-사용자 결정 D-014에 따라 차량 위치·경로·운행 패턴과 취향을 결합하는 J1을 보완합니다. [기획 및 검증 범위](docs/JOURNEY_CONTEXT_PROPOSAL_2026-11-02.md). [J1 로컬 듣기 시연](http://127.0.0.1:4177) · 실행: `node experiments/journey-context/demo/server.mjs`. 합성여정/직접작성콘텐츠이며실제SDK미연동입니다. [실행·검증 범위](experiments/journey-context/README.md). 아래는 보존 중인 이전 주차 MVP의 실행 설명입니다.
+이 브랜치는 기존 주차·J1 개발 이력을 보존합니다. 새 픽업 약속판 기획은 `codex/pickup-board` 브랜치에서 관리합니다.
+
+J1 웹 실행: `node experiments/journey-context/demo/server.mjs` → http://127.0.0.1:4177
+
+[웹 실행·검증 안내](experiments/journey-context/README.md) · [업로드 범위와 검증](docs/GITHUB_SNAPSHOT_2026-11-02.md)
 
 # 도착 전에 — 주차 정보 MVP
 
@@ -43,3 +47,10 @@ APK 위치: 없음. SDK·에뮬레이터·실차 검증: 미실행. 실제 데�
 
 ## 실제 연결 후 판정
 세종로 공영주차장 실제 연결 및 오류·시간 경계 개선, 최종22개 테스트 통과. 공동 재평가 결과 현재 주차 아이디어의 공모전 주력 개발은 종료하고 코드는 보존합니다. [재평가 및 새 후보](docs/LIVE_PARKING_REEVALUATION_2026-11-02.md).
+
+## Android 기본 듣기 시연
+
+[J1 Android 실행 안내](experiments/j1-listening/README.md) · [검증 보고서](docs/J1_ANDROID_LISTENING_2026-11-02.md) · APK: `output/J1_Android_Listening_0.1.0_debug.apk`. 한국어 로컬4편 시작/일시정지/이어듣기/종료/자연 다음 재생, Pleos 에뮬레이터 최종8개 시험 통과. 전면 재생 시연이며 내비 전면 지속재생·STT·실제좌표추천·release 제출본은 아니다. 화면 이탈 시 저장·정지한다.
+
+## Android 모의 운행 추천 시연 · 0.2.0
+[실행 안내](experiments/j1-listening/README.md) · [검증·한계](docs/J1_ANDROID_JOURNEY_2026-11-02.md) · APK: output/J1_Android_Journey_0.2.0_debug.apk. 명시debug모드에서 합성공통구간/분기·이탈·만료·철회를 다음콘텐츠선택에 연결합니다. 현재재생유지, 선택직전신선도검사, 제한시새듣기복구. Android14회귀+별도프로세스2시험통과. 실제SDK위치/ETA·실차·백그라운드재생·추천효과검증은 아닙니다. 기본실행은 기존순차듣기입니다.

@@ -53,3 +53,30 @@
 |FusedLocation LocationData|공개 sources.jar에도 timestampMillis/confidence 의미 설명 없음|시계 기준/오차/확률 해석 보류|
 
 NavigationSnapshotMapper를 실제 navi-data classes.jar로 컴파일 exit0. Kotlin DeprecationLevel.HIDDEN annotation 클래스 부재 경고2건 발생. 독립 classpath 실험이며 전체 의존성 해결/Android 컴파일 완료 아님. 실행·권한·이벤트 주기·현재 경로와 응답 연관·원천 데이터 신선도는 미검증이다. getter·단위 확인만으로 최신 경로 추정 입력에 바로 연결하지 않는다.
+
+## 2026-11-02 · Windows 에뮬레이터 검증 갱신
+FusedLocation1.1.3의 isSupported/initialize/registerFusedLocationCallback/getLastKnownLocation 및 NaviHelper3.0.5의 initialize 콜백/addListener/getRouteStateInfo/getCurrentLocationInfo/getDestinationInfo를 experiments/pleos-probe에서 실제 실행했다. Fused 권한은 dangerous이며 미허용 시 SecurityException, 검증 AVD에서 install -g 허용 후 위치 수신. NAVI_ROUTE는 해당 이미지에서 normal/허용. 60초 유효 좌표 콜백49회, 내비3응답, SAFE_GUIDING/routing=false. 상태: 에뮬레이터 확인(읽기 기본 흐름), 활성 경로·ETA·실차는 미확인. API 반환값·로그 증거는 evidence/pleos-probe-result-2026-11-02.json 및 runtime txt. SDK 배포/신청 문서 차이가 실제 프로젝트/실차 사용 권한까지 해소됐다는 뜻은 아니다.
+
+## 2026-11-02 · 활성 안내 시간 실수신
+NaviHelper.requestRoute(RouteInfo) 공식 예제 POI로 실제 요청, NAVI_ROUTE_SEARCH normal 권한. 현재 SDK 생성자 latitude→longitude/11인자는 공식 Java 예제(좌표 역순/9인자)와 달라 SDK 소스·Kotlin예제로 보정. DrivingInfo.destination.duration=60초 및 DestinationInfo.remainTime=60 실제 수신, ROUTE_DRIVE/ROUTE_GUIDING 및 화면1분 안내와 대조. 상태: 에뮬레이터 확인. TripInfo.eta·실제 주행 시각 갱신·정확도는 미확인. 주의: RouteStateInfo.isRouting 주석은 active 여부지만 실제 활성 안내 중 false. 이전 routing=false만으로 비활성이라는 해석을 정정하고 서비스/문서 불일치로 유지한다. evidence/pleos-eta-runtime/result-2026-11-02 및 experiments/pleos-probe/README 참조.
+
+## J1 SDK 시각과 실제 입력 어댑터 · 2026-11-02
+공식 위치 접근 문서는 last-known이 신규 계산을 보장하지 않는다고 명시한다. 공식 LocationData/timestampMillis 상세 페이지와 공개 getter 선언에서 시계 epoch/monotonic·관측/계산/캐시 시점 계약은 확인하지 못했다. 출처: https://document.pleos.ai/en/api-reference/connect-sdk-pleos/FusedLocation/fused-location/ai.pleos.playground.location.fused.model/location-data/timestamp-millis 및 https://document.pleos.ai/docs/pleos-only/connect-sdk-pleos/FusedLocation/location-data-access .
+Pleos2.1.0/Fused SDK1.1.3·service1.0.0 에뮬레이터 실제27표본에서 raw는 기기 wall epoch ms와5~1636ms 차이, raw 비역행. 해당 환경 관찰이며 공식/실차 계약 확정이 아니다. 수신은 별도로 elapsedRealtime에서 캡처. 호스트 시각·수신시각으로 raw를 대체하지 않았다.
+별도 j1-input-adapter에서 실제SDK→세대검사→좌표/접근검사→UNVERIFIED_CLOCK 연결. 원시좌표는 저장/로그/Sink에 전달하지 않음. 기존 JS 추천기로의 관측 전달은 시계 계약 미확인 때문에 차단 유지. 활성 Android user10을 명시한 권한 거부 후 ACCESS_DENIED 실제관찰. 시험 후 권한 복구 명령은 자동 승인 정책에 차단되어 미실행, user10은 거부 상태로 남음. 증거 j1-clock-result/runtime 및 j1-input-runtime 참조.
+
+## 2026-11-02 · 이동 갱신 범위 보정
+FusedLocation1.1.3 실제 서비스 콜백이 adb geo fix 11개 합성위치 전체를 반영함(2회 재현). NaviHelper3.0.5 getCurrentLocationInfo/getDestinationInfo/getRouteStateInfo 반복 조회에서는 ROUTE_GUIDING임에도 내비 좌표 변화0, 목적지 remainTimeRaw60 고정. Fused의 이동 수신을 내비 위치·ETA 갱신으로 일반화할 수 없다. 내비 모의주행 입력 경로와 GPS 공급원 연계 원인은 미확인. 증거 evidence/pleos-movement-result-2026-11-02.json 및 second-runtime.
+
+## 2026-11-02 · 내비 NMEA 입력 진단
+실제 내비 GpsLocationSource 로그: NMEA checksum mismatch 반복. AOSP gps.cpp의 고정47 생성과 부합하지만 단독원인으로 확정하지 않음. Android OnNmeaMessageListener에서 계산한 checksum=true 입력 수신에도 NaviHelper 현재위치 변화0. foreground service 진단으로 내비화면 유지. NaviMode.SIMULATION_GUIDING enum 존재만 확인, 진입API/실행 미확인. details: experiments/pleos-probe/README.md, evidence/pleos-navi-drive-result-2026-11-02.json.
+
+
+## 2026-11-02 · SDK 시각 공식 본문 재대조
+DOT-R004 완료/원문대조: evidence/dot-clock-2026-11-02.md. timestampMillis API-reference URL의 meta refresh를 따라 en/docs/pleos-only/connect-sdk-pleos/FusedLocation/fused-location/ai.pleos.playground.location.fused.model/location-data/timestamp-millis 본문 확인. 제목 뒤 Dokka 의미 정의가 비어 있음. 공식epoch/monotonic·관측시점계약 확보 못함, UNVERIFIED_CLOCK 유지. REST data.timestamp/Android elapsedRealtime 계약을 전이하지 않음. 현재 adb 기기없음; 이번SDK 재수신시험 미실행. 이전권한복구 완료는 기존후속기록 기준이며 새권한변경 없음.
+
+## 2026-11-02 · Android 기본 미디어/UX
+AndroidAPI34 MediaPlayer prepareAsync/onPrepared/seekTo(long,SEEK_CLOSEST)/onSeekComplete/start/pause/release 및 AudioFocusRequest MEDIA/SPEECH 사용. 공식 developer.android.com MediaPlayer 상태·오디오포커스/API 원문 직접확인, 실제APK컴파일/에뮬레이터재생. AudioManager 실제GAIN경쟁loss확인, duck/transient는직접주입단계이며내비공존인증아님. Car.createCar 비동기수명주기/CarUxRestrictionsManager current/register/unregister 실제android.car.jar javap대조와컴파일, 에뮬레이터baseline실조회. unknown주입처리확인, 실제주행변경/서비스단절미실행. 인터넷·위치·마이크권한없음. FusedLocation/ETA연결없고 UNVERIFIED_CLOCK유지. 상세·URL: J1_ANDROID_LISTENING_2026-11-02.md.
+
+## 2026-11-02 · Android 모의 운행과 MediaPlayer 연결
+실제 위치 SDK/API 추가 없음. 기존 MediaPlayer·AudioFocus·CarUxRestrictions 경계를 유지하고 합성입력 정책만 debug+명시intent에서 연결. elapsedRealtime은 이번 합성 시각의 내부 기준이며 Pleos timestampMillis 계약으로 전이하지 않음. 실제SDK/ETA 상태bridge6필드·UNVERIFIED_CLOCK 변경없음. 위치/인터넷/마이크 신규권한 없음. Android14회귀+프로세스분리2시험은 합성정책/로컬실재생 증거이며 실제주행·SDK추천 인증이 아님. J1_ANDROID_JOURNEY_2026-11-02.md 참조.

@@ -1,0 +1,567 @@
+--------- beginning of main
+11-02 19:18:16.990 31308 31308 I PleosProbe: 1276339 START
+11-02 19:18:17.020 31308 31308 I PleosProbe: 1276369 LOCATION_SUPPORTED=true
+11-02 19:18:17.021 31308 31308 I PleosProbe: 1276370 LOCATION_REQUESTED
+11-02 19:18:17.659 31308 31308 I PleosProbe: 1277008 LOCATION_CALLBACK present=true validCoordinates=true
+11-02 19:18:17.745 31308 31308 I PleosProbe: 1277094 NAVI_CONNECTED
+11-02 19:18:17.747 31308 31308 I PleosProbe: 1277096 NAVI_REQUESTED
+11-02 19:18:17.749 31308 31308 I PleosProbe: 1277098 LOCATION_CHANGE changed=false changes=0 syntheticFixture=-1
+11-02 19:18:18.814 31308 31308 I PleosProbe: 1278163 LOCATION_CALLBACK present=true validCoordinates=true
+11-02 19:18:18.838 31308 31308 I PleosProbe: 1278187 LOCATION_CHANGE changed=false changes=0 syntheticFixture=-1
+11-02 19:18:19.354 31308 31308 I PleosProbe: 1278703 NAVI_ROUTE_STATE present=true
+11-02 19:18:19.367 31308 31308 I PleosProbe: 1278716 ROUTE_STATUS mode=ROUTE_GUIDING routing=false
+11-02 19:18:19.430 31308 31308 I PleosProbe: 1278779 NAVI_CURRENT_LOCATION present=true
+11-02 19:18:19.435 31308 31308 I PleosProbe: 1278784 NAVI_CURRENT_LOCATION present=true
+11-02 19:18:19.438 31308 31308 I PleosProbe: 1278787 NAVI_ROUTE_STATE present=true
+11-02 19:18:19.439 31308 31308 I PleosProbe: 1278788 ROUTE_STATUS mode=ROUTE_GUIDING routing=false
+11-02 19:18:19.570 31308 31308 I PleosProbe: 1278919 NAVI_DESTINATION present=true
+11-02 19:18:19.572 31308 31308 I PleosProbe: 1278921 DESTINATION_TIME remainTimeRaw=60
+11-02 19:18:19.580 31308 31308 I PleosProbe: 1278929 NAVI_DESTINATION present=true
+11-02 19:18:19.583 31308 31308 I PleosProbe: 1278932 DESTINATION_TIME remainTimeRaw=60
+11-02 19:18:20.730 31308 31308 I PleosProbe: 1280079 LOCATION_CALLBACK present=true validCoordinates=true
+11-02 19:18:20.757 31308 31308 I PleosProbe: 1280106 LOCATION_CHANGE changed=false changes=0 syntheticFixture=-1
+11-02 19:18:20.865 31308 31308 I PleosProbe: 1280214 LOCATION_REQUERY
+11-02 19:18:20.897 31308 31308 I PleosProbe: 1280246 LOCATION_CALLBACK present=true validCoordinates=true
+11-02 19:18:20.940 31308 31308 I PleosProbe: 1280289 LOCATION_CHANGE changed=false changes=0 syntheticFixture=-1
+11-02 19:18:21.731 31308 31308 I PleosProbe: 1281080 LOCATION_CALLBACK present=true validCoordinates=true
+11-02 19:18:21.748 31308 31308 I PleosProbe: 1281097 LOCATION_CHANGE changed=false changes=0 syntheticFixture=-1
+11-02 19:18:22.788 31308 31308 I PleosProbe: 1282137 NAVI_CURRENT_LOCATION present=true
+11-02 19:18:22.799 31308 31308 I PleosProbe: 1282148 NAVI_ROUTE_STATE present=true
+11-02 19:18:22.806 31308 31308 I PleosProbe: 1282155 ROUTE_STATUS mode=ROUTE_GUIDING routing=false
+11-02 19:18:23.722 31308 31308 I PleosProbe: 1283069 LOCATION_CALLBACK present=true validCoordinates=true
+11-02 19:18:23.737 31308 31308 I PleosProbe: 1283086 LOCATION_CHANGE changed=false changes=0 syntheticFixture=-1
+11-02 19:18:23.796 31308 31308 I PleosProbe: 1283145 NAVI_DESTINATION present=true
+11-02 19:18:23.801 31308 31308 I PleosProbe: 1283150 DESTINATION_TIME remainTimeRaw=60
+11-02 19:18:24.720 31308 31308 I PleosProbe: 1284069 LOCATION_CALLBACK present=true validCoordinates=true
+11-02 19:18:24.752 31308 31308 I PleosProbe: 1284101 LOCATION_CHANGE changed=false changes=0 syntheticFixture=-1
+11-02 19:18:25.743 31308 31308 I PleosProbe: 1285092 LOCATION_CALLBACK present=true validCoordinates=true
+11-02 19:18:25.749 31308 31308 I PleosProbe: 1285098 LOCATION_CHANGE changed=false changes=0 syntheticFixture=-1
+11-02 19:18:27.743 31308 31308 I PleosProbe: 1287092 LOCATION_CALLBACK present=true validCoordinates=true
+11-02 19:18:27.765 31308 31308 I PleosProbe: 1287114 LOCATION_CHANGE changed=false changes=0 syntheticFixture=-1
+11-02 19:18:27.817 31308 31308 I PleosProbe: 1287166 NAVI_CURRENT_LOCATION present=true
+11-02 19:18:27.820 31308 31308 I PleosProbe: 1287169 NAVI_ROUTE_STATE present=true
+11-02 19:18:27.821 31308 31308 I PleosProbe: 1287170 ROUTE_STATUS mode=ROUTE_GUIDING routing=false
+11-02 19:18:28.785 31308 31308 I PleosProbe: 1288134 NAVI_DESTINATION present=true
+11-02 19:18:28.787 31308 31308 I PleosProbe: 1288136 DESTINATION_TIME remainTimeRaw=60
+11-02 19:18:29.760 31308 31308 I PleosProbe: 1289109 LOCATION_CALLBACK present=true validCoordinates=true
+11-02 19:18:29.783 31308 31308 I PleosProbe: 1289132 LOCATION_CHANGE changed=false changes=0 syntheticFixture=-1
+11-02 19:18:30.737 31308 31308 I PleosProbe: 1290086 LOCATION_CALLBACK present=true validCoordinates=true
+11-02 19:18:30.749 31308 31308 I PleosProbe: 1290098 LOCATION_CHANGE changed=false changes=0 syntheticFixture=-1
+11-02 19:18:30.870 31308 31308 I PleosProbe: 1290219 LOCATION_REQUERY
+11-02 19:18:30.896 31308 31308 I PleosProbe: 1290245 LOCATION_CALLBACK present=true validCoordinates=true
+11-02 19:18:30.929 31308 31308 I PleosProbe: 1290278 LOCATION_CHANGE changed=false changes=0 syntheticFixture=-1
+11-02 19:18:31.750 31308 31308 I PleosProbe: 1291099 LOCATION_CALLBACK present=true validCoordinates=true
+11-02 19:18:31.775 31308 31308 I PleosProbe: 1291123 LOCATION_CHANGE changed=false changes=0 syntheticFixture=-1
+11-02 19:18:32.777 31308 31308 I PleosProbe: 1292126 LOCATION_CALLBACK present=true validCoordinates=true
+11-02 19:18:32.804 31308 31308 I PleosProbe: 1292153 LOCATION_CHANGE changed=false changes=0 syntheticFixture=-1
+11-02 19:18:32.827 31308 31308 I PleosProbe: 1292176 NAVI_CURRENT_LOCATION present=true
+11-02 19:18:32.835 31308 31308 I PleosProbe: 1292183 NAVI_ROUTE_STATE present=true
+11-02 19:18:32.861 31308 31308 I PleosProbe: 1292210 ROUTE_STATUS mode=ROUTE_GUIDING routing=false
+11-02 19:18:33.786 31308 31308 I PleosProbe: 1293135 LOCATION_CALLBACK present=true validCoordinates=true
+11-02 19:18:33.804 31308 31308 I PleosProbe: 1293153 LOCATION_CHANGE changed=true changes=1 syntheticFixture=0
+11-02 19:18:33.837 31308 31308 I PleosProbe: 1293186 NAVI_DESTINATION present=true
+11-02 19:18:33.842 31308 31308 I PleosProbe: 1293189 DESTINATION_TIME remainTimeRaw=60
+11-02 19:18:35.795 31308 31308 I PleosProbe: 1295144 LOCATION_CALLBACK present=true validCoordinates=true
+11-02 19:18:35.816 31308 31308 I PleosProbe: 1295165 LOCATION_CHANGE changed=false changes=1 syntheticFixture=0
+11-02 19:18:37.776 31308 31308 I PleosProbe: 1297125 LOCATION_CALLBACK present=true validCoordinates=true
+11-02 19:18:37.780 31308 31308 I PleosProbe: 1297129 LOCATION_CHANGE changed=false changes=1 syntheticFixture=0
+11-02 19:18:37.851 31308 31308 I PleosProbe: 1297200 NAVI_CURRENT_LOCATION present=true
+11-02 19:18:37.881 31308 31308 I PleosProbe: 1297230 NAVI_ROUTE_STATE present=true
+11-02 19:18:37.883 31308 31308 I PleosProbe: 1297232 ROUTE_STATUS mode=ROUTE_GUIDING routing=false
+11-02 19:18:38.780 31308 31308 I PleosProbe: 1298129 LOCATION_CALLBACK present=true validCoordinates=true
+11-02 19:18:38.801 31308 31308 I PleosProbe: 1298150 LOCATION_CHANGE changed=false changes=1 syntheticFixture=0
+11-02 19:18:38.888 31308 31308 I PleosProbe: 1298237 NAVI_DESTINATION present=true
+11-02 19:18:38.890 31308 31308 I PleosProbe: 1298239 DESTINATION_TIME remainTimeRaw=60
+11-02 19:18:40.788 31308 31308 I PleosProbe: 1300137 LOCATION_CALLBACK present=true validCoordinates=true
+11-02 19:18:40.815 31308 31308 I PleosProbe: 1300164 LOCATION_CHANGE changed=false changes=1 syntheticFixture=0
+11-02 19:18:41.799 31308 31308 I PleosProbe: 1301148 LOCATION_CALLBACK present=true validCoordinates=true
+11-02 19:18:41.814 31308 31308 I PleosProbe: 1301163 LOCATION_CHANGE changed=true changes=2 syntheticFixture=1
+11-02 19:18:42.790 31308 31308 I PleosProbe: 1302139 NAVI_CURRENT_LOCATION present=true
+11-02 19:18:42.798 31308 31308 I PleosProbe: 1302147 LOCATION_CALLBACK present=true validCoordinates=true
+11-02 19:18:42.806 31308 31308 I PleosProbe: 1302155 NAVI_ROUTE_STATE present=true
+11-02 19:18:42.807 31308 31308 I PleosProbe: 1302156 ROUTE_STATUS mode=ROUTE_GUIDING routing=false
+11-02 19:18:42.846 31308 31308 I PleosProbe: 1302195 LOCATION_CHANGE changed=false changes=2 syntheticFixture=1
+11-02 19:18:43.800 31308 31308 I PleosProbe: 1303149 NAVI_DESTINATION present=true
+11-02 19:18:43.802 31308 31308 I PleosProbe: 1303152 DESTINATION_TIME remainTimeRaw=60
+11-02 19:18:43.804 31308 31308 I PleosProbe: 1303153 LOCATION_CALLBACK present=true validCoordinates=true
+11-02 19:18:43.815 31308 31308 I PleosProbe: 1303164 LOCATION_CHANGE changed=false changes=2 syntheticFixture=1
+11-02 19:18:44.807 31308 31308 I PleosProbe: 1304156 LOCATION_CALLBACK present=true validCoordinates=true
+11-02 19:18:44.817 31308 31308 I PleosProbe: 1304166 LOCATION_CHANGE changed=false changes=2 syntheticFixture=1
+11-02 19:18:45.829 31308 31308 I PleosProbe: 1305178 LOCATION_CALLBACK present=true validCoordinates=true
+11-02 19:18:45.849 31308 31308 I PleosProbe: 1305198 LOCATION_CHANGE changed=false changes=2 syntheticFixture=1
+11-02 19:18:45.903 31308 31308 I PleosProbe: 1305252 LOCATION_REQUERY
+11-02 19:18:45.918 31308 31308 I PleosProbe: 1305267 LOCATION_CALLBACK present=true validCoordinates=true
+11-02 19:18:45.952 31308 31308 I PleosProbe: 1305301 LOCATION_CHANGE changed=false changes=2 syntheticFixture=1
+11-02 19:18:46.829 31308 31308 I PleosProbe: 1306178 LOCATION_CALLBACK present=true validCoordinates=true
+11-02 19:18:46.849 31308 31308 I PleosProbe: 1306198 LOCATION_CHANGE changed=false changes=2 syntheticFixture=1
+11-02 19:18:47.799 31308 31308 I PleosProbe: 1307148 NAVI_CURRENT_LOCATION present=true
+11-02 19:18:47.829 31308 31308 I PleosProbe: 1307178 NAVI_ROUTE_STATE present=true
+11-02 19:18:47.834 31308 31308 I PleosProbe: 1307183 ROUTE_STATUS mode=ROUTE_GUIDING routing=false
+11-02 19:18:47.970 31308 31308 I PleosProbe: 1307319 LOCATION_CALLBACK present=true validCoordinates=true
+11-02 19:18:47.981 31308 31308 I PleosProbe: 1307330 LOCATION_CHANGE changed=false changes=2 syntheticFixture=1
+11-02 19:18:48.801 31308 31308 I PleosProbe: 1308150 NAVI_DESTINATION present=true
+11-02 19:18:48.803 31308 31308 I PleosProbe: 1308152 DESTINATION_TIME remainTimeRaw=60
+11-02 19:18:49.228 31308 31308 I PleosProbe: 1308577 LOCATION_CALLBACK present=true validCoordinates=true
+11-02 19:18:49.254 31308 31308 I PleosProbe: 1308603 LOCATION_CHANGE changed=true changes=3 syntheticFixture=2
+11-02 19:18:50.865 31308 31308 I PleosProbe: 1310214 LOCATION_CALLBACK present=true validCoordinates=true
+11-02 19:18:50.890 31308 31308 I PleosProbe: 1310239 LOCATION_CHANGE changed=false changes=3 syntheticFixture=2
+11-02 19:18:52.827 31308 31308 I PleosProbe: 1312176 NAVI_CURRENT_LOCATION present=true
+11-02 19:18:52.893 31308 31308 I PleosProbe: 1312243 NAVI_ROUTE_STATE present=true
+11-02 19:18:52.899 31308 31308 I PleosProbe: 1312249 ROUTE_STATUS mode=ROUTE_GUIDING routing=false
+11-02 19:18:52.954 31308 31308 I PleosProbe: 1312303 LOCATION_CALLBACK present=true validCoordinates=true
+11-02 19:18:52.999 31308 31308 I PleosProbe: 1312348 LOCATION_CHANGE changed=false changes=3 syntheticFixture=2
+11-02 19:18:53.848 31308 31308 I PleosProbe: 1313197 NAVI_DESTINATION present=true
+11-02 19:18:53.861 31308 31308 I PleosProbe: 1313210 DESTINATION_TIME remainTimeRaw=60
+11-02 19:18:53.864 31308 31308 I PleosProbe: 1313213 LOCATION_CALLBACK present=true validCoordinates=true
+11-02 19:18:53.882 31308 31308 I PleosProbe: 1313231 LOCATION_CHANGE changed=false changes=3 syntheticFixture=2
+11-02 19:18:55.854 31308 31308 I PleosProbe: 1315203 LOCATION_CALLBACK present=true validCoordinates=true
+11-02 19:18:55.875 31308 31308 I PleosProbe: 1315224 LOCATION_CHANGE changed=false changes=3 syntheticFixture=2
+11-02 19:18:57.417 31308 31308 I PleosProbe: 1316766 LOCATION_CALLBACK present=true validCoordinates=true
+11-02 19:18:57.467 31308 31308 I PleosProbe: 1316816 LOCATION_CHANGE changed=true changes=4 syntheticFixture=3
+11-02 19:18:57.837 31308 31308 I PleosProbe: 1317186 NAVI_CURRENT_LOCATION present=true
+11-02 19:18:57.840 31308 31308 I PleosProbe: 1317189 NAVI_ROUTE_STATE present=true
+11-02 19:18:57.841 31308 31308 I PleosProbe: 1317190 ROUTE_STATUS mode=ROUTE_GUIDING routing=false
+11-02 19:18:58.864 31308 31308 I PleosProbe: 1318213 NAVI_DESTINATION present=true
+11-02 19:18:58.866 31308 31308 I PleosProbe: 1318215 DESTINATION_TIME remainTimeRaw=60
+11-02 19:18:58.882 31308 31308 I PleosProbe: 1318231 LOCATION_CALLBACK present=true validCoordinates=true
+11-02 19:18:58.901 31308 31308 I PleosProbe: 1318250 LOCATION_CHANGE changed=false changes=4 syntheticFixture=3
+11-02 19:19:00.961 31308 31308 I PleosProbe: 1320310 LOCATION_CALLBACK present=true validCoordinates=true
+11-02 19:19:01.020 31308 31308 I PleosProbe: 1320369 LOCATION_CHANGE changed=false changes=4 syntheticFixture=3
+11-02 19:19:02.830 31308 31308 I PleosProbe: 1322180 NAVI_CURRENT_LOCATION present=true
+11-02 19:19:02.848 31308 31308 I PleosProbe: 1322196 NAVI_ROUTE_STATE present=true
+11-02 19:19:02.850 31308 31308 I PleosProbe: 1322199 ROUTE_STATUS mode=ROUTE_GUIDING routing=false
+11-02 19:19:02.933 31308 31308 I PleosProbe: 1322282 LOCATION_CALLBACK present=true validCoordinates=true
+11-02 19:19:02.949 31308 31308 I PleosProbe: 1322298 LOCATION_CHANGE changed=false changes=4 syntheticFixture=3
+11-02 19:19:03.835 31308 31308 I PleosProbe: 1323184 NAVI_DESTINATION present=true
+11-02 19:19:03.837 31308 31308 I PleosProbe: 1323186 DESTINATION_TIME remainTimeRaw=60
+11-02 19:19:04.876 31308 31308 I PleosProbe: 1324225 LOCATION_CALLBACK present=true validCoordinates=true
+11-02 19:19:04.881 31308 31308 I PleosProbe: 1324230 LOCATION_CHANGE changed=false changes=4 syntheticFixture=3
+11-02 19:19:05.880 31308 31308 I PleosProbe: 1325229 LOCATION_CALLBACK present=true validCoordinates=true
+11-02 19:19:05.900 31308 31308 I PleosProbe: 1325249 LOCATION_CHANGE changed=true changes=5 syntheticFixture=4
+11-02 19:19:06.884 31308 31308 I PleosProbe: 1326233 LOCATION_CALLBACK present=true validCoordinates=true
+11-02 19:19:06.904 31308 31308 I PleosProbe: 1326252 LOCATION_CHANGE changed=false changes=5 syntheticFixture=4
+11-02 19:19:07.837 31308 31308 I PleosProbe: 1327186 NAVI_CURRENT_LOCATION present=true
+11-02 19:19:07.848 31308 31308 I PleosProbe: 1327197 NAVI_ROUTE_STATE present=true
+11-02 19:19:07.851 31308 31308 I PleosProbe: 1327200 ROUTE_STATUS mode=ROUTE_GUIDING routing=false
+11-02 19:19:07.908 31308 31308 I PleosProbe: 1327257 LOCATION_CALLBACK present=true validCoordinates=true
+11-02 19:19:07.917 31308 31308 I PleosProbe: 1327266 LOCATION_CHANGE changed=false changes=5 syntheticFixture=4
+11-02 19:19:08.844 31308 31308 I PleosProbe: 1328193 NAVI_DESTINATION present=true
+11-02 19:19:08.846 31308 31308 I PleosProbe: 1328195 DESTINATION_TIME remainTimeRaw=60
+11-02 19:19:08.924 31308 31308 I PleosProbe: 1328273 LOCATION_CALLBACK present=true validCoordinates=true
+11-02 19:19:08.933 31308 31308 I PleosProbe: 1328282 LOCATION_CHANGE changed=false changes=5 syntheticFixture=4
+11-02 19:19:09.922 31308 31308 I PleosProbe: 1329271 LOCATION_CALLBACK present=true validCoordinates=true
+11-02 19:19:09.942 31308 31308 I PleosProbe: 1329291 LOCATION_CHANGE changed=false changes=5 syntheticFixture=4
+11-02 19:19:11.952 31308 31308 I PleosProbe: 1331301 LOCATION_CALLBACK present=true validCoordinates=true
+11-02 19:19:11.969 31308 31308 I PleosProbe: 1331318 LOCATION_CHANGE changed=false changes=5 syntheticFixture=4
+11-02 19:19:12.838 31308 31308 I PleosProbe: 1332187 NAVI_CURRENT_LOCATION present=true
+11-02 19:19:12.851 31308 31308 I PleosProbe: 1332200 NAVI_ROUTE_STATE present=true
+11-02 19:19:12.853 31308 31308 I PleosProbe: 1332202 ROUTE_STATUS mode=ROUTE_GUIDING routing=false
+11-02 19:19:12.941 31308 31308 I PleosProbe: 1332290 LOCATION_CALLBACK present=true validCoordinates=true
+11-02 19:19:12.977 31308 31308 I PleosProbe: 1332326 LOCATION_CHANGE changed=false changes=5 syntheticFixture=4
+11-02 19:19:13.865 31308 31308 I PleosProbe: 1333214 NAVI_DESTINATION present=true
+11-02 19:19:13.870 31308 31308 I PleosProbe: 1333219 DESTINATION_TIME remainTimeRaw=60
+11-02 19:19:13.965 31308 31308 I PleosProbe: 1333314 LOCATION_CALLBACK present=true validCoordinates=true
+11-02 19:19:13.987 31308 31308 I PleosProbe: 1333336 LOCATION_CHANGE changed=true changes=6 syntheticFixture=5
+11-02 19:19:15.927 31308 31308 I PleosProbe: 1335276 LOCATION_CALLBACK present=true validCoordinates=true
+11-02 19:19:15.948 31308 31308 I PleosProbe: 1335297 LOCATION_CHANGE changed=false changes=6 syntheticFixture=5
+11-02 19:19:16.440 31308 31308 I PleosProbe: 1335789 OBSERVATION_60S locationCallbacks=46 validLocationCallbacks=46 naviCallbacks=39 (counts do not imply fresh data)
+11-02 19:19:16.930 31308 31308 I PleosProbe: 1336279 LOCATION_CALLBACK present=true validCoordinates=true
+11-02 19:19:16.948 31308 31308 I PleosProbe: 1336297 LOCATION_CHANGE changed=false changes=6 syntheticFixture=5
+11-02 19:19:17.841 31308 31308 I PleosProbe: 1337190 NAVI_CURRENT_LOCATION present=true
+11-02 19:19:17.846 31308 31308 I PleosProbe: 1337195 NAVI_ROUTE_STATE present=true
+11-02 19:19:17.848 31308 31308 I PleosProbe: 1337197 ROUTE_STATUS mode=ROUTE_GUIDING routing=false
+11-02 19:19:17.939 31308 31308 I PleosProbe: 1337288 LOCATION_CALLBACK present=true validCoordinates=true
+11-02 19:19:17.948 31308 31308 I PleosProbe: 1337297 LOCATION_CHANGE changed=false changes=6 syntheticFixture=5
+11-02 19:19:18.848 31308 31308 I PleosProbe: 1338197 NAVI_DESTINATION present=true
+11-02 19:19:18.851 31308 31308 I PleosProbe: 1338200 DESTINATION_TIME remainTimeRaw=60
+11-02 19:19:18.945 31308 31308 I PleosProbe: 1338294 LOCATION_CALLBACK present=true validCoordinates=true
+11-02 19:19:18.963 31308 31308 I PleosProbe: 1338312 LOCATION_CHANGE changed=false changes=6 syntheticFixture=5
+11-02 19:19:19.946 31308 31308 I PleosProbe: 1339295 LOCATION_CALLBACK present=true validCoordinates=true
+11-02 19:19:19.970 31308 31308 I PleosProbe: 1339319 LOCATION_CHANGE changed=false changes=6 syntheticFixture=5
+11-02 19:19:20.944 31308 31308 I PleosProbe: 1340293 LOCATION_CALLBACK present=true validCoordinates=true
+11-02 19:19:20.963 31308 31308 I PleosProbe: 1340312 LOCATION_CHANGE changed=false changes=6 syntheticFixture=5
+11-02 19:19:21.947 31308 31308 I PleosProbe: 1341296 LOCATION_CALLBACK present=true validCoordinates=true
+11-02 19:19:21.969 31308 31308 I PleosProbe: 1341318 LOCATION_CHANGE changed=true changes=7 syntheticFixture=6
+11-02 19:19:22.842 31308 31308 I PleosProbe: 1342191 NAVI_CURRENT_LOCATION present=true
+11-02 19:19:22.859 31308 31308 I PleosProbe: 1342208 NAVI_ROUTE_STATE present=true
+11-02 19:19:22.861 31308 31308 I PleosProbe: 1342210 ROUTE_STATUS mode=ROUTE_GUIDING routing=false
+11-02 19:19:22.949 31308 31308 I PleosProbe: 1342298 LOCATION_CALLBACK present=true validCoordinates=true
+11-02 19:19:22.968 31308 31308 I PleosProbe: 1342317 LOCATION_CHANGE changed=false changes=7 syntheticFixture=6
+11-02 19:19:23.850 31308 31308 I PleosProbe: 1343199 NAVI_DESTINATION present=true
+11-02 19:19:23.853 31308 31308 I PleosProbe: 1343202 DESTINATION_TIME remainTimeRaw=60
+11-02 19:19:23.967 31308 31308 I PleosProbe: 1343316 LOCATION_CALLBACK present=true validCoordinates=true
+11-02 19:19:23.982 31308 31308 I PleosProbe: 1343331 LOCATION_CHANGE changed=false changes=7 syntheticFixture=6
+11-02 19:19:25.965 31308 31308 I PleosProbe: 1345314 LOCATION_CALLBACK present=true validCoordinates=true
+11-02 19:19:25.983 31308 31308 I PleosProbe: 1345332 LOCATION_CHANGE changed=false changes=7 syntheticFixture=6
+11-02 19:19:26.973 31308 31308 I PleosProbe: 1346322 LOCATION_CALLBACK present=true validCoordinates=true
+11-02 19:19:26.982 31308 31308 I PleosProbe: 1346331 LOCATION_CHANGE changed=false changes=7 syntheticFixture=6
+11-02 19:19:27.845 31308 31308 I PleosProbe: 1347194 NAVI_CURRENT_LOCATION present=true
+11-02 19:19:27.880 31308 31308 I PleosProbe: 1347229 NAVI_ROUTE_STATE present=true
+11-02 19:19:27.884 31308 31308 I PleosProbe: 1347233 ROUTE_STATUS mode=ROUTE_GUIDING routing=false
+11-02 19:19:27.973 31308 31308 I PleosProbe: 1347322 LOCATION_CALLBACK present=true validCoordinates=true
+11-02 19:19:27.982 31308 31308 I PleosProbe: 1347331 LOCATION_CHANGE changed=false changes=7 syntheticFixture=6
+11-02 19:19:28.861 31308 31308 I PleosProbe: 1348210 NAVI_DESTINATION present=true
+11-02 19:19:28.864 31308 31308 I PleosProbe: 1348213 DESTINATION_TIME remainTimeRaw=60
+11-02 19:19:28.976 31308 31308 I PleosProbe: 1348325 LOCATION_CALLBACK present=true validCoordinates=true
+11-02 19:19:29.002 31308 31308 I PleosProbe: 1348351 LOCATION_CHANGE changed=false changes=7 syntheticFixture=6
+11-02 19:19:30.974 31308 31308 I PleosProbe: 1350323 LOCATION_CALLBACK present=true validCoordinates=true
+11-02 19:19:30.982 31308 31308 I PleosProbe: 1350331 LOCATION_CHANGE changed=true changes=8 syntheticFixture=7
+11-02 19:19:32.033 31308 31308 I PleosProbe: 1351383 LOCATION_CALLBACK present=true validCoordinates=true
+11-02 19:19:32.051 31308 31308 I PleosProbe: 1351400 LOCATION_CHANGE changed=false changes=8 syntheticFixture=7
+11-02 19:19:32.890 31308 31308 I PleosProbe: 1352239 NAVI_CURRENT_LOCATION present=true
+11-02 19:19:32.921 31308 31308 I PleosProbe: 1352270 NAVI_ROUTE_STATE present=true
+11-02 19:19:32.970 31308 31308 I PleosProbe: 1352319 ROUTE_STATUS mode=ROUTE_GUIDING routing=false
+11-02 19:19:33.964 31308 31308 I PleosProbe: 1353313 NAVI_DESTINATION present=true
+11-02 19:19:33.966 31308 31308 I PleosProbe: 1353315 DESTINATION_TIME remainTimeRaw=60
+11-02 19:19:34.028 31308 31308 I PleosProbe: 1353377 LOCATION_CALLBACK present=true validCoordinates=true
+11-02 19:19:34.084 31308 31308 I PleosProbe: 1353433 LOCATION_CHANGE changed=false changes=8 syntheticFixture=7
+11-02 19:19:35.977 31308 31308 I PleosProbe: 1355326 LOCATION_CALLBACK present=true validCoordinates=true
+11-02 19:19:35.999 31308 31308 I PleosProbe: 1355348 LOCATION_CHANGE changed=false changes=8 syntheticFixture=7
+11-02 19:19:36.976 31308 31308 I PleosProbe: 1356325 LOCATION_CALLBACK present=true validCoordinates=true
+11-02 19:19:36.978 31308 31308 I PleosProbe: 1356327 LOCATION_CHANGE changed=false changes=8 syntheticFixture=7
+11-02 19:19:37.861 31308 31308 I PleosProbe: 1357210 NAVI_CURRENT_LOCATION present=true
+11-02 19:19:37.872 31308 31308 I PleosProbe: 1357221 NAVI_ROUTE_STATE present=true
+11-02 19:19:37.874 31308 31308 I PleosProbe: 1357223 ROUTE_STATUS mode=ROUTE_GUIDING routing=false
+11-02 19:19:37.985 31308 31308 I PleosProbe: 1357334 LOCATION_CALLBACK present=true validCoordinates=true
+11-02 19:19:37.987 31308 31308 I PleosProbe: 1357336 LOCATION_CHANGE changed=true changes=9 syntheticFixture=8
+11-02 19:19:38.863 31308 31308 I PleosProbe: 1358212 NAVI_DESTINATION present=true
+11-02 19:19:38.865 31308 31308 I PleosProbe: 1358214 DESTINATION_TIME remainTimeRaw=60
+11-02 19:19:39.003 31308 31308 I PleosProbe: 1358352 LOCATION_CALLBACK present=true validCoordinates=true
+11-02 19:19:39.004 31308 31308 I PleosProbe: 1358353 LOCATION_CHANGE changed=false changes=9 syntheticFixture=8
+11-02 19:19:40.996 31308 31308 I PleosProbe: 1360345 LOCATION_CALLBACK present=true validCoordinates=true
+11-02 19:19:40.997 31308 31308 I PleosProbe: 1360346 LOCATION_CHANGE changed=false changes=9 syntheticFixture=8
+11-02 19:19:42.890 31308 31308 I PleosProbe: 1362239 NAVI_CURRENT_LOCATION present=true
+11-02 19:19:42.893 31308 31308 I PleosProbe: 1362242 NAVI_ROUTE_STATE present=true
+11-02 19:19:42.901 31308 31308 I PleosProbe: 1362250 ROUTE_STATUS mode=ROUTE_GUIDING routing=false
+11-02 19:19:43.041 31308 31308 I PleosProbe: 1362390 LOCATION_CALLBACK present=true validCoordinates=true
+11-02 19:19:43.043 31308 31308 I PleosProbe: 1362392 LOCATION_CHANGE changed=false changes=9 syntheticFixture=8
+11-02 19:19:43.891 31308 31308 I PleosProbe: 1363240 NAVI_DESTINATION present=true
+11-02 19:19:43.893 31308 31308 I PleosProbe: 1363242 DESTINATION_TIME remainTimeRaw=60
+11-02 19:19:43.995 31308 31308 I PleosProbe: 1363344 LOCATION_CALLBACK present=true validCoordinates=true
+11-02 19:19:43.997 31308 31308 I PleosProbe: 1363346 LOCATION_CHANGE changed=false changes=9 syntheticFixture=8
+11-02 19:19:45.003 31308 31308 I PleosProbe: 1364352 LOCATION_CALLBACK present=true validCoordinates=true
+11-02 19:19:45.004 31308 31308 I PleosProbe: 1364353 LOCATION_CHANGE changed=false changes=9 syntheticFixture=8
+11-02 19:19:46.000 31308 31308 I PleosProbe: 1365349 LOCATION_CALLBACK present=true validCoordinates=true
+11-02 19:19:46.005 31308 31308 I PleosProbe: 1365354 LOCATION_CHANGE changed=false changes=9 syntheticFixture=8
+11-02 19:19:47.004 31308 31308 I PleosProbe: 1366353 LOCATION_CALLBACK present=true validCoordinates=true
+11-02 19:19:47.006 31308 31308 I PleosProbe: 1366355 LOCATION_CHANGE changed=true changes=10 syntheticFixture=9
+11-02 19:19:47.889 31308 31308 I PleosProbe: 1367238 NAVI_CURRENT_LOCATION present=true
+11-02 19:19:47.892 31308 31308 I PleosProbe: 1367241 NAVI_ROUTE_STATE present=true
+11-02 19:19:47.893 31308 31308 I PleosProbe: 1367242 ROUTE_STATUS mode=ROUTE_GUIDING routing=false
+11-02 19:19:48.882 31308 31308 I PleosProbe: 1368231 NAVI_DESTINATION present=true
+11-02 19:19:48.902 31308 31308 I PleosProbe: 1368251 DESTINATION_TIME remainTimeRaw=60
+11-02 19:19:49.032 31308 31308 I PleosProbe: 1368381 LOCATION_CALLBACK present=true validCoordinates=true
+11-02 19:19:49.036 31308 31308 I PleosProbe: 1368385 LOCATION_CHANGE changed=false changes=10 syntheticFixture=9
+11-02 19:19:50.022 31308 31308 I PleosProbe: 1369371 LOCATION_CALLBACK present=true validCoordinates=true
+11-02 19:19:50.024 31308 31308 I PleosProbe: 1369373 LOCATION_CHANGE changed=false changes=10 syntheticFixture=9
+11-02 19:19:52.010 31308 31308 I PleosProbe: 1371359 LOCATION_CALLBACK present=true validCoordinates=true
+11-02 19:19:52.013 31308 31308 I PleosProbe: 1371362 LOCATION_CHANGE changed=false changes=10 syntheticFixture=9
+11-02 19:19:52.898 31308 31308 I PleosProbe: 1372247 NAVI_ROUTE_STATE present=true
+11-02 19:19:52.904 31308 31308 I PleosProbe: 1372253 ROUTE_STATUS mode=ROUTE_GUIDING routing=false
+11-02 19:19:52.906 31308 31308 I PleosProbe: 1372255 NAVI_CURRENT_LOCATION present=true
+11-02 19:19:53.017 31308 31308 I PleosProbe: 1372366 LOCATION_CALLBACK present=true validCoordinates=true
+11-02 19:19:53.018 31308 31308 I PleosProbe: 1372367 LOCATION_CHANGE changed=false changes=10 syntheticFixture=9
+11-02 19:19:53.889 31308 31308 I PleosProbe: 1373238 NAVI_DESTINATION present=true
+11-02 19:19:53.891 31308 31308 I PleosProbe: 1373240 DESTINATION_TIME remainTimeRaw=60
+11-02 19:19:54.034 31308 31308 I PleosProbe: 1373383 LOCATION_CALLBACK present=true validCoordinates=true
+11-02 19:19:54.036 31308 31308 I PleosProbe: 1373385 LOCATION_CHANGE changed=false changes=10 syntheticFixture=9
+11-02 19:19:56.040 31308 31308 I PleosProbe: 1375389 LOCATION_CALLBACK present=true validCoordinates=true
+11-02 19:19:56.043 31308 31308 I PleosProbe: 1375393 LOCATION_CHANGE changed=true changes=11 syntheticFixture=10
+11-02 19:19:57.903 31308 31308 I PleosProbe: 1377252 NAVI_CURRENT_LOCATION present=true
+11-02 19:19:57.905 31308 31308 I PleosProbe: 1377254 NAVI_ROUTE_STATE present=true
+11-02 19:19:57.907 31308 31308 I PleosProbe: 1377256 ROUTE_STATUS mode=ROUTE_GUIDING routing=false
+11-02 19:19:58.024 31308 31308 I PleosProbe: 1377373 LOCATION_CALLBACK present=true validCoordinates=true
+11-02 19:19:58.026 31308 31308 I PleosProbe: 1377375 LOCATION_CHANGE changed=false changes=11 syntheticFixture=10
+11-02 19:19:58.915 31308 31308 I PleosProbe: 1378264 NAVI_DESTINATION present=true
+11-02 19:19:58.917 31308 31308 I PleosProbe: 1378266 DESTINATION_TIME remainTimeRaw=60
+11-02 19:19:59.027 31308 31308 I PleosProbe: 1378376 LOCATION_CALLBACK present=true validCoordinates=true
+11-02 19:19:59.045 31308 31308 I PleosProbe: 1378394 LOCATION_CHANGE changed=false changes=11 syntheticFixture=10
+11-02 19:20:00.025 31308 31308 I PleosProbe: 1379374 LOCATION_CALLBACK present=true validCoordinates=true
+11-02 19:20:00.033 31308 31308 I PleosProbe: 1379382 LOCATION_CHANGE changed=false changes=11 syntheticFixture=10
+11-02 19:20:01.037 31308 31308 I PleosProbe: 1380386 LOCATION_CALLBACK present=true validCoordinates=true
+11-02 19:20:01.042 31308 31308 I PleosProbe: 1380391 LOCATION_CHANGE changed=false changes=11 syntheticFixture=10
+11-02 19:20:02.067 31308 31308 I PleosProbe: 1381416 LOCATION_CALLBACK present=true validCoordinates=true
+11-02 19:20:02.069 31308 31308 I PleosProbe: 1381418 LOCATION_CHANGE changed=false changes=11 syntheticFixture=10
+11-02 19:20:02.904 31308 31308 I PleosProbe: 1382253 NAVI_CURRENT_LOCATION present=true
+11-02 19:20:02.906 31308 31308 I PleosProbe: 1382255 NAVI_ROUTE_STATE present=true
+11-02 19:20:02.908 31308 31308 I PleosProbe: 1382257 ROUTE_STATUS mode=ROUTE_GUIDING routing=false
+11-02 19:20:03.897 31308 31308 I PleosProbe: 1383246 NAVI_DESTINATION present=true
+11-02 19:20:03.898 31308 31308 I PleosProbe: 1383247 DESTINATION_TIME remainTimeRaw=60
+11-02 19:20:04.061 31308 31308 I PleosProbe: 1383410 LOCATION_CALLBACK present=true validCoordinates=true
+11-02 19:20:04.062 31308 31308 I PleosProbe: 1383411 LOCATION_CHANGE changed=false changes=11 syntheticFixture=10
+11-02 19:20:05.043 31308 31308 I PleosProbe: 1384392 LOCATION_CALLBACK present=true validCoordinates=true
+11-02 19:20:05.045 31308 31308 I PleosProbe: 1384394 LOCATION_CHANGE changed=false changes=11 syntheticFixture=10
+11-02 19:20:06.032 31308 31308 I PleosProbe: 1385381 LOCATION_CALLBACK present=true validCoordinates=true
+11-02 19:20:06.033 31308 31308 I PleosProbe: 1385382 LOCATION_CHANGE changed=false changes=11 syntheticFixture=10
+11-02 19:20:07.057 31308 31308 I PleosProbe: 1386406 LOCATION_CALLBACK present=true validCoordinates=true
+11-02 19:20:07.059 31308 31308 I PleosProbe: 1386408 LOCATION_CHANGE changed=false changes=11 syntheticFixture=10
+11-02 19:20:07.948 31308 31308 I PleosProbe: 1387297 NAVI_CURRENT_LOCATION present=true
+11-02 19:20:08.028 31308 31308 I PleosProbe: 1387377 NAVI_ROUTE_STATE present=true
+11-02 19:20:08.031 31308 31308 I PleosProbe: 1387380 ROUTE_STATUS mode=ROUTE_GUIDING routing=false
+11-02 19:20:08.964 31308 31308 I PleosProbe: 1388313 NAVI_DESTINATION present=true
+11-02 19:20:08.970 31308 31308 I PleosProbe: 1388319 DESTINATION_TIME remainTimeRaw=60
+11-02 19:20:09.057 31308 31308 I PleosProbe: 1388406 LOCATION_CALLBACK present=true validCoordinates=true
+11-02 19:20:09.062 31308 31308 I PleosProbe: 1388411 LOCATION_CHANGE changed=false changes=11 syntheticFixture=10
+11-02 19:20:10.100 31308 31308 I PleosProbe: 1389449 LOCATION_CALLBACK present=true validCoordinates=true
+11-02 19:20:10.114 31308 31308 I PleosProbe: 1389463 LOCATION_CHANGE changed=false changes=11 syntheticFixture=10
+11-02 19:20:12.047 31308 31308 I PleosProbe: 1391396 LOCATION_CALLBACK present=true validCoordinates=true
+11-02 19:20:12.066 31308 31308 I PleosProbe: 1391415 LOCATION_CHANGE changed=false changes=11 syntheticFixture=10
+11-02 19:20:12.926 31308 31308 I PleosProbe: 1392275 NAVI_CURRENT_LOCATION present=true
+11-02 19:20:12.937 31308 31308 I PleosProbe: 1392287 NAVI_ROUTE_STATE present=true
+11-02 19:20:12.943 31308 31308 I PleosProbe: 1392292 ROUTE_STATUS mode=ROUTE_GUIDING routing=false
+11-02 19:20:13.080 31308 31308 I PleosProbe: 1392429 LOCATION_CALLBACK present=true validCoordinates=true
+11-02 19:20:13.108 31308 31308 I PleosProbe: 1392458 LOCATION_CHANGE changed=false changes=11 syntheticFixture=10
+11-02 19:20:13.942 31308 31308 I PleosProbe: 1393291 NAVI_DESTINATION present=true
+11-02 19:20:13.966 31308 31308 I PleosProbe: 1393315 DESTINATION_TIME remainTimeRaw=60
+11-02 19:20:14.064 31308 31308 I PleosProbe: 1393414 LOCATION_CALLBACK present=true validCoordinates=true
+11-02 19:20:14.082 31308 31308 I PleosProbe: 1393431 LOCATION_CHANGE changed=false changes=11 syntheticFixture=10
+11-02 19:20:16.064 31308 31308 I PleosProbe: 1395413 LOCATION_CALLBACK present=true validCoordinates=true
+11-02 19:20:16.092 31308 31308 I PleosProbe: 1395441 LOCATION_CHANGE changed=false changes=11 syntheticFixture=10
+11-02 19:20:17.912 31308 31308 I PleosProbe: 1397262 NAVI_CURRENT_LOCATION present=true
+11-02 19:20:17.931 31308 31308 I PleosProbe: 1397280 NAVI_ROUTE_STATE present=true
+11-02 19:20:17.933 31308 31308 I PleosProbe: 1397282 ROUTE_STATUS mode=ROUTE_GUIDING routing=false
+11-02 19:20:18.060 31308 31308 I PleosProbe: 1397409 LOCATION_CALLBACK present=true validCoordinates=true
+11-02 19:20:18.081 31308 31308 I PleosProbe: 1397430 LOCATION_CHANGE changed=false changes=11 syntheticFixture=10
+11-02 19:20:18.915 31308 31308 I PleosProbe: 1398264 NAVI_DESTINATION present=true
+11-02 19:20:18.916 31308 31308 I PleosProbe: 1398266 DESTINATION_TIME remainTimeRaw=60
+11-02 19:20:19.061 31308 31308 I PleosProbe: 1398410 LOCATION_CALLBACK present=true validCoordinates=true
+11-02 19:20:19.069 31308 31308 I PleosProbe: 1398418 LOCATION_CHANGE changed=false changes=11 syntheticFixture=10
+11-02 19:20:20.064 31308 31308 I PleosProbe: 1399413 LOCATION_CALLBACK present=true validCoordinates=true
+11-02 19:20:20.080 31308 31308 I PleosProbe: 1399429 LOCATION_CHANGE changed=false changes=11 syntheticFixture=10
+11-02 19:20:21.072 31308 31308 I PleosProbe: 1400421 LOCATION_CALLBACK present=true validCoordinates=true
+11-02 19:20:21.080 31308 31308 I PleosProbe: 1400429 LOCATION_CHANGE changed=false changes=11 syntheticFixture=10
+11-02 19:20:22.067 31308 31308 I PleosProbe: 1401416 LOCATION_CALLBACK present=true validCoordinates=true
+11-02 19:20:22.081 31308 31308 I PleosProbe: 1401430 LOCATION_CHANGE changed=false changes=11 syntheticFixture=10
+11-02 19:20:22.930 31308 31308 I PleosProbe: 1402279 NAVI_CURRENT_LOCATION present=true
+11-02 19:20:22.948 31308 31308 I PleosProbe: 1402297 NAVI_ROUTE_STATE present=true
+11-02 19:20:22.949 31308 31308 I PleosProbe: 1402298 ROUTE_STATUS mode=ROUTE_GUIDING routing=false
+11-02 19:20:23.075 31308 31308 I PleosProbe: 1402424 LOCATION_CALLBACK present=true validCoordinates=true
+11-02 19:20:23.081 31308 31308 I PleosProbe: 1402430 LOCATION_CHANGE changed=false changes=11 syntheticFixture=10
+11-02 19:20:23.946 31308 31308 I PleosProbe: 1403295 NAVI_DESTINATION present=true
+11-02 19:20:23.948 31308 31308 I PleosProbe: 1403297 DESTINATION_TIME remainTimeRaw=60
+11-02 19:20:24.073 31308 31308 I PleosProbe: 1403422 LOCATION_CALLBACK present=true validCoordinates=true
+11-02 19:20:24.081 31308 31308 I PleosProbe: 1403430 LOCATION_CHANGE changed=false changes=11 syntheticFixture=10
+11-02 19:20:25.103 31308 31308 I PleosProbe: 1404452 LOCATION_CALLBACK present=true validCoordinates=true
+11-02 19:20:25.115 31308 31308 I PleosProbe: 1404464 LOCATION_CHANGE changed=false changes=11 syntheticFixture=10
+11-02 19:20:27.083 31308 31308 I PleosProbe: 1406432 LOCATION_CALLBACK present=true validCoordinates=true
+11-02 19:20:27.105 31308 31308 I PleosProbe: 1406454 LOCATION_CHANGE changed=false changes=11 syntheticFixture=10
+11-02 19:20:27.918 31308 31308 I PleosProbe: 1407268 NAVI_CURRENT_LOCATION present=true
+11-02 19:20:27.938 31308 31308 I PleosProbe: 1407287 NAVI_ROUTE_STATE present=true
+11-02 19:20:27.940 31308 31308 I PleosProbe: 1407289 ROUTE_STATUS mode=ROUTE_GUIDING routing=false
+11-02 19:20:28.081 31308 31308 I PleosProbe: 1407430 LOCATION_CALLBACK present=true validCoordinates=true
+11-02 19:20:28.097 31308 31308 I PleosProbe: 1407446 LOCATION_CHANGE changed=false changes=11 syntheticFixture=10
+11-02 19:20:28.924 31308 31308 I PleosProbe: 1408273 NAVI_DESTINATION present=true
+11-02 19:20:28.925 31308 31308 I PleosProbe: 1408274 DESTINATION_TIME remainTimeRaw=60
+11-02 19:20:29.094 31308 31308 I PleosProbe: 1408443 LOCATION_CALLBACK present=true validCoordinates=true
+11-02 19:20:29.115 31308 31308 I PleosProbe: 1408464 LOCATION_CHANGE changed=false changes=11 syntheticFixture=10
+11-02 19:20:31.094 31308 31308 I PleosProbe: 1410443 LOCATION_CALLBACK present=true validCoordinates=true
+11-02 19:20:31.114 31308 31308 I PleosProbe: 1410463 LOCATION_CHANGE changed=false changes=11 syntheticFixture=10
+11-02 19:20:32.089 31308 31308 I PleosProbe: 1411438 LOCATION_CALLBACK present=true validCoordinates=true
+11-02 19:20:32.100 31308 31308 I PleosProbe: 1411449 LOCATION_CHANGE changed=false changes=11 syntheticFixture=10
+11-02 19:20:32.935 31308 31308 I PleosProbe: 1412283 NAVI_CURRENT_LOCATION present=true
+11-02 19:20:32.949 31308 31308 I PleosProbe: 1412298 NAVI_ROUTE_STATE present=true
+11-02 19:20:32.952 31308 31308 I PleosProbe: 1412301 ROUTE_STATUS mode=ROUTE_GUIDING routing=false
+11-02 19:20:33.101 31308 31308 I PleosProbe: 1412450 LOCATION_CALLBACK present=true validCoordinates=true
+11-02 19:20:33.117 31308 31308 I PleosProbe: 1412466 LOCATION_CHANGE changed=false changes=11 syntheticFixture=10
+11-02 19:20:33.949 31308 31308 I PleosProbe: 1413298 NAVI_DESTINATION present=true
+11-02 19:20:33.964 31308 31308 I PleosProbe: 1413313 DESTINATION_TIME remainTimeRaw=60
+11-02 19:20:34.105 31308 31308 I PleosProbe: 1413454 LOCATION_CALLBACK present=true validCoordinates=true
+11-02 19:20:34.114 31308 31308 I PleosProbe: 1413463 LOCATION_CHANGE changed=false changes=11 syntheticFixture=10
+11-02 19:20:35.113 31308 31308 I PleosProbe: 1414462 LOCATION_CALLBACK present=true validCoordinates=true
+11-02 19:20:35.133 31308 31308 I PleosProbe: 1414482 LOCATION_CHANGE changed=false changes=11 syntheticFixture=10
+11-02 19:20:36.108 31308 31308 I PleosProbe: 1415457 LOCATION_CALLBACK present=true validCoordinates=true
+11-02 19:20:36.114 31308 31308 I PleosProbe: 1415463 LOCATION_CHANGE changed=false changes=11 syntheticFixture=10
+11-02 19:20:37.949 31308 31308 I PleosProbe: 1417298 NAVI_CURRENT_LOCATION present=true
+11-02 19:20:37.966 31308 31308 I PleosProbe: 1417315 NAVI_ROUTE_STATE present=true
+11-02 19:20:37.968 31308 31308 I PleosProbe: 1417317 ROUTE_STATUS mode=ROUTE_GUIDING routing=false
+11-02 19:20:38.112 31308 31308 I PleosProbe: 1417461 LOCATION_CALLBACK present=true validCoordinates=true
+11-02 19:20:38.131 31308 31308 I PleosProbe: 1417480 LOCATION_CHANGE changed=false changes=11 syntheticFixture=10
+11-02 19:20:38.940 31308 31308 I PleosProbe: 1418289 NAVI_DESTINATION present=true
+11-02 19:20:38.941 31308 31308 I PleosProbe: 1418290 DESTINATION_TIME remainTimeRaw=60
+11-02 19:20:39.134 31308 31308 I PleosProbe: 1418483 LOCATION_CALLBACK present=true validCoordinates=true
+11-02 19:20:39.151 31308 31308 I PleosProbe: 1418500 LOCATION_CHANGE changed=false changes=11 syntheticFixture=10
+11-02 19:20:41.128 31308 31308 I PleosProbe: 1420477 LOCATION_CALLBACK present=true validCoordinates=true
+11-02 19:20:41.148 31308 31308 I PleosProbe: 1420498 LOCATION_CHANGE changed=false changes=11 syntheticFixture=10
+11-02 19:20:42.959 31308 31308 I PleosProbe: 1422308 NAVI_CURRENT_LOCATION present=true
+11-02 19:20:42.982 31308 31308 I PleosProbe: 1422331 NAVI_ROUTE_STATE present=true
+11-02 19:20:42.983 31308 31308 I PleosProbe: 1422332 ROUTE_STATUS mode=ROUTE_GUIDING routing=false
+11-02 19:20:43.126 31308 31308 I PleosProbe: 1422475 LOCATION_CALLBACK present=true validCoordinates=true
+11-02 19:20:43.138 31308 31308 I PleosProbe: 1422487 LOCATION_CHANGE changed=false changes=11 syntheticFixture=10
+11-02 19:20:43.943 31308 31308 I PleosProbe: 1423292 NAVI_DESTINATION present=true
+11-02 19:20:43.945 31308 31308 I PleosProbe: 1423294 DESTINATION_TIME remainTimeRaw=60
+11-02 19:20:44.148 31308 31308 I PleosProbe: 1423497 LOCATION_CALLBACK present=true validCoordinates=true
+11-02 19:20:44.173 31308 31308 I PleosProbe: 1423522 LOCATION_CHANGE changed=false changes=11 syntheticFixture=10
+11-02 19:20:46.132 31308 31308 I PleosProbe: 1425481 LOCATION_CALLBACK present=true validCoordinates=true
+11-02 19:20:46.148 31308 31308 I PleosProbe: 1425497 LOCATION_CHANGE changed=false changes=11 syntheticFixture=10
+11-02 19:20:47.130 31308 31308 I PleosProbe: 1426479 LOCATION_CALLBACK present=true validCoordinates=true
+11-02 19:20:47.169 31308 31308 I PleosProbe: 1426518 LOCATION_CHANGE changed=false changes=11 syntheticFixture=10
+11-02 19:20:47.940 31308 31308 I PleosProbe: 1427289 NAVI_CURRENT_LOCATION present=true
+11-02 19:20:47.953 31308 31308 I PleosProbe: 1427302 NAVI_ROUTE_STATE present=true
+11-02 19:20:47.959 31308 31308 I PleosProbe: 1427307 ROUTE_STATUS mode=ROUTE_GUIDING routing=false
+11-02 19:20:48.147 31308 31308 I PleosProbe: 1427496 LOCATION_CALLBACK present=true validCoordinates=true
+11-02 19:20:48.166 31308 31308 I PleosProbe: 1427515 LOCATION_CHANGE changed=false changes=11 syntheticFixture=10
+11-02 19:20:48.971 31308 31308 I PleosProbe: 1428320 NAVI_DESTINATION present=true
+11-02 19:20:48.978 31308 31308 I PleosProbe: 1428327 DESTINATION_TIME remainTimeRaw=60
+11-02 19:20:49.150 31308 31308 I PleosProbe: 1428499 LOCATION_CALLBACK present=true validCoordinates=true
+11-02 19:20:49.167 31308 31308 I PleosProbe: 1428516 LOCATION_CHANGE changed=false changes=11 syntheticFixture=10
+11-02 19:20:51.145 31308 31308 I PleosProbe: 1430494 LOCATION_CALLBACK present=true validCoordinates=true
+11-02 19:20:51.165 31308 31308 I PleosProbe: 1430514 LOCATION_CHANGE changed=false changes=11 syntheticFixture=10
+11-02 19:20:52.177 31308 31308 I PleosProbe: 1431526 LOCATION_CALLBACK present=true validCoordinates=true
+11-02 19:20:52.212 31308 31308 I PleosProbe: 1431561 LOCATION_CHANGE changed=false changes=11 syntheticFixture=10
+11-02 19:20:52.944 31308 31308 I PleosProbe: 1432293 NAVI_CURRENT_LOCATION present=true
+11-02 19:20:52.946 31308 31308 I PleosProbe: 1432295 NAVI_ROUTE_STATE present=true
+11-02 19:20:52.947 31308 31308 I PleosProbe: 1432296 ROUTE_STATUS mode=ROUTE_GUIDING routing=false
+11-02 19:20:53.152 31308 31308 I PleosProbe: 1432501 LOCATION_CALLBACK present=true validCoordinates=true
+11-02 19:20:53.164 31308 31308 I PleosProbe: 1432513 LOCATION_CHANGE changed=false changes=11 syntheticFixture=10
+11-02 19:20:53.943 31308 31308 I PleosProbe: 1433292 NAVI_DESTINATION present=true
+11-02 19:20:53.944 31308 31308 I PleosProbe: 1433294 DESTINATION_TIME remainTimeRaw=60
+11-02 19:20:55.152 31308 31308 I PleosProbe: 1434501 LOCATION_CALLBACK present=true validCoordinates=true
+11-02 19:20:55.165 31308 31308 I PleosProbe: 1434514 LOCATION_CHANGE changed=false changes=11 syntheticFixture=10
+11-02 19:20:57.159 31308 31308 I PleosProbe: 1436506 LOCATION_CALLBACK present=true validCoordinates=true
+11-02 19:20:57.165 31308 31308 I PleosProbe: 1436514 LOCATION_CHANGE changed=false changes=11 syntheticFixture=10
+11-02 19:20:57.942 31308 31308 I PleosProbe: 1437291 NAVI_CURRENT_LOCATION present=true
+11-02 19:20:57.988 31308 31308 I PleosProbe: 1437336 NAVI_ROUTE_STATE present=true
+11-02 19:20:57.990 31308 31308 I PleosProbe: 1437339 ROUTE_STATUS mode=ROUTE_GUIDING routing=false
+11-02 19:20:58.164 31308 31308 I PleosProbe: 1437513 LOCATION_CALLBACK present=true validCoordinates=true
+11-02 19:20:58.181 31308 31308 I PleosProbe: 1437530 LOCATION_CHANGE changed=false changes=11 syntheticFixture=10
+11-02 19:20:58.958 31308 31308 I PleosProbe: 1438307 NAVI_DESTINATION present=true
+11-02 19:20:58.960 31308 31308 I PleosProbe: 1438309 DESTINATION_TIME remainTimeRaw=60
+11-02 19:20:59.180 31308 31308 I PleosProbe: 1438529 LOCATION_CALLBACK present=true validCoordinates=true
+11-02 19:20:59.216 31308 31308 I PleosProbe: 1438565 LOCATION_CHANGE changed=false changes=11 syntheticFixture=10
+11-02 19:21:01.219 31308 31308 I PleosProbe: 1440568 LOCATION_CALLBACK present=true validCoordinates=true
+11-02 19:21:01.238 31308 31308 I PleosProbe: 1440587 LOCATION_CHANGE changed=false changes=11 syntheticFixture=10
+11-02 19:21:02.947 31308 31308 I PleosProbe: 1442296 NAVI_CURRENT_LOCATION present=true
+11-02 19:21:02.969 31308 31308 I PleosProbe: 1442318 NAVI_ROUTE_STATE present=true
+11-02 19:21:02.971 31308 31308 I PleosProbe: 1442320 ROUTE_STATUS mode=ROUTE_GUIDING routing=false
+11-02 19:21:03.259 31308 31308 I PleosProbe: 1442608 LOCATION_CALLBACK present=true validCoordinates=true
+11-02 19:21:03.284 31308 31308 I PleosProbe: 1442633 LOCATION_CHANGE changed=false changes=11 syntheticFixture=10
+11-02 19:21:03.948 31308 31308 I PleosProbe: 1443297 NAVI_DESTINATION present=true
+11-02 19:21:03.951 31308 31308 I PleosProbe: 1443300 DESTINATION_TIME remainTimeRaw=60
+11-02 19:21:04.198 31308 31308 I PleosProbe: 1443547 LOCATION_CALLBACK present=true validCoordinates=true
+11-02 19:21:04.214 31308 31308 I PleosProbe: 1443563 LOCATION_CHANGE changed=false changes=11 syntheticFixture=10
+11-02 19:21:06.165 31308 31308 I PleosProbe: 1445514 LOCATION_CALLBACK present=true validCoordinates=true
+11-02 19:21:06.180 31308 31308 I PleosProbe: 1445529 LOCATION_CHANGE changed=false changes=11 syntheticFixture=10
+11-02 19:21:07.168 31308 31308 I PleosProbe: 1446517 LOCATION_CALLBACK present=true validCoordinates=true
+11-02 19:21:07.181 31308 31308 I PleosProbe: 1446531 LOCATION_CHANGE changed=false changes=11 syntheticFixture=10
+11-02 19:21:07.949 31308 31308 I PleosProbe: 1447298 NAVI_CURRENT_LOCATION present=true
+11-02 19:21:07.992 31308 31308 I PleosProbe: 1447341 NAVI_ROUTE_STATE present=true
+11-02 19:21:07.994 31308 31308 I PleosProbe: 1447343 ROUTE_STATUS mode=ROUTE_GUIDING routing=false
+11-02 19:21:08.171 31308 31308 I PleosProbe: 1447520 LOCATION_CALLBACK present=true validCoordinates=true
+11-02 19:21:08.182 31308 31308 I PleosProbe: 1447531 LOCATION_CHANGE changed=false changes=11 syntheticFixture=10
+11-02 19:21:08.967 31308 31308 I PleosProbe: 1448316 NAVI_DESTINATION present=true
+11-02 19:21:08.968 31308 31308 I PleosProbe: 1448317 DESTINATION_TIME remainTimeRaw=60
+11-02 19:21:10.170 31308 31308 I PleosProbe: 1449519 LOCATION_CALLBACK present=true validCoordinates=true
+11-02 19:21:10.180 31308 31308 I PleosProbe: 1449529 LOCATION_CHANGE changed=false changes=11 syntheticFixture=10
+11-02 19:21:11.170 31308 31308 I PleosProbe: 1450519 LOCATION_CALLBACK present=true validCoordinates=true
+11-02 19:21:11.181 31308 31308 I PleosProbe: 1450530 LOCATION_CHANGE changed=false changes=11 syntheticFixture=10
+11-02 19:21:12.179 31308 31308 I PleosProbe: 1451528 LOCATION_CALLBACK present=true validCoordinates=true
+11-02 19:21:12.198 31308 31308 I PleosProbe: 1451547 LOCATION_CHANGE changed=false changes=11 syntheticFixture=10
+11-02 19:21:12.951 31308 31308 I PleosProbe: 1452300 NAVI_CURRENT_LOCATION present=true
+11-02 19:21:12.966 31308 31308 I PleosProbe: 1452315 NAVI_ROUTE_STATE present=true
+11-02 19:21:13.002 31308 31308 I PleosProbe: 1452351 ROUTE_STATUS mode=ROUTE_GUIDING routing=false
+11-02 19:21:13.187 31308 31308 I PleosProbe: 1452536 LOCATION_CALLBACK present=true validCoordinates=true
+11-02 19:21:13.199 31308 31308 I PleosProbe: 1452548 LOCATION_CHANGE changed=false changes=11 syntheticFixture=10
+11-02 19:21:13.960 31308 31308 I PleosProbe: 1453309 NAVI_DESTINATION present=true
+11-02 19:21:13.963 31308 31308 I PleosProbe: 1453312 DESTINATION_TIME remainTimeRaw=60
+11-02 19:21:14.192 31308 31308 I PleosProbe: 1453541 LOCATION_CALLBACK present=true validCoordinates=true
+11-02 19:21:14.243 31308 31308 I PleosProbe: 1453592 LOCATION_CHANGE changed=false changes=11 syntheticFixture=10
+11-02 19:21:15.190 31308 31308 I PleosProbe: 1454539 LOCATION_CALLBACK present=true validCoordinates=true
+11-02 19:21:15.224 31308 31308 I PleosProbe: 1454573 LOCATION_CHANGE changed=false changes=11 syntheticFixture=10
+11-02 19:21:16.198 31308 31308 I PleosProbe: 1455547 LOCATION_CALLBACK present=true validCoordinates=true
+11-02 19:21:16.214 31308 31308 I PleosProbe: 1455563 LOCATION_CHANGE changed=false changes=11 syntheticFixture=10
+11-02 19:21:17.188 31308 31308 I PleosProbe: 1456537 LOCATION_CALLBACK present=true validCoordinates=true
+11-02 19:21:17.204 31308 31308 I PleosProbe: 1456553 LOCATION_CHANGE changed=false changes=11 syntheticFixture=10
+11-02 19:21:18.193 31308 31308 I PleosProbe: 1457542 LOCATION_CALLBACK present=true validCoordinates=true
+11-02 19:21:18.216 31308 31308 I PleosProbe: 1457565 LOCATION_CHANGE changed=false changes=11 syntheticFixture=10
+11-02 19:21:19.204 31308 31308 I PleosProbe: 1458553 LOCATION_CALLBACK present=true validCoordinates=true
+11-02 19:21:19.214 31308 31308 I PleosProbe: 1458564 LOCATION_CHANGE changed=false changes=11 syntheticFixture=10
+11-02 19:21:21.223 31308 31308 I PleosProbe: 1460572 LOCATION_CALLBACK present=true validCoordinates=true
+11-02 19:21:21.233 31308 31308 I PleosProbe: 1460582 LOCATION_CHANGE changed=false changes=11 syntheticFixture=10
+11-02 19:21:22.212 31308 31308 I PleosProbe: 1461562 LOCATION_CALLBACK present=true validCoordinates=true
+11-02 19:21:22.231 31308 31308 I PleosProbe: 1461580 LOCATION_CHANGE changed=false changes=11 syntheticFixture=10
+11-02 19:21:24.241 31308 31308 I PleosProbe: 1463590 LOCATION_CALLBACK present=true validCoordinates=true
+11-02 19:21:24.249 31308 31308 I PleosProbe: 1463598 LOCATION_CHANGE changed=false changes=11 syntheticFixture=10
+11-02 19:21:25.221 31308 31308 I PleosProbe: 1464570 LOCATION_CALLBACK present=true validCoordinates=true
+11-02 19:21:25.232 31308 31308 I PleosProbe: 1464581 LOCATION_CHANGE changed=false changes=11 syntheticFixture=10
+11-02 19:21:26.258 31308 31308 I PleosProbe: 1465607 LOCATION_CALLBACK present=true validCoordinates=true
+11-02 19:21:26.265 31308 31308 I PleosProbe: 1465614 LOCATION_CHANGE changed=false changes=11 syntheticFixture=10
+11-02 19:21:27.340 31308 31308 I PleosProbe: 1466689 LOCATION_CALLBACK present=true validCoordinates=true
+11-02 19:21:27.364 31308 31308 I PleosProbe: 1466713 LOCATION_CHANGE changed=false changes=11 syntheticFixture=10
+11-02 19:21:29.227 31308 31308 I PleosProbe: 1468576 LOCATION_CALLBACK present=true validCoordinates=true
+11-02 19:21:29.232 31308 31308 I PleosProbe: 1468581 LOCATION_CHANGE changed=false changes=11 syntheticFixture=10
+11-02 19:21:30.226 31308 31308 I PleosProbe: 1469575 LOCATION_CALLBACK present=true validCoordinates=true
+11-02 19:21:30.227 31308 31308 I PleosProbe: 1469576 LOCATION_CHANGE changed=false changes=11 syntheticFixture=10
+11-02 19:21:31.230 31308 31308 I PleosProbe: 1470579 LOCATION_CALLBACK present=true validCoordinates=true
+11-02 19:21:31.233 31308 31308 I PleosProbe: 1470582 LOCATION_CHANGE changed=false changes=11 syntheticFixture=10
+11-02 19:21:32.225 31308 31308 I PleosProbe: 1471574 LOCATION_CALLBACK present=true validCoordinates=true
+11-02 19:21:32.227 31308 31308 I PleosProbe: 1471576 LOCATION_CHANGE changed=false changes=11 syntheticFixture=10
+11-02 19:21:33.240 31308 31308 I PleosProbe: 1472589 LOCATION_CALLBACK present=true validCoordinates=true
+11-02 19:21:33.241 31308 31308 I PleosProbe: 1472591 LOCATION_CHANGE changed=false changes=11 syntheticFixture=10
+11-02 19:21:34.261 31308 31308 I PleosProbe: 1473610 LOCATION_CALLBACK present=true validCoordinates=true
+11-02 19:21:34.263 31308 31308 I PleosProbe: 1473612 LOCATION_CHANGE changed=false changes=11 syntheticFixture=10
+11-02 19:21:36.256 31308 31308 I PleosProbe: 1475605 LOCATION_CALLBACK present=true validCoordinates=true
+11-02 19:21:36.261 31308 31308 I PleosProbe: 1475610 LOCATION_CHANGE changed=false changes=11 syntheticFixture=10
+11-02 19:21:37.262 31308 31308 I PleosProbe: 1476611 LOCATION_CALLBACK present=true validCoordinates=true
+11-02 19:21:37.264 31308 31308 I PleosProbe: 1476613 LOCATION_CHANGE changed=false changes=11 syntheticFixture=10
+11-02 19:21:38.259 31308 31308 I PleosProbe: 1477608 LOCATION_CALLBACK present=true validCoordinates=true
+11-02 19:21:38.260 31308 31308 I PleosProbe: 1477609 LOCATION_CHANGE changed=false changes=11 syntheticFixture=10
+11-02 19:21:39.265 31308 31308 I PleosProbe: 1478614 LOCATION_CALLBACK present=true validCoordinates=true
+11-02 19:21:39.268 31308 31308 I PleosProbe: 1478617 LOCATION_CHANGE changed=false changes=11 syntheticFixture=10
+11-02 19:21:40.261 31308 31308 I PleosProbe: 1479610 LOCATION_CALLBACK present=true validCoordinates=true
+11-02 19:21:40.263 31308 31308 I PleosProbe: 1479612 LOCATION_CHANGE changed=false changes=11 syntheticFixture=10
+11-02 19:21:41.260 31308 31308 I PleosProbe: 1480609 LOCATION_CALLBACK present=true validCoordinates=true
+11-02 19:21:41.261 31308 31308 I PleosProbe: 1480610 LOCATION_CHANGE changed=false changes=11 syntheticFixture=10
+11-02 19:21:42.267 31308 31308 I PleosProbe: 1481616 LOCATION_CALLBACK present=true validCoordinates=true
+11-02 19:21:42.269 31308 31308 I PleosProbe: 1481618 LOCATION_CHANGE changed=false changes=11 syntheticFixture=10
+11-02 19:21:43.280 31308 31308 I PleosProbe: 1482629 LOCATION_CALLBACK present=true validCoordinates=true
+11-02 19:21:43.282 31308 31308 I PleosProbe: 1482631 LOCATION_CHANGE changed=false changes=11 syntheticFixture=10
+11-02 19:21:45.273 31308 31308 I PleosProbe: 1484622 LOCATION_CALLBACK present=true validCoordinates=true
+11-02 19:21:45.274 31308 31308 I PleosProbe: 1484623 LOCATION_CHANGE changed=false changes=11 syntheticFixture=10
+11-02 19:21:46.276 31308 31308 I PleosProbe: 1485625 LOCATION_CALLBACK present=true validCoordinates=true
+11-02 19:21:46.278 31308 31308 I PleosProbe: 1485627 LOCATION_CHANGE changed=false changes=11 syntheticFixture=10
+11-02 19:21:48.292 31308 31308 I PleosProbe: 1487641 LOCATION_CALLBACK present=true validCoordinates=true
+11-02 19:21:48.293 31308 31308 I PleosProbe: 1487642 LOCATION_CHANGE changed=false changes=11 syntheticFixture=10
+11-02 19:21:49.274 31308 31308 I PleosProbe: 1488623 LOCATION_CALLBACK present=true validCoordinates=true
+11-02 19:21:49.276 31308 31308 I PleosProbe: 1488625 LOCATION_CHANGE changed=false changes=11 syntheticFixture=10
+11-02 19:21:50.306 31308 31308 I PleosProbe: 1489655 LOCATION_CALLBACK present=true validCoordinates=true
+11-02 19:21:50.307 31308 31308 I PleosProbe: 1489656 LOCATION_CHANGE changed=false changes=11 syntheticFixture=10
+11-02 19:21:52.298 31308 31308 I PleosProbe: 1491647 LOCATION_CALLBACK present=true validCoordinates=true
+11-02 19:21:52.299 31308 31308 I PleosProbe: 1491648 LOCATION_CHANGE changed=false changes=11 syntheticFixture=10
+11-02 19:21:53.439 31308 31308 I PleosProbe: 1492788 LOCATION_CALLBACK present=true validCoordinates=true
+11-02 19:21:53.448 31308 31308 I PleosProbe: 1492797 LOCATION_CHANGE changed=false changes=11 syntheticFixture=10
+11-02 19:21:55.317 31308 31308 I PleosProbe: 1494666 LOCATION_CALLBACK present=true validCoordinates=true
+11-02 19:21:55.358 31308 31308 I PleosProbe: 1494707 LOCATION_CHANGE changed=false changes=11 syntheticFixture=10
+11-02 19:21:56.337 31308 31308 I PleosProbe: 1495686 LOCATION_CALLBACK present=true validCoordinates=true
+11-02 19:21:56.350 31308 31308 I PleosProbe: 1495699 LOCATION_CHANGE changed=false changes=11 syntheticFixture=10
+11-02 19:21:58.318 31308 31308 I PleosProbe: 1497667 LOCATION_CALLBACK present=true validCoordinates=true
+11-02 19:21:58.340 31308 31308 I PleosProbe: 1497689 LOCATION_CHANGE changed=false changes=11 syntheticFixture=10
+11-02 19:21:59.323 31308 31308 I PleosProbe: 1498672 LOCATION_CALLBACK present=true validCoordinates=true
+11-02 19:21:59.331 31308 31308 I PleosProbe: 1498680 LOCATION_CHANGE changed=false changes=11 syntheticFixture=10
+11-02 19:22:01.325 31308 31308 I PleosProbe: 1500674 LOCATION_CALLBACK present=true validCoordinates=true
+11-02 19:22:01.350 31308 31308 I PleosProbe: 1500699 LOCATION_CHANGE changed=false changes=11 syntheticFixture=10
+11-02 19:22:02.332 31308 31308 I PleosProbe: 1501681 LOCATION_CALLBACK present=true validCoordinates=true
+11-02 19:22:02.350 31308 31308 I PleosProbe: 1501699 LOCATION_CHANGE changed=false changes=11 syntheticFixture=10
+11-02 19:22:03.323 31308 31308 I PleosProbe: 1502672 LOCATION_CALLBACK present=true validCoordinates=true
+11-02 19:22:03.330 31308 31308 I PleosProbe: 1502679 LOCATION_CHANGE changed=false changes=11 syntheticFixture=10
+11-02 19:22:04.336 31308 31308 I PleosProbe: 1503685 LOCATION_CALLBACK present=true validCoordinates=true
+11-02 19:22:04.348 31308 31308 I PleosProbe: 1503697 LOCATION_CHANGE changed=false changes=11 syntheticFixture=10
+11-02 19:22:05.340 31308 31308 I PleosProbe: 1504689 LOCATION_CALLBACK present=true validCoordinates=true
+11-02 19:22:05.348 31308 31308 I PleosProbe: 1504697 LOCATION_CHANGE changed=false changes=11 syntheticFixture=10
+11-02 19:22:06.339 31308 31308 I PleosProbe: 1505689 LOCATION_CALLBACK present=true validCoordinates=true
+11-02 19:22:06.349 31308 31308 I PleosProbe: 1505698 LOCATION_CHANGE changed=false changes=11 syntheticFixture=10
+11-02 19:22:07.343 31308 31308 I PleosProbe: 1506692 LOCATION_CALLBACK present=true validCoordinates=true
+11-02 19:22:07.349 31308 31308 I PleosProbe: 1506698 LOCATION_CHANGE changed=false changes=11 syntheticFixture=10
+11-02 19:22:08.361 31308 31308 I PleosProbe: 1507710 LOCATION_CALLBACK present=true validCoordinates=true
+11-02 19:22:08.381 31308 31308 I PleosProbe: 1507730 LOCATION_CHANGE changed=false changes=11 syntheticFixture=10
+11-02 19:22:09.366 31308 31308 I PleosProbe: 1508715 LOCATION_CALLBACK present=true validCoordinates=true
+11-02 19:22:09.414 31308 31308 I PleosProbe: 1508763 LOCATION_CHANGE changed=false changes=11 syntheticFixture=10
+11-02 19:22:11.355 31308 31308 I PleosProbe: 1510704 LOCATION_CALLBACK present=true validCoordinates=true
+11-02 19:22:11.370 31308 31308 I PleosProbe: 1510719 LOCATION_CHANGE changed=false changes=11 syntheticFixture=10
+11-02 19:22:12.358 31308 31308 I PleosProbe: 1511707 LOCATION_CALLBACK present=true validCoordinates=true
+11-02 19:22:12.365 31308 31308 I PleosProbe: 1511714 LOCATION_CHANGE changed=false changes=11 syntheticFixture=10
+11-02 19:22:13.364 31308 31308 I PleosProbe: 1512713 LOCATION_CALLBACK present=true validCoordinates=true
+11-02 19:22:13.381 31308 31308 I PleosProbe: 1512731 LOCATION_CHANGE changed=false changes=11 syntheticFixture=10
+11-02 19:22:15.375 31308 31308 I PleosProbe: 1514724 LOCATION_CALLBACK present=true validCoordinates=true
+11-02 19:22:15.382 31308 31308 I PleosProbe: 1514731 LOCATION_CHANGE changed=false changes=11 syntheticFixture=10
+11-02 19:22:16.373 31308 31308 I PleosProbe: 1515722 LOCATION_CALLBACK present=true validCoordinates=true
+11-02 19:22:16.405 31308 31308 I PleosProbe: 1515754 LOCATION_CHANGE changed=false changes=11 syntheticFixture=10

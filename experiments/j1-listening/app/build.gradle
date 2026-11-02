@@ -1,0 +1,12 @@
+plugins { id 'com.android.application' }
+android {
+    namespace 'org.example.j1listening'
+    compileSdk 34
+    useLibrary 'android.car'
+    useLibrary 'android.test.runner'
+    useLibrary 'android.test.base'
+    defaultConfig { applicationId 'org.example.j1listening'; minSdk 28; targetSdk 34; versionCode 2; versionName '0.2.0'; testInstrumentationRunner 'android.test.InstrumentationTestRunner' }
+    compileOptions { sourceCompatibility JavaVersion.VERSION_17; targetCompatibility JavaVersion.VERSION_17 }
+    // Reuse the verified local debug key. Never generate a new signing identity here.
+    signingConfigs { debug { storeFile file('../../../work/pleos-environment/android-user/debug.keystore') } }
+}

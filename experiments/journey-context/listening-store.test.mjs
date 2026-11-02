@@ -40,3 +40,13 @@ test('invalid taste/version are rejected while preference-only storage remains s
  assert.equal(saveListening(s,{taste:'reflection'},['a'],100),true);
  assert.equal(loadListening(s,['a'],100).checkpoint,null);
 });
+
+test('replacing bundled audio preserves taste but never resumes an old take',()=>{
+ for(const mediaRevision of [undefined,'older-take']){
+  const s=store();s.setItem(STORAGE_KEY,JSON.stringify({version:1,mediaRevision,taste:'reflection',checkpoint:{id:'a',seconds:5,duration:20},savedAt:100}));
+  const restored=loadListening(s,['a'],101);
+  assert.equal(restored.taste,'reflection');assert.equal(restored.checkpoint,null);
+  saveListening(s,{taste:restored.taste,checkpoint:{id:'a',seconds:3,duration:22}},['a'],102);
+  assert.deepEqual(loadListening(s,['a'],103).checkpoint,{id:'a',seconds:3,duration:22});
+ }
+});

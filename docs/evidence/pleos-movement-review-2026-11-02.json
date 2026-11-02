@@ -1,0 +1,114 @@
+{
+  "review": {
+    "duration_api_ms": 31562,
+    "stop_reason": "end_turn",
+    "session_id": "4ca6be50-be0b-4d67-9a0f-20d7aedd36ae",
+    "total_cost_usd": 0.00506678,
+    "usage": {
+      "input_tokens": 2,
+      "cache_creation_input_tokens": 8848,
+      "cache_read_input_tokens": 2348,
+      "output_tokens": 6547,
+      "output_tokens_details": {
+        "thinking_tokens": 5110
+      },
+      "server_tool_use": {
+        "web_search_requests": 0,
+        "web_fetch_requests": 0
+      },
+      "service_tier": "standard",
+      "cache_creation": {
+        "ephemeral_1h_input_tokens": 8848,
+        "ephemeral_5m_input_tokens": 0
+      },
+      "inference_geo": "global",
+      "iterations": [
+        {
+          "input_tokens": 2,
+          "output_tokens": 6547,
+          "cache_read_input_tokens": 2348,
+          "cache_creation_input_tokens": 8848,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 8848
+          },
+          "type": "message"
+        }
+      ],
+      "speed": "standard",
+      "fallback_credit": null
+    },
+    "modelUsage": {
+      "claude-haiku-5-5": {
+        "inputTokens": 2,
+        "outputTokens": 6547,
+        "cacheReadInputTokens": 2348,
+        "cacheCreationInputTokens": 8848,
+        "webSearchRequests": 0,
+        "costUSD": 0.00506678,
+        "contextWindow": 1000000,
+        "maxOutputTokens": 128000,
+        "thinkingTokens": 5110,
+        "canonicalModel": "claude-haiku-5-5",
+        "provider": "firstParty",
+        "costBasis": "list"
+      }
+    },
+    "permission_denials": [],
+    "terminal_reason": "completed",
+    "fast_mode_state": "off",
+    "fast_mode_disabled_reason": "sdk_opt_in_required",
+    "subagent_stats": {
+      "spawned": 0,
+      "requested": {
+        "background": 0,
+        "foreground": 0,
+        "unset": 0
+      },
+      "started_in_background": 0,
+      "max_depth": 0,
+      "spawned_by_subagents": 0,
+      "completed": 0,
+      "failed": 0,
+      "killed": {
+        "parent": 0,
+        "user": 0,
+        "system": 0
+      },
+      "refused": {
+        "depth_limit": 0,
+        "concurrency_limit": 0,
+        "budget": 0
+      },
+      "by_type": {}
+    },
+    "safety_stops": 0,
+    "is_error": false,
+    "num_turns": 1,
+    "subtype": "success",
+    "api_error_status": null,
+    "result": "## Review: movement probe (read-only, no tools run)\n\nThe movement path is bounded and cleans up correctly, and it does not log coordinates. It doesn't yet meet the stated goal of distinguishing repeated callbacks from changed coordinates and ETA. ETA is never compared, and without `test_route` there is no destination for ETA to refer to.\n\n### Findings, by severity\n\n**1. ETA has no change detection (medium, goal gap).** `DESTINATION_TIME`, `TRIP_ETA`, and `DRIVING_DURATION` log the raw value on every callback, but nothing compares it to the previous value. The live log can't show whether ETA changed or just repeated, so the goal isn't met for ETA. Track a previous ETA the same way `previousLatitude`/`previousLongitude` are tracked and emit `ETA_CHANGE changed=...`.\n\n**2. SDK navigation location is not compared (medium).** `onCurrentLocationInfo` calls `received()`, which logs only `present=`. The \"location comparison\" applies only to `FusedLocation`. If the goal includes whether the navi location follows the fused fixtures, that data isn't captured.\n\n**3. Movement probe is empty without `test_route` (medium, run setup).** The movement queries run against whatever state exists. With no active route, destination and ETA will likely be null, so the 36 queries would show nothing useful for ETA. Run with `test_movement` and `test_route` together, or state that the ETA result is expected to be null in that case.\n\n**4. The first valid sample is indistinguishable from a repeat (low).** On the first valid callback `previousLatitude` is null, so `changed=false`. That matches a real repeat. Add `baseline=true` for the first sample.\n\n**5. Query-cap timing (low).** The first query fires immediately and the 36th at roughly t=175s, so the window is about 0–175s. The activity does not finish when the cap is reached, unlike `ClockProbeActivity`, and there is no end-of-run summary. Post a `MOVEMENT_DONE` line when `movementQueries` reaches 36, or call `finish()`.\n\n**6. Possible double-start (low).** `handler.post(movementQuery)` runs inside the `navi.initialize` success callback. If that callback can fire more than once, two loops run and the query rate doubles. A `movementStarted` boolean guard prevents this.\n\n**7. Change threshold (low, verify).** `0.000001` degrees is about 0.1 m, and the fixture tolerance is `0.00005`. Repeated identical values are fine. If the SDK adds jitter or float32 rounding, `changed=true` could fire on noise. Confirm with the first run's output.\n\n### What's correct\n\n- `onDestroy` sets `closed` first, then removes callbacks, so no movement tick runs after teardown.\n- `movementQuery` returns early when `closed` or `!naviListening`. The `movementQueries++` short-circuits, so the counter only advances while listening.\n- Per-tick exceptions are caught and logged as an event, and the loop still reschedules.\n- The `ranchu` guard matches the existing route probe.\n- Coordinates are never logged. Only `syntheticFixture=i` or `-1` appears, and the fixture loop assigns at most one match because the step (0.0002) is much larger than twice the tolerance (0.0001).\n- Event ordering is preserved, since `LOCATION_CALLBACK` and `LOCATION_CHANGE` both go through the main handler FIFO.\n- Validity checks handle null, NaN, and out-of-range values, and invalid samples don't update the baseline.\n\n### ClockProbeActivity\n\nNothing in the clock probe blocks the movement goal. `onChanged` is `synchronized` and `closed` is volatile, so the teardown ordering is fine. If `initialize()` throws, `finish()` runs and `onDestroy` releases the SDK safely.\n\n### Not verified\n\nThe synthetic GPS fixture source and the SDK's `LocationData` and `DestinationInfo` value semantics weren't in the review input. I can't confirm that the fixture driver actually steps through `37.4000 + i*0.0002`, or what units `remainTimeRaw` and `rawSeconds` use. Those need to be checked against the fixture file and SDK docs.",
+    "ttft_ms": 26465,
+    "type": "result",
+    "duration_ms": 33055,
+    "uuid": "015d060c-f2c7-498f-b8c9-f906e7e1eb11",
+    "ttft_stream_ms": 2590,
+    "time_to_request_ms": 1480,
+    "first_content_frame_ms": 2591,
+    "queued_turn_count": 0,
+    "result_index": 0
+  },
+  "disposition": {
+    "1_eta_comparison": "Implemented offline comparison in analyze-movement.py: all samples 60; changes 0. No fabricated ETA.",
+    "2_navi_coordinates": "Added finite/range validation and baseline/change/fixture comparison. Rebuilt and ran second trial; 24 samples, no changes.",
+    "3_active_route": "Existing route from prior trial retained; both logs repeatedly show ROUTE_GUIDING. No new route needed.",
+    "4_first_fused_baseline": "First sample is baseline, not movement; analysis counts changed=true only. Both trials match all 11 fixture IDs.",
+    "5_bounded_queries": "36 maximum at 0..175 seconds. Second observation stopped after captured 112.42 seconds; not a full query-cap test. Probe force-stopped after capture.",
+    "6_reconnect": "No duplicate initialize or reconnect observed in this bounded trial. Reconnect stress remains untested.",
+    "7_jitter": "11 true transitions and all 11 matching fixture IDs each run. Counts include transition from prior location to fixture0; not 11 path segments."
+  },
+  "limitations": [
+    "Reviewer did not execute runtime tests. Final navigation comparison and analyzer verified by Codex build/runtime and log review.",
+    "Additional localhost /vehicle/state GET command rejected as blocked by policy; no console state or dynamics result claimed."
+  ]
+}

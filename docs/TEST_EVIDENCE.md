@@ -119,3 +119,101 @@ node --test experiments/journey-context/*.test.mjs 32/32,종료0. 고정잡음20
 - `git diff --cached --check`: 기존 검수 원문 mvp-haiku-input 및 mvp-haiku-followup의 EOF 빈 줄 2건 경고(종료 2). 원문 보존을 위해 수정하지 않음.
 - 일반적인 private-key/GitHub-token/OpenAI-project-key/AWS-access-key 패턴 검사에서 일치 없음. 포괄적인 비밀값 부재 인증은 아님.
 - 이번은 기존 작업 저장이며 코드 수정/새 Claude 검수/SDK·브라우저 재검증은 수행하지 않음.
+
+
+## 2026-11-02 · Windows에서 J1 이어듣기 계속
+사용자 요청으로 노트북의 D-015 작업을 이어감. main 1471d0c 시작, 기존 미추적 work/의 기억 백업 보존. 기존 38개 시험 통과 후 실제 app.mjs를 실행하는 fake DOM/media 회귀에서 저장 위치 이전 play 요청 2개 실패 재현. 메타데이터→seek→play 순서, 취소 가능한 대기, 종료/초기화/프로필 전환, pause 표시, 차주/게스트 저장 격리, 잘못된 체크포인트 폐기와 다른 항목 기록 보존을 수정했다.
+Claude Haiku 5.5 같은 세션 a3540f58-c568-43fa-866f-cb8207eb454e로 읽기 전용 검수 3회. 모두 종료0/is_error=false/정확한 modelUsage 확인. 파일 수정·도구 실행은 Codex만 수행. 초기 게스트 resume 노출 의심은 owner gate로 반증되어 폐기. Claude의 오류 후 항상 next=null 주장도 update가 await 이전에 실행됨과 회귀시험으로 반박, 최종 회신에서 철회. 나머지 checkpoint 소실/paused 표시/지연 error 지적 반영. 마지막 P2 두 건(다른 항목 실패 시 기존 체크포인트 보존, 게스트 시작 미디어 동안 취향 저장 금지)은 2개 회귀 추가 후 수정; 이 마지막 좁은 변경의 4차 Claude 검수는 미실행.
+최종 Node v24.19.0 54/54 통과, node --check와 git diff --check 통과. IAB 실제 WAV 재생·자동 다음 항목·명시 종료·재접속 이어듣기 관찰. story 13.323478초 종료→13.433496초 재생, 후속 story2 1.276889초 종료→1.424885초 재생. 최종 저장 경계 변경 후는 페이지 갱신과 Node 회귀 확인이며 모든 브라우저 경로 재실행은 아님.
+증거: evidence/j1-windows-playback-review-2026-11-02.json, evidence/j1-windows-playback-tests-2026-11-02.txt. 실제 차량/SDK/Android/사용자 효과는 미검증, 점수 상향 없음. 다음: 실제 운행 입력 연결 전 첫 관측 지연/수신 시계 계약과 온라인 누적 입력 검증. 공개·push 없음.
+
+## 2026-11-02 · J1 디자인 회귀
+- node --test experiments/journey-context/*.test.mjs: 종료0, 54/54 통과 (fake media 포함, 실제 차량 시험 아님).
+- skill lint --app index.html style.css: 0 FAIL, section-label 2 WARN. 앱의 현재/다음 영역 명칭이므로 유지.
+- skill inspect --app http://127.0.0.1:4177: 1440/768/390 렌더 확인. 결과 work/design-final/report.json 및 각 fold/page JPG.
+- Claude 실제 claude-haiku-5-5 static review: 조건부 PASS, P2 2개 수정. 근거 work/design-claude-review.json. 최종 CSS 수정의 재호출 없음.
+- IAB 실제 상호작용 재검증: browser.user unavailable 연결 차단. 스크린리더/iOS/실제 SDK 미실행.
+- 최종 inspector: 0 FAIL / 0 WARN. server node --check 통과. CSS EOF 공백 정리 후 diff --check 재확인.
+
+## 2026-11-02 · D-016 협업 운영 검증
+python work/dot-coordination-review.py: 종료0, is_error=false, modelUsage claude-haiku-5-5, session 26ef0fb7-6859-4f79-a907-66245a008045. 검수는 고정 입력 텍스트, 도구/파일 수정 없음. 입력 해시·파일 해시·회신은 evidence/dot-coordination-review-2026-11-02.json. 지적 처리는 DOTS_COLLABORATION 참조. 마지막 문구 보강의 추가 Claude 검수는 미실행.
+브라우저: Dot 연결 시험과 DOT-R001 하달/수신/1차 보고/보완 요청의 실제 대화 확인. 자동 확인: automation_update 성공, 로컬 automation.toml에서 heartbeat/ACTIVE/4시간/현재 채팅 대상 확인; 실제 예약 첫 실행은 아직 미실행. 지침/결정/협업 파일 한정 git diff --check 종료0. 전체 diff 검사에서는 다른 작업의 demo/style.css EOF 빈 줄 경고가 있어 미수정. 문서·운영 변경이므로 앱 테스트/빌드/SDK 재실행 없음. 공식 미디어 문서 2곳 직접 대조는 문서 확인이지 실행 성공이 아님.
+
+
+## 2026-11-02 · Windows Pleos SDK 에뮬레이터
+- `gradle.bat -p experiments/pleos-probe --no-daemon assembleDebug`: 성공. `lintDebug`: 성공, 0 errors / 2 warnings (백업 규칙·아이콘). 도구 실행 셸은 experiments/pleos-probe/env.ps1 사용.
+- Pleos2.1.0/API34 cold boot, WHPX, RAM4096MB. `adb -s emulator-5556 install -g ...app-debug.apk` 및 `am start`: 성공. 초기 권한 없음 SecurityException과 설치 서명 불일치 실패도 WORK_LOG에 보존.
+- 60초 집계: locationCallbacks=49, validLocationCallbacks=49, naviCallbacks=3. 내비 CURRENT_LOCATION/DESTINATION/ROUTE_STATE 객체 수신. SAFE_GUIDING/routing=false. 활성 목적지·ETA·실차·위치 정확도/신선도 검증 아님.
+- 증거: evidence/pleos-probe-result-2026-11-02.json, runtime/build/lint txt. raw 좌표/목적지 로그 없음. 단위 시험 신규 없음; 실제 APK 빌드·lint·에뮬레이터 시험 수행.
+
+## 2026-11-02 · J1 온라인 관측 검증
+- node --test experiments/journey-context/*.test.mjs: 65/65, 종료0. 추가11개는 입력 시각·세션·수신 경계 및 추천 연결 fake 시험.
+- node experiments/journey-context/replay-stream.mjs: 종료0. story→pause 추천, stale unknown, 종료 뒤 inactive-session 거부. evidence/j1-stream-replay-2026-11-02.json.
+- node --check experiments/journey-context/coordinate-stream.mjs: 종료0.
+- 로그: evidence/j1-stream-tests-2026-11-02.txt. UI 디자인/재생 로직 변경 없음. 실제 SDK 온라인 연결·권한 감시 통합·실차·운영 임계값 검증 미실행.
+- 직전 디자인 실제 브라우저 후속확인: pause.wav 4.739→13.763초, 자연종료 후 story.wav 5.187초 재생, 일시정지11.378→재개11.710초, 종료19.801초 paused=true. 음원 error=null. 해당 결과는 온라인 관측 모듈의 실차 검증이 아니다.
+- 최종 getter 예외/반복 revoke 회귀 추가 후 **66/66**, 종료0. 위65개는 중간 결과. Claude 2회 정적 검수 원문/처리: evidence/j1-stream-review-2026-11-02.json. 입력 source 제한·호출자 revoke 계약, 미연결 범위 유지.
+
+## 2026-11-02 · 활성 경로 ETA
+실제 APK assembleDebug+lintDebug 성공,0오류/2경고. 공식 POI requestRoute → ROUTE_DRIVE(816716ms) → ROUTE_GUIDING(816720ms) → DrivingState.duration60초(817739ms), DestinationInfo.remainTime60(834479ms). 실제 UI1분/50m 대조. routing=false가 안내상태와 공존하여 단독판정 금지. logs/result/build/review/screenshot: evidence/pleos-eta-*-2026-11-02.*. 에뮬레이터 정차에서 SDK 예상시간 수신 확인이며 실제 이동/정확도/TripInfo.eta/실차 미실행.
+
+## 2026-11-02 · 지원서 문서 검증
+번들 Python work/application-draft/build.py / review.py 종료0. ZIP 보존 검사: document.xml/core.xml 이외 원본과 byte 동일, 8개 입력 SDT 유지. 원본/최종 SHA256은 work/application-draft/structural-check.json. render_docx.py는 LibreOffice 없음으로 실패. Word 읽기 전용 ExportAsFixedFormat→번들 pypdfium2 렌더 성공; verified-render/page-1..5.png 전쪽 시각 검사 통과. 최종 동의서·서명 공란 보존. Claude 검수 원문 review.json, 처리 WORK_LOG. 앱 빌드/시험은 문서 변경이므로 재실행하지 않음.
+
+## 2026-11-02 · J1 SDK 입력 검증
+- 실제27개 시각표본: evidence/j1-clock-result-2026-11-02.json, j1-clock-runtime-2026-11-02.txt. epoch와 일치하는 관찰만, 계약 미확정.
+- 최종 Android assembleDebug/lintDebug 종료0; lint0 errors/3 warnings. evidence/j1-input-build-2026-11-02.txt 및 j1-input-lint-2026-11-02.txt.
+- javac + LocationInputGateTest 종료0: 세대/접근/좌표/수신순서/error/중복close 검증. evidence/j1-input-gate-tests-2026-11-02.txt.
+- node --test experiments/journey-context/*.test.mjs 종료0,66/66. 기존 디자인/재생 코드 미변경.
+- 실제 SDK 콜백 최종APK15개→revoke→5초뒤15개, onStop. 권한거부 user10 ACCESS_DENIED→0개. evidence/j1-input-runtime-2026-11-02.txt. 실제SDK 시각→추천기 변환, 서비스 강제단절, 실차/벽시계 변경은 미실행.
+- 테스트 권한 복구는 자동승인 정책 차단. user10 거부 유지. 성공으로 기록하지 않음.
+
+## 2026-11-02 · 에뮬레이터 이동 입력과 ETA 갱신
+assembleDebug/lintDebug 종료0, 0 errors/2 기존 warnings. 설치 성공. emulator-5556/ranchu에 geo fix 합성11점(약22m/8초, 총약222m) 2회 입력, 각11회 OK. Fused 양쪽 모두 fixture0~10 수신 및 변화11회(초기위치→fixture0 포함). 1차239.415초 로그/목적지37회, 2차112.420초 로그/목적지24회: 모두 remainTimeRaw60, 변화0. 2차 내비좌표24회: baseline 이후 변화0, fixture 불일치. ROUTE_GUIDING 유지. 판정: Fused 합성 이동 반영 통과, 내비 위치·ETA 변화 확인 실패. 실차/ETA정확도/차량속도·기어 주행 미실행. 명령: python experiments/pleos-probe/move-emulator.py, PID한정 logcat, python experiments/pleos-probe/analyze-movement.py. 원본 입력·런타임·집계·빌드·검수: evidence/pleos-movement-*-2026-11-02.*. 로컬 차량콘솔 추가조회는 실행정책 blocked by policy로 차단.
+
+
+## 2026-11-02 · VoiceStudio 초기 설정 완료
+사용자 요청으로 로컬 실행 환경 설치 및 첫 실행 마법사 완료. /health HTTP200, startup ready, setup models_ready, 메인 스튜디오 진입 확인. 자체 심화 점검 9통과/1경고(HF token 없음)/0실패; KittenTTS CPU 합성3.8초 생성13.1초. GPU인식과 GPU합성은 구분. 한국어·복제·ASR·Pleos 미검증. 세부 경로/복구 한계/라이선스: VOICESTUDIO_SETUP_2026-11-02.md, 원본: evidence/voicestudio-setup-2026-11-02.json. 기존 앱소스 편집·공개·push 없음.
+
+
+## 2026-11-02 · J1 한국어 AI 음성 시연
+generate.py 종료0: /generate WAV4개 실제생성,44.1kHz monoPCM16. verify.py 종료0: faster-whisper-small CPUint8, CER story1.92/pause0/story2 1.03/pause2 0%, clipping모두0. 전달해시4개일치. 최초 WAV를JSON해석실패 수정, ASRsymlink WinError1314는 일반파일복사/local snapshot으로 해결. 자연스러움청취·실차·APK통합 미실행. evidence/j1-korean-voice-quality/model/review-2026-11-02.json 및 상세보고서 참조.
+
+## 2026-11-02 · SDK 상태 end-to-end
+- node --test experiments/journey-context/*.test.mjs: 종료0,75/75. SDK순서/세대/schema/unknown/NO_BRIDGE/조회epoch 및 실제app fakeDOM 재생회귀. evidence/j1-sdk-status-tests-2026-11-02.txt.
+- 실제 HTTP 거부6개(Origin/Host/추가필드/content-type/크기/JSON), 최종 Connection:close 변경후 재실행 통과: j1-sdk-bridge-http-2026-11-02.json.
+- gradle assembleDebug lintDebug: 종료0,lint0오류3경고. j1-sdk-status-build-2026-11-02.txt. includeSubdomains 초기lint오류는 수정함.
+- 실제SDK debug콜백→loopbackHTTP202→IAB 표시/재생/7.294초이어듣기/종료. j1-sdk-status-runtime-2026-11-02.txt, outputs/j1-sdk-connected.png. 실제SDK 관측 freshness/경로판단 성공시험 아님.
+- Claude Opus5.5 1회,Haiku5.5 2회 종료0/is_error=false/모델 확인, 원문·처리 j1-sdk-status-review-2026-11-02.json. 마지막 Connection:close/2시험은 Codex재검증만.
+
+
+## 2026-11-02 · 현대 Pleos 톤 차량 UI 시안
+명령: node work/cockpit-design/check.mjs. 최종 가로 1280×720/1024×600/1920×720 및 차량 분할 640×960/480×720에서 브라우저 상호작용·overflow·버튼 위치/크기 assertion 통과, JS 예외 없음. 버튼 높이 88~96 CSS px, 모든 상태에서 위치 유지. 시작→음성 진입 시 일시정지→취소→타이머 취소 유지→재진입→실패→종료 확인. 초기 1024×600의 scrollHeight634 실패 후 작은 화면 장식 축소로600 통과. git diff --check 종료0(CRLF 경고만). PNG 시각 확인 및 최종 JSON: work/cockpit-design/check.json, output/j1-cockpit/. Claude Opus 설계1회/Haiku 검수2회 성공 및 지적처리 문서화. 실제 오디오/STT/차량 SDK/실차/주간 반사/Android dp 검증은 미실행. 기존 앱 코드 미변경으로 앱 회귀시험은 재실행하지 않음.
+
+
+## 2026-11-02 · J1 한국어 음원 브라우저 적용
+node --test experiments/journey-context/*.test.mjs 종료0,76통과0실패. HTTP원본일치4/4+Range206. Chrome4개WAV pausedfalse/readyState4/time>0/errornull, 자동이어듣기마지막종료, story10초중단→새로고침→11.586초재생. 실제스피커청취/실차미실행. 증거j1-voice-integration-* 및 상세보고서참조.
+
+## 2026-11-02 · 내비 모의주행 진단: 목표 미달
+NMEA 합성 입력/foreground 진단서비스 실험. 정차89회 위치조회 변화0, 정상checksum137회, ETA1080초/12000m 고정. 최종34회 위치조회 변화0, 정상checksum30회, 동일시간/거리. 재부팅 직후SAFE_GUIDING 목적지0 시험은 활성경로 검증 제외. D/ACCEL 콘솔 시험도 성공 없음; emulator 종료 발생/원인미확인, 재부팅 P0 복구. geo nmea OK와 SDK 수신/갱신 분리. 최종 assembleDebug+lintDebug 종료0, 0errors/2warnings. 중간lint MissingPermission1건을 명시적권한검사/SecurityException처리로 수정. 최종실행증거는 권한검사 추가직전 APK, 추가후에는 빌드/lint만 검증. 원본/집계/검수: evidence/pleos-navi-drive-*. Native모의주행/도로경로/실차/ETA정확도 미검증.
+
+
+## 2026-11-02 · 기존 차량 시안 실제 재생 통합
+앱 디자인 채팅 수정본을 demo/cockpit*로 실제 재생 연결, 기본/SDK URL 반영, 기존 실험 /lab 보존. Node87/87 및 실제 IAB 재생/18초 저장이어듣기/자연소진/명시종료 확인. headless audio clock0 실패와 emulator 미연결 재수신실패 별도 기록. DotR004 공식 시계 계약 확보실패, 실제 좌표 gate 유지. ClaudeHaiku 고정검수/지적처리. 상세 J1_COCKPIT_INTEGRATION_2026-11-02.md, evidence/j1-cockpit-integration-*.
+
+## 2026-11-02 · 내비 문의 준비와 ETA 격리 회귀
+node --test experiments/journey-context/eta-isolation.test.mjs experiments/journey-context/sdk-status.test.mjs 종료0, 7/7통과. 실제 상태 bridge에 ETA/거리/중첩 navigation 필드가 들어오면 거부되며 거부 입력으로 수신 TTL이 연장되지 않음을 검증. 정상 반복 상태 수신도 추천에는 취향만 사용하는 기존 경계를 확인. production 코드 수정 없음. 단위 시험이며 실제 ETA 신선도·내비 모의주행 성공 증거 아님. evidence/pleos-eta-isolation-tests-2026-11-02.txt. git diff --check 종료0(CRLF 경고). 이번 에뮬레이터 재실행 없음.
+
+## 2026-11-02 · 합성 운행 연결 검증
+node --test experiments/journey-context/*.test.mjs 종료0,109/109. 신규20개는 공유경로/분기/이탈/만료/선택직전신선도/단절/도착/철회/세대분리/source거부/프로필격리/교체시간·예산/새듣기복구/CLI출력을 검사. node experiments/journey-context/run-simulation.mjs 합성16이벤트 JSON. 초기 stale-consume 경계1실패 후 수정; 로그 work/j1-simulation/stale-consume-before.txt. Claude2회 읽기검수 종료0, 실행은 Codex. 증거 evidence/j1-simulation-{tests,replay,review,followup,manifest}-2026-11-02.*. 실제 오디오 재생·SDK추천·실차 검증이 아님.
+
+## 2026-11-02 · Android 기본 듣기
+`gradle.bat -p experiments/j1-listening --no-daemon assembleDebug assembleDebugAndroidTest lintDebug` 종료0; lint0오류4경고. `javac`/`java -ea ListeningStateTest` 종료0. `adb -s emulator-5556 shell am instrument --user 10 -w org.example.j1listening.test/android.test.InstrumentationTestRunner` 최종8/8,114.766초. WAV4편실제자연완료·시스템GAIN경쟁loss와 콜백직접주입시험을구분. 실제HOME·프로세스재시작·저장복원/명시종료검증은process-restart.json(2520→7358→0ms). apksigner검증성공, aapt요청권한없음, 음원4개원본해시동일/ZIP_STORED. 앱화면PNG시각검사. 초기시험도구오류와수정/미실행/Claude대응은 J1_ANDROID_LISTENING_2026-11-02.md. 증거 evidence/j1-android-listening-* 및 work/j1-android-listening/.
+
+
+## 2026-11-02 · 추천 정책 v1
+node --test experiments/journey-context/*.test.mjs 종료0,125/125. 기존109+신규16. node experiments/journey-context/recommendation-scenarios.mjs 종료0,합성7사례. node work/recommendation-v1/compatibility.mjs 종료0,기존 정상입력36개 선택ID/점수/mode 일치. core HTTP 실제파일 일치, 추정기/큐/세션 텍스트 불변. evidence/j1-recommendation-{tests,scenarios,run,compatibility}-2026-11-02.*. 실제브라우저 소리재생/Android빌드/SDK/실차 이번 미실행. Haiku2회검수와 지적대응은 전용설계문서. 초기 증거수집 콘솔 인코딩오류 후 UTF-8로 수정·완료.
+
+## 2026-11-02 · Android 합성 운행 연결 최종
+node experiments/j1-listening/generate-journey-fixture.mjs 후 javac/java 교차364/경계37/기존상태 통과. node --test experiments/journey-context/*.test.mjs 125/125. gradle.bat -p experiments/j1-listening --no-daemon assembleDebug assembleDebugAndroidTest lintDebug 종료0,0errors2warnings. 최종 am instrument --user 10 -w ... 14/14,159.487초. JourneyProcessTest#testPrepareCheckpoint, 실제am force-stop, #testRestoreCheckpoint 각각1/1:1529ms저장/무음복원/명시재개2882ms/종료0. source/main 및 APK는 최종14개와 일치, 추가process시험클래스만 후속 빌드.
+서명 apksigner verify 성공/기존키, aapt 요청권한없음, WAV4개 원본해시일치. 외부UI dump idle 최초실패 수정; 이후 터치시험은 Settings/Gleo 표시와 J1 UI hierarchy 불일치로offset0 실패하여 중단. instrumentation process검증과 실제HOME터치검증을 혼동하지 않음. 실제스피커·내비공존·실차·SDKclock·ETA·최종release 미실행/차단. 상세 J1_ANDROID_JOURNEY_2026-11-02.md, 원문 evidence/j1-android-journey-*.

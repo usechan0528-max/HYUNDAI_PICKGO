@@ -1,0 +1,32 @@
+[
+  {
+    "test": "extra-field-rejected",
+    "http": 400,
+    "passed": true
+  },
+  {
+    "test": "origin-rejected",
+    "http": 403,
+    "passed": true
+  },
+  {
+    "test": "content-type-rejected",
+    "http": 403,
+    "passed": true
+  },
+  {
+    "test": "oversize-rejected",
+    "http": 413,
+    "passed": true
+  },
+  {
+    "test": "host-rejected",
+    "http": 403,
+    "passed": true
+  },
+  {
+    "test": "invalid-json-rejected",
+    "http": 400,
+    "passed": true
+  }
+]

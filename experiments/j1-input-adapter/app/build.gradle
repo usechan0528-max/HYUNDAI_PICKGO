@@ -1,0 +1,19 @@
+plugins { id 'com.android.application' }
+android {
+    namespace 'org.example.j1input'
+    compileSdk 34
+    defaultConfig {
+        applicationId 'org.example.j1input'
+        minSdk 28
+        targetSdk 34
+        versionCode 1
+        versionName '0.1'
+    }
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+}
+dependencies {
+    implementation 'ai.pleos.playground:FusedLocation:1.1.3'
+}

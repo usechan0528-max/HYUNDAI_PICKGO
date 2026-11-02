@@ -1,0 +1,108 @@
+{
+  "date": "2026-11-02",
+  "baseline_commit": "1471d0ca8c09e6be8cb3cf8030ea0d7600274c52",
+  "node": "v24.19.0",
+  "reviews": [
+    {
+      "stage": "initial",
+      "session_id": "a3540f58-c568-43fa-866f-cb8207eb454e",
+      "modelUsage": {
+        "claude-haiku-5-5": {
+          "inputTokens": 2,
+          "outputTokens": 17474,
+          "cacheReadInputTokens": 649,
+          "cacheCreationInputTokens": 11440,
+          "webSearchRequests": 0,
+          "costUSD": 0.01103169,
+          "contextWindow": 1000000,
+          "maxOutputTokens": 128000,
+          "thinkingTokens": 15497,
+          "canonicalModel": "claude-haiku-5-5",
+          "provider": "firstParty",
+          "costBasis": "list"
+        }
+      },
+      "is_error": false,
+      "result": "## Read-only review: J1 synthetic audio demo\n\nI did not run tools or edit files. These findings come from reading `app.mjs`, `listening-store.mjs`, and `core.mjs`. I did not execute anything, so each defect below needs a DOM-level regression test to confirm.\n\n### Findings (ordered by severity)\n\n**1. High: owner checkpoint is erased by a profile toggle followed by a taste change (D-015: guest must not consume the owner checkpoint).**\n- Symbols: the `profile` change listener (`resumePending=null`), the `taste` change listener (`savingAllowed=...; persistListening()`), `persistListening`.\n- Path: load with an owner checkpoint in storage → switch to guest (the profile listener nulls `resumePending`) → switch back to owner → change taste. The taste listener sets `savingAllowed=true`, then `persistListening` computes `checkpoint = resumePending = null` and `saveListening` overwrites `STORAGE_KEY`. The owner checkpoint is gone from storage. Guest selection is what discards it.\n- Minimal fix: stop nulling `resumePending` on profile change. Load the stored checkpoint once in `reset`, keep it in a separate variable, and derive `resumePending` from it only when `profile === 'owner'`. Only `startNext` consumption and `ended` (completed) should clear it.\n- Regression: seed storage with `{checkpoint:{id,seconds:30,duration:120}}`, switch guest→owner, change taste, and assert the stored checkpoint is unchanged. Then start a guest session and assert storage is untouched and `resumeSeconds` is 0.\n\n**2. High: an explicit pause during loading is dropped, and the UI reports \"playing\" while paused (D-015: explicit stop/pause honored).**\n- Symbols: the `pause` listener (acts only when `playbackPhase==='playing'`), the `play` listener (returns early on `loading`), and the code in `startNext` after `await audio.play()` that unconditionally sets `playbackPhase='playing'`.\n- Path: the user pauses through native controls while `loading` (before `play()` resolves or during the resume seek). The pause is ignored. `startNext` then sets `playing` and \"자동 이어듣기 중\", while `audio.paused` is true. `autoContinue` stays true and the stop button stays enabled.\n- Minimal fix: at the end of `startNext`, set `playbackPhase = audio.paused ? 'paused' : 'playing'` and show the matching status text. Leave `autoContinue` alone so the user's next play resumes.\n- Regression: stub `audio.play()` with a deferred promise, dispatch `pause` while loading, resolve play, and assert phase `paused` and the 일시정지 text. Then dispatch `play` and assert `playing`.\n\n**3. Medium: a failed resume strands the UI, and the seek happens after playback has started.**\n- Symbols: the `catch` block in `startNext`, `resumePending`, `session.queue.consumeNext()`.\n- Path: `resumeSeconds` is validated only after `play()` resolves. A failed resume leaves `currentId` set, `session.queue.next` null, and `resumePending` still pointing at the same id. The play button stays disabled, yet the status text tells the user to press it. The seek also begins after playback has already started from 0, which causes an audible restart before the jump.\n- Minimal fix: in the resume-failure path, set `resumePending=null`, set `currentId=null`, and call `update()` to refill the queue. Better still, await `loadedmetadata` and set `currentTime` before `play()`.\n- Regression: stub duration 10 with a checkpoint at 9.x seconds. Assert the play button is enabled after `update()`, and that the stored checkpoint is cleared.\n\n**4. Low–Medium: events from a stopped load are not scoped to the current generation.**\n- Symbols: the `error` listener (sets `playbackPhase='error'`, `autoContinue=false`, and the status text with no generation check), the `stop` listener, the `play` listener.\n- Path: stop during loading leaves `src` set. If that fetch later fails, the `error` listener overwrites the \"종료했습니다\" message. A native play after stop also moves the phase to `playing` while the stop button remains disabled.\n- Minimal fix: in the `error` listener, `if(playbackPhase==='stopped')return;`. Alternatively, have `stop` call `removeAttribute('src')` and `load()`, but that changes native-play behavior, so I'd prefer the guard.\n- Regression: stop during loading, dispatch `error`, and assert the stopped status text is still shown.\n\n### Suspicions checked\n- **Profile `update()` runs before `resumePending` is cleared:** the ordering is real, but it is harmless. `update()` gates the resume override on `profile==='owner'`. The actual defect is the clearing itself (finding 1).\n- **Seeking after play:** real (finding 3).\n- **Stopped loading emitting later events:** partly real (finding 4). The pending `play()` promise is rejected by `pause()`, and the generation check neutralizes it. The seek timer is cleared properly.\n\n### Held as expected\n- `reset(true)` removes only `STORAGE_KEY` via `clearListening`.\n- Guest playback never writes storage, since `persistListening` checks `profile` and `startNext` sets `savingAllowed` false for guest. The only storage write path that discards data is finding 1, and it is an owner write.\n\n### Harness gap\nThe 38 Node tests cover the pure modules but not `app.mjs`. Findings 1–4 need a small DOM harness with a stubbed `audio` element that exposes a deferred `play()`, `duration`, and manually dispatched `seeked`, `pause`, `play`, and `error` events. Without it, none of these fixes can be verified by the current test suite.",
+      "input_sha256": "87872ae5eb3020e690ecbd5ea8d7d75bdb1a598275a419db5d22ac39bb5a83b4"
+    },
+    {
+      "stage": "followup",
+      "session_id": "a3540f58-c568-43fa-866f-cb8207eb454e",
+      "modelUsage": {
+        "claude-haiku-5-5": {
+          "inputTokens": 4,
+          "outputTokens": 31754,
+          "thinkingTokens": 28135,
+          "cacheReadInputTokens": 12738,
+          "cacheCreationInputTokens": 36989,
+          "webSearchRequests": 0,
+          "costUSD": 0.02340258,
+          "contextWindow": 1000000,
+          "maxOutputTokens": 128000,
+          "canonicalModel": "claude-haiku-5-5",
+          "provider": "firstParty",
+          "costBasis": "list"
+        }
+      },
+      "is_error": false,
+      "result": "## Follow-up review: J1 demo fixes\n\nStatic reading only, no tools. The changed code paths below are verified by reading. Browser-only items are hypotheses that the fake `Audio` cannot exercise. I found no P1 issues in the reviewed paths.\n\nYou're right about finding 3. `update()` refills `session.queue.next` from the catalog. My claim was too strong. The accurate version is that `next` stays null until the next `update()`, which runs only on a control `change` event. Nothing calls it after a failed start, so the play button stays disabled until the user touches a control.\n\n### P2-1: Failed resume keeps a stale checkpoint, and it can be re-saved (verified)\n- **Path:** `startNext` `catch` after a resume failure (`outside media`, `waitForMedia` error or timeout) does not clear `resumePending`. The `error` listener does not clear it either. Two things keep the checkpoint alive:\n  - `persistListening` returns `resumePending` first, so `pagehide` writes the same id and seconds back to storage.\n  - Even if `resumePending` were cleared, the `currentId && audio.readyState>0` branch would re-save `{id:X, seconds:<failure position>}` on `pagehide`, because `currentId` stays set after the failure.\n- **Impact:** a deterministic failure (missing file, duration mismatch) recurs on every page load. The owner gets a resume offer for content that cannot play.\n- **Minimal fix:** on non-transient failures (`resume outside media`, `error` event), set `resumePending=null` and a `discardCheckpoint` flag, then call `persistListening` with an explicit discard. Keep the checkpoint for transient seek timeouts. Also make `persistListening` skip the `currentId` branch once playback has failed.\n- **Retry:** the play button label is `다음으로` whenever `currentId` is set, so the failed item cannot be retried from the button. The error text tells the user to press 오디오 재생, but no such button is wired in this code. The user can only retry through native audio controls or after a control change refills the queue.\n- **Regression:** seed a checkpoint with `seconds >= duration-1` or a failing `error`, start, then assert storage has no checkpoint after `pagehide` and that the reload offers no resume.\n\n### P2-2: Owner completion and pagehide writes depend on the selector, not on the playing profile (verified)\n- **Path:** owner plays X and the profile listener sets `savingAllowed=false`. The user switches to guest and back to owner, which does not restore `savingAllowed`. When X ends, `persistListening(true)` returns early, so the owner's last timeupdate checkpoint (e.g., X at 12s) remains. The next visit offers to resume a finished item.\n- The same gate also drops the final `pagehide` position of owner content while the selector reads guest.\n- **Minimal fix:** decide write ownership from `playbackProfile`, not `$('profile').value`. Guest-started content never writes owner state, and owner content still clears its own checkpoint on completion. Keep the selector only for blocking writes when `playbackProfile` is guest.\n- **Regression:** owner starts X, switch guest→owner, `finish()`, then assert the stored checkpoint is cleared. Add a guest-content case asserting the owner checkpoint is unchanged.\n\n### Browser-only hypotheses (not verifiable with the fake Audio)\n- **Autoplay rejection on auto-advance:** `ended` → `startNext` consumes the next item before `play()`. If the browser rejects that play, the catch leaves `next` null and the button disabled. Recovery needs a control change or native controls. Chrome's sticky activation probably allows this, but it should be checked in a real browser.\n- **`waitForMedia` calls `audio.load()` after `src` was set:** this may re-request the file, and on slow connections the 5-second `loadedmetadata` timeout could fire on a cold resume. This is a performance and flakiness concern, not a logic fault.\n\n### Held as expected\n- Stop, reset, and profile change during loading increment `playGeneration` and call `cancelMediaWait`, so the waiting `startNext` returns on rejection.\n- Reset sets `playbackPhase='idle'` before `removeAttribute('src')`, so the `error` listener ignores the resulting event.\n- The resume seek completes before `play()`.\n- Guest content never writes owner state through `persistListening`.\n- `reset(true)` clears only `STORAGE_KEY`. The copy says a taste change resumes saving, so the next taste change recreates the demo record. That matches the copy, so I'm not counting it as a defect, but confirm it is intended.\n\n### Test gaps\n- No test for a failed resume followed by reload (P2-1).\n- No test for owner content completing after a profile toggle (P2-2).\n- No test for the error-state retry path.\n- No test for a deterministic failure recurring across loads.",
+      "input_sha256": "a775b70560065161a90ec9e5efd423bb2d52c3891938e107d938477d05c20674"
+    },
+    {
+      "stage": "final",
+      "session_id": "a3540f58-c568-43fa-866f-cb8207eb454e",
+      "modelUsage": {
+        "claude-haiku-5-5": {
+          "inputTokens": 6,
+          "outputTokens": 35114,
+          "thinkingTokens": 30761,
+          "cacheReadInputTokens": 50376,
+          "cacheCreationInputTokens": 60226,
+          "webSearchRequests": 0,
+          "costUSD": 0.030106559999999997,
+          "contextWindow": 1000000,
+          "maxOutputTokens": 128000,
+          "canonicalModel": "claude-haiku-5-5",
+          "provider": "firstParty",
+          "costBasis": "list"
+        }
+      },
+      "is_error": false,
+      "result": "## Bounded review: P2-1 and P2-2 fixes\n\nStatic reading only. I'm accepting your correction that `update()` runs before `await audio.play()`, so the queue is filled before a failure and the earlier next-null claim is withdrawn. The P2-1 and P2-2 fixes hold for the cases they target. Two residual issues remain, both P2.\n\n**P2-A: an unrelated media error erases the owner's stored checkpoint (verified by reading).**\n- Path: the owner has stored checkpoint X. `startNext` clears `resumePending` for a new item Y, but the storage still holds X. If Y then raises an `error` event, the `error` listener calls `discardResume()`, which sets `checkpointDiscarded=true` without checking the id. On the next `persistListening`, the owner's `taste` change or `pagehide` writes `checkpoint:null`, erasing X even though X never failed.\n- Fix: track the discarded id, for example `discardResume(id)`. Set `checkpointDiscarded` only when `id===resumePending?.id` or the failed item matches the checkpoint. Otherwise only the `error` state changes.\n- Regression: store X, play Y under owner, dispatch `error` on Y, then change taste and assert X survives.\n\n**P2-B: a taste change during guest-started playback writes owner storage (verified by reading).**\n- The `taste` listener sets `savingAllowed = selector==='owner'`, which ignores `playbackProfile`. With the selector on owner and guest-started playback running, `persistListening` writes the taste field to owner storage. The stored checkpoint is preserved, so the checkpoint test passes, but the write still happens. The profile listener deliberately avoids this, so the two listeners disagree.\n- Fix: use the same predicate in both listeners, `owner && (playbackProfile===null || playbackProfile==='owner')`. This keeps the documented no-saving-for-guest rule while still allowing the pre-playback taste save.\n- Regression: start as guest, return the selector to owner, change taste, and assert storage is byte-identical.\n\n**Test gaps:** neither case has a test. The guest-playhead test checks the checkpoint only, not the taste field.",
+      "input_sha256": "bcdf197580fb94f00a7b6f948d1309603ee9da29e1490fe02481857bbf359a51"
+    }
+  ],
+  "final_files": {
+    "experiments/journey-context/demo/app.mjs": "992a42c628dd022a3c64030ba060926d1863c74bf1f197176c7132279f2b46d2",
+    "experiments/journey-context/playback.test.mjs": "3bef5042efefc9a796b1762586d03e49705fc0305abaecdd9999166f0197f5de"
+  },
+  "tests": {
+    "command": "node --test experiments/journey-context/*.test.mjs",
+    "pass": 54,
+    "fail": 0,
+    "baseline": 38,
+    "regressions_added": 16
+  },
+  "browser": {
+    "intermediate_resume": {
+      "stopped_seconds": 13.323478,
+      "resumed_seconds": 13.433496,
+      "paused": false,
+      "src": "/audio/story.wav"
+    },
+    "after_second_fix": {
+      "stopped_seconds": 1.276889,
+      "resumed_seconds": 1.424885,
+      "paused": false,
+      "src": "/audio/story2.wav"
+    },
+    "final_patch": "storage-only final fixes covered by Node tests; final page reload observed, no full browser rerun"
+  },
+  "limits": [
+    "fake media tests do not certify browser policies",
+    "final two narrow P2 fixes not sent for a fourth Claude review",
+    "no SDK, Android, real vehicle or user-effect testing",
+    "no change to prior 76.75 design score"
+  ]
+}

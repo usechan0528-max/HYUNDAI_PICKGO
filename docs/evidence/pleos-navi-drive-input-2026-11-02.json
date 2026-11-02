@@ -1,0 +1,79 @@
+[
+  {
+    "step": 0,
+    "hostMonotonic": 1227665.14,
+    "nmeaUtc": "111400",
+    "consoleCommandsAccepted": 3,
+    "sdkAcceptance": "not asserted"
+  },
+  {
+    "step": 1,
+    "hostMonotonic": 1227666.593,
+    "nmeaUtc": "111402",
+    "consoleCommandsAccepted": 3,
+    "sdkAcceptance": "not asserted"
+  },
+  {
+    "step": 2,
+    "hostMonotonic": 1227667.968,
+    "nmeaUtc": "111403",
+    "consoleCommandsAccepted": 3,
+    "sdkAcceptance": "not asserted"
+  },
+  {
+    "step": 3,
+    "hostMonotonic": 1227669.281,
+    "nmeaUtc": "111405",
+    "consoleCommandsAccepted": 3,
+    "sdkAcceptance": "not asserted"
+  },
+  {
+    "step": 4,
+    "hostMonotonic": 1227670.64,
+    "nmeaUtc": "111406",
+    "consoleCommandsAccepted": 3,
+    "sdkAcceptance": "not asserted"
+  },
+  {
+    "step": 5,
+    "hostMonotonic": 1227672.031,
+    "nmeaUtc": "111407",
+    "consoleCommandsAccepted": 3,
+    "sdkAcceptance": "not asserted"
+  },
+  {
+    "step": 6,
+    "hostMonotonic": 1227673.5,
+    "nmeaUtc": "111409",
+    "consoleCommandsAccepted": 3,
+    "sdkAcceptance": "not asserted"
+  },
+  {
+    "step": 7,
+    "hostMonotonic": 1227675.062,
+    "nmeaUtc": "111410",
+    "consoleCommandsAccepted": 3,
+    "sdkAcceptance": "not asserted"
+  },
+  {
+    "step": 8,
+    "hostMonotonic": 1227676.484,
+    "nmeaUtc": "111412",
+    "consoleCommandsAccepted": 3,
+    "sdkAcceptance": "not asserted"
+  },
+  {
+    "step": 9,
+    "hostMonotonic": 1227677.859,
+    "nmeaUtc": "111413",
+    "consoleCommandsAccepted": 3,
+    "sdkAcceptance": "not asserted"
+  },
+  {
+    "step": 10,
+    "hostMonotonic": 1227679.296,
+    "nmeaUtc": "111415",
+    "consoleCommandsAccepted": 3,
+    "sdkAcceptance": "not asserted"
+  }
+]

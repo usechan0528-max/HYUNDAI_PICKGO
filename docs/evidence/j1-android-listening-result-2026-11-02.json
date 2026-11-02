@@ -1,0 +1,88 @@
+{
+  "apk": "output\\J1_Android_Listening_0.1.0_debug.apk",
+  "apk_sha256": "2fbd894484d7958537bf3c46b4c90db8bd1f13d27cd2d396ba77a6617439544f",
+  "apk_bytes": 7865832,
+  "sources": {
+    "experiments\\j1-listening\\.gitignore": "838655f2e91bf2cc39b78e25f41b3706543530eeaca3c710e323d9c7fa5619ca",
+    "experiments\\j1-listening\\build.gradle": "8ebf0602839be8fd4c06f07a93e45da6b4a04444fa1b38df8b9def9c1b5c8032",
+    "experiments\\j1-listening\\ListeningStateTest.java": "d33bc28eef420ea153f5be838fee260d87bdbd116e3f36960f3bb6495e99f776",
+    "experiments\\j1-listening\\README.md": "3489bffa2f58e14a4f7ec902cf78b2f03f3a2a28884582e3d8b04c6b8fa6ff72",
+    "experiments\\j1-listening\\settings.gradle": "e49af7de00b71f0e7e7245404cefe72b396567ba9a5b9c5ce016ccebe1e23771",
+    "experiments\\j1-listening\\app\\build.gradle": "9ac0c38a04fc808af81c4a1c95af6cb42c6c9b74f1f5943b78004cd6271c49e5",
+    "experiments\\j1-listening\\app\\src\\androidTest\\java\\org\\example\\j1listening\\ListeningTest.java": "bc1b2a110a417d484c84346c64ee3dacc96adf83ed8e1eb95fde1efdb6fb3a1b",
+    "experiments\\j1-listening\\app\\src\\main\\AndroidManifest.xml": "a30801ec7c30ba437f1baf592a3532fa7f31adf70a9ac53125800eeadff64a73",
+    "experiments\\j1-listening\\app\\src\\main\\assets\\NOTICE.txt": "094eec677fdf449ff1b0264b051108e44a6d562fe736bd8574dd0ae28bca4d4f",
+    "experiments\\j1-listening\\app\\src\\main\\assets\\fonts\\Inter.ttf": "29160a80ff49ddcab2c97711247e08b1fab27a484a329ce8b813d820dc559031",
+    "experiments\\j1-listening\\app\\src\\main\\assets\\fonts\\OFL.txt": "5b9321a4298cfeb6b34354164a1c3afc3db114569984c502b9b35d988fd58c57",
+    "experiments\\j1-listening\\app\\src\\main\\assets\\licenses\\Supertonic-MIT.txt": "0dfe0d0ba84416fe3879d9a34f4909d8d0137c78d1e95834177b0414ac096fa2",
+    "experiments\\j1-listening\\app\\src\\main\\assets\\licenses\\Supertonic-SDK-1.3.1-MIT.txt": "f41cb0ff617e2ed634215f3e62f7b33b3dc02b079c6379a2f1a9c7ce7bd84c03",
+    "experiments\\j1-listening\\app\\src\\main\\assets\\licenses\\Supertonic3-OpenRAIL-M.txt": "0d944a9110fed9a9602d60e0423a272903e7bd21ab060490774efc77c2275e9f",
+    "experiments\\j1-listening\\app\\src\\main\\java\\org\\example\\j1listening\\ListeningActivity.java": "45ffd4e6c56c241d5d01471ecf7a4099c3fc5311b3e311c555b847385f3aa9ab",
+    "experiments\\j1-listening\\app\\src\\main\\java\\org\\example\\j1listening\\ListeningState.java": "55db3c88ca06820101c4bd0cec721570a1cbdfc6c6fe6c6ff9dff4f6375414d7",
+    "experiments\\j1-listening\\app\\src\\main\\res\\drawable\\ic_listen.xml": "336f690f55671312a02b65bfdfd05e7403c7d239fd7f580566ab0917933310b6",
+    "experiments\\j1-listening\\app\\src\\main\\res\\raw\\pause.wav": "818a01f4258f46fbce8d3a106e27258b31ebb44c9bd9aa9ef7e47cfb2a0d6e8a",
+    "experiments\\j1-listening\\app\\src\\main\\res\\raw\\pause2.wav": "9dc33ae5de626edace81128c8d8dc3462e6e9233b4a71a3f5d7fec02cec02a97",
+    "experiments\\j1-listening\\app\\src\\main\\res\\raw\\story.wav": "df48a44af2e5500b271b14dd35e244b7af37ce523e7bf19bb61f0095f7bc5fec",
+    "experiments\\j1-listening\\app\\src\\main\\res\\raw\\story2.wav": "3fe829ed7c4cb1ea399d13611178a4d3bab1c9110009b4250e9ce88101a351e9",
+    "experiments\\j1-listening\\app\\src\\main\\res\\xml\\extraction_rules.xml": "ae35849d9ca27241f4481e5785aaf5fa797ef14209574beb1941af15e29f25a5"
+  },
+  "audio": {
+    "story": {
+      "sha256": "df48a44af2e5500b271b14dd35e244b7af37ce523e7bf19bb61f0095f7bc5fec",
+      "source_equal": true,
+      "stored_uncompressed": true,
+      "seconds": 22.580045351473924
+    },
+    "story2": {
+      "sha256": "3fe829ed7c4cb1ea399d13611178a4d3bab1c9110009b4250e9ce88101a351e9",
+      "source_equal": true,
+      "stored_uncompressed": true,
+      "seconds": 20.072403628117915
+    },
+    "pause": {
+      "sha256": "818a01f4258f46fbce8d3a106e27258b31ebb44c9bd9aa9ef7e47cfb2a0d6e8a",
+      "source_equal": true,
+      "stored_uncompressed": true,
+      "seconds": 20.480589569160998
+    },
+    "pause2": {
+      "sha256": "9dc33ae5de626edace81128c8d8dc3462e6e9233b4a71a3f5d7fec02cec02a97",
+      "source_equal": true,
+      "stored_uncompressed": true,
+      "seconds": 19.92528344671202
+    }
+  },
+  "tests": {
+    "instrumentation": 8,
+    "failures": 0,
+    "elapsed_seconds": 114.766
+  },
+  "process_restart": {
+    "background_saved_ms": 2520,
+    "resume_paused_ms": 7358,
+    "restart_no_autoplay": true,
+    "explicit_stop_cleared": true,
+    "user": 10
+  },
+  "plan-review": {
+    "session_id": "745a1dec-bfee-4bca-b89a-2e0e3a9f5511",
+    "is_error": false,
+    "modelUsage": [
+      "claude-opus-5-5"
+    ]
+  },
+  "review": {
+    "session_id": "f8c3723f-a429-4dfe-8684-1264ab3fd17d",
+    "is_error": false,
+    "modelUsage": [
+      "claude-haiku-5-5"
+    ]
+  },
+  "followup": {
+    "session_id": "22a77693-c919-41be-9d9b-78af33d0bb46",
+    "is_error": false,
+    "modelUsage": [
+      "claude-haiku-5-5"
+    ]
+  }
+}

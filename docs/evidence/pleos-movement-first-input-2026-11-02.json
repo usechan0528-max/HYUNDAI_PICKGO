@@ -1,0 +1,79 @@
+[
+  {
+    "fixture": 0,
+    "hostMonotonic": 1224337.078,
+    "exitCode": 0,
+    "stdout": "OK",
+    "stderr": ""
+  },
+  {
+    "fixture": 1,
+    "hostMonotonic": 1224345.187,
+    "exitCode": 0,
+    "stdout": "OK",
+    "stderr": ""
+  },
+  {
+    "fixture": 2,
+    "hostMonotonic": 1224353.328,
+    "exitCode": 0,
+    "stdout": "OK",
+    "stderr": ""
+  },
+  {
+    "fixture": 3,
+    "hostMonotonic": 1224361.515,
+    "exitCode": 0,
+    "stdout": "OK",
+    "stderr": ""
+  },
+  {
+    "fixture": 4,
+    "hostMonotonic": 1224369.656,
+    "exitCode": 0,
+    "stdout": "OK",
+    "stderr": ""
+  },
+  {
+    "fixture": 5,
+    "hostMonotonic": 1224377.75,
+    "exitCode": 0,
+    "stdout": "OK",
+    "stderr": ""
+  },
+  {
+    "fixture": 6,
+    "hostMonotonic": 1224385.828,
+    "exitCode": 0,
+    "stdout": "OK",
+    "stderr": ""
+  },
+  {
+    "fixture": 7,
+    "hostMonotonic": 1224393.921,
+    "exitCode": 0,
+    "stdout": "OK",
+    "stderr": ""
+  },
+  {
+    "fixture": 8,
+    "hostMonotonic": 1224402.046,
+    "exitCode": 0,
+    "stdout": "OK",
+    "stderr": ""
+  },
+  {
+    "fixture": 9,
+    "hostMonotonic": 1224410.187,
+    "exitCode": 0,
+    "stdout": "OK",
+    "stderr": ""
+  },
+  {
+    "fixture": 10,
+    "hostMonotonic": 1224418.39,
+    "exitCode": 0,
+    "stdout": "OK",
+    "stderr": ""
+  }
+]

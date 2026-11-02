@@ -1,0 +1,8 @@
+
+org.example.j1listening.ListeningTest:........
+Test results for InstrumentationTestRunner=........
+Time: 114.766
+
+OK (8 tests)
+
+

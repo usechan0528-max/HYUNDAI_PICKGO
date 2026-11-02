@@ -1,0 +1,82 @@
+{
+  "environment": "Pleos 2.1.0 API34 emulator-5556; actual SDK services, synthetic GPS",
+  "fusedSdk": "1.1.3",
+  "naviSdk": "3.0.5",
+  "runs": {
+    "first": {
+      "logSha256": "eb0baadc4db521655e9fff7406a681000765c770c8e84d921974315f714f0047",
+      "observationSpanSeconds": 239.415,
+      "fusedSamples": 186,
+      "fusedChanges": 11,
+      "fusedMatchedFixtures": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10
+      ],
+      "naviLocationSamples": 0,
+      "naviLocationChanges": 0,
+      "naviMatchedFixtures": [],
+      "destinationSamples": 37,
+      "destinationUniqueRawTimes": [
+        60
+      ],
+      "destinationTimeChanges": 0,
+      "routeStates": [
+        [
+          "ROUTE_GUIDING",
+          "false"
+        ]
+      ],
+      "errors": []
+    },
+    "second": {
+      "logSha256": "1b93b3f86be22f9d75eac63c3667bb47c580f646ea1337e798b23828775f2f49",
+      "observationSpanSeconds": 112.42,
+      "fusedSamples": 89,
+      "fusedChanges": 11,
+      "fusedMatchedFixtures": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10
+      ],
+      "naviLocationSamples": 24,
+      "naviLocationChanges": 0,
+      "naviMatchedFixtures": [],
+      "destinationSamples": 24,
+      "destinationUniqueRawTimes": [
+        60
+      ],
+      "destinationTimeChanges": 0,
+      "routeStates": [
+        [
+          "ROUTE_GUIDING",
+          "false"
+        ]
+      ],
+      "errors": []
+    }
+  },
+  "conclusion": "Fused movement confirmed; navigation location and ETA changes NOT confirmed.",
+  "limits": [
+    "Synthetic straight path, not verified road route; no vehicle dynamics test.",
+    "First run did not compare navigation coordinates.",
+    "No real vehicle or ETA accuracy verification."
+  ],
+  "apkSha256": "522063cf793361f230a5a9231236920a3dd80d2aa6815e9d85883121f15b08ce"
+}

@@ -1,0 +1,110 @@
+--------- beginning of main
+11-02 01:58:18.863  5390  5390 I PleosProbe: 78212 START
+11-02 01:58:18.925  5390  5390 I PleosProbe: 78274 LOCATION_SUPPORTED=true
+11-02 01:58:18.925  5390  5390 I PleosProbe: 78274 LOCATION_SETUP_ERROR SecurityException
+11-02 01:58:19.509  5390  5390 I PleosProbe: 78858 NAVI_CONNECTED
+11-02 01:58:19.511  5390  5390 I PleosProbe: 78860 NAVI_REQUESTED
+11-02 01:58:36.570  5390  5390 I PleosProbe: 95919 START
+11-02 01:58:36.591  5390  5390 I PleosProbe: 95941 LOCATION_SUPPORTED=true
+11-02 01:58:36.593  5390  5390 I PleosProbe: 95942 LOCATION_SETUP_ERROR SecurityException
+11-02 01:58:36.609  5390  5390 I PleosProbe: 95958 NAVI_CONNECTED
+11-02 01:58:36.612  5390  5390 I PleosProbe: 95961 NAVI_REQUESTED
+11-02 01:59:12.643  9610  9610 I PleosProbe: 131992 START
+11-02 01:59:12.704  9610  9610 I PleosProbe: 132054 LOCATION_SUPPORTED=true
+11-02 01:59:12.705  9610  9610 I PleosProbe: 132054 LOCATION_SETUP_ERROR SecurityException
+11-02 01:59:14.487  9610  9610 I PleosProbe: 133837 NAVI_CONNECTED
+11-02 01:59:14.489  9610  9610 I PleosProbe: 133838 NAVI_REQUESTED
+11-02 01:59:20.543  9610  9610 I PleosProbe: 139892 NAVI_NAVIGATION_STATUS present=true
+11-02 01:59:20.684  9610  9610 I PleosProbe: 140033 NAVI_CURRENT_LOCATION present=true
+11-02 01:59:21.553  9610  9610 I PleosProbe: 140902 NAVI_DESTINATION present=true
+11-02 01:59:21.614  9610  9610 I PleosProbe: 140963 NAVI_ROUTE_STATE present=true
+11-02 01:59:36.980 10767 10767 I PleosProbe: 156324 START
+11-02 01:59:36.995 10767 10767 I PleosProbe: 156345 LOCATION_SUPPORTED=true
+11-02 01:59:36.996 10767 10767 I PleosProbe: 156345 LOCATION_REQUESTED
+11-02 01:59:38.140 10767 10767 I PleosProbe: 157489 LOCATION_CALLBACK present=true validCoordinates=true
+11-02 01:59:38.146 10767 10767 I PleosProbe: 157495 LOCATION_CALLBACK present=true validCoordinates=true
+11-02 01:59:38.170 10767 10767 I PleosProbe: 157519 NAVI_CONNECTED
+11-02 01:59:38.177 10767 10767 I PleosProbe: 157522 NAVI_REQUESTED
+11-02 01:59:38.942 10767 10767 I PleosProbe: 158291 LOCATION_CALLBACK present=true validCoordinates=true
+11-02 01:59:38.977 10767 10767 I PleosProbe: 158326 NAVI_ROUTE_STATE present=true
+11-02 01:59:39.037 10767 10767 I PleosProbe: 158386 ROUTE_STATUS mode=SAFE_GUIDING routing=false
+11-02 01:59:39.074 10767 10767 I PleosProbe: 158423 NAVI_CURRENT_LOCATION present=true
+11-02 01:59:39.145 10767 10767 I PleosProbe: 158494 NAVI_DESTINATION present=true
+11-02 01:59:39.755 10767 10767 I PleosProbe: 159104 LOCATION_REQUERY
+11-02 01:59:39.769 10767 10767 I PleosProbe: 159118 LOCATION_CALLBACK present=true validCoordinates=true
+11-02 01:59:39.926 10767 10767 I PleosProbe: 159275 LOCATION_CALLBACK present=true validCoordinates=true
+11-02 01:59:40.942 10767 10767 I PleosProbe: 160291 LOCATION_CALLBACK present=true validCoordinates=true
+11-02 01:59:41.931 10767 10767 I PleosProbe: 161280 LOCATION_CALLBACK present=true validCoordinates=true
+11-02 01:59:43.000 10767 10767 I PleosProbe: 162349 LOCATION_CALLBACK present=true validCoordinates=true
+11-02 01:59:43.942 10767 10767 I PleosProbe: 163291 LOCATION_CALLBACK present=true validCoordinates=true
+11-02 01:59:44.941 10767 10767 I PleosProbe: 164290 LOCATION_CALLBACK present=true validCoordinates=true
+11-02 01:59:45.961 10767 10767 I PleosProbe: 165311 LOCATION_CALLBACK present=true validCoordinates=true
+11-02 01:59:46.939 10767 10767 I PleosProbe: 166288 LOCATION_CALLBACK present=true validCoordinates=true
+11-02 01:59:47.985 10767 10767 I PleosProbe: 167334 LOCATION_CALLBACK present=true validCoordinates=true
+11-02 01:59:49.757 10767 10767 I PleosProbe: 169106 LOCATION_REQUERY
+11-02 01:59:49.782 10767 10767 I PleosProbe: 169131 LOCATION_CALLBACK present=true validCoordinates=true
+11-02 01:59:49.950 10767 10767 I PleosProbe: 169299 LOCATION_CALLBACK present=true validCoordinates=true
+11-02 01:59:50.965 10767 10767 I PleosProbe: 170314 LOCATION_CALLBACK present=true validCoordinates=true
+11-02 01:59:51.969 10767 10767 I PleosProbe: 171318 LOCATION_CALLBACK present=true validCoordinates=true
+11-02 01:59:53.963 10767 10767 I PleosProbe: 173312 LOCATION_CALLBACK present=true validCoordinates=true
+11-02 01:59:54.964 10767 10767 I PleosProbe: 174313 LOCATION_CALLBACK present=true validCoordinates=true
+11-02 01:59:55.963 10767 10767 I PleosProbe: 175312 LOCATION_CALLBACK present=true validCoordinates=true
+11-02 01:59:56.963 10767 10767 I PleosProbe: 176312 LOCATION_CALLBACK present=true validCoordinates=true
+11-02 01:59:57.967 10767 10767 I PleosProbe: 177316 LOCATION_CALLBACK present=true validCoordinates=true
+11-02 01:59:59.966 10767 10767 I PleosProbe: 179315 LOCATION_CALLBACK present=true validCoordinates=true
+11-02 02:00:00.972 10767 10767 I PleosProbe: 180321 LOCATION_CALLBACK present=true validCoordinates=true
+11-02 02:00:02.966 10767 10767 I PleosProbe: 182315 LOCATION_CALLBACK present=true validCoordinates=true
+11-02 02:00:03.969 10767 10767 I PleosProbe: 183318 LOCATION_CALLBACK present=true validCoordinates=true
+11-02 02:00:04.755 10767 10767 I PleosProbe: 184104 LOCATION_REQUERY
+11-02 02:00:04.765 10767 10767 I PleosProbe: 184114 LOCATION_CALLBACK present=true validCoordinates=true
+11-02 02:00:05.971 10767 10767 I PleosProbe: 185320 LOCATION_CALLBACK present=true validCoordinates=true
+11-02 02:00:07.970 10767 10767 I PleosProbe: 187319 LOCATION_CALLBACK present=true validCoordinates=true
+11-02 02:00:08.974 10767 10767 I PleosProbe: 188323 LOCATION_CALLBACK present=true validCoordinates=true
+11-02 02:00:09.971 10767 10767 I PleosProbe: 189320 LOCATION_CALLBACK present=true validCoordinates=true
+11-02 02:00:10.975 10767 10767 I PleosProbe: 190324 LOCATION_CALLBACK present=true validCoordinates=true
+11-02 02:00:12.009 10767 10767 I PleosProbe: 191358 LOCATION_CALLBACK present=true validCoordinates=true
+11-02 02:00:14.017 10767 10767 I PleosProbe: 193366 LOCATION_CALLBACK present=true validCoordinates=true
+11-02 02:00:16.027 10767 10767 I PleosProbe: 195376 LOCATION_CALLBACK present=true validCoordinates=true
+11-02 02:00:18.043 10767 10767 I PleosProbe: 197392 LOCATION_CALLBACK present=true validCoordinates=true
+11-02 02:00:20.040 10767 10767 I PleosProbe: 199389 LOCATION_CALLBACK present=true validCoordinates=true
+11-02 02:00:21.072 10767 10767 I PleosProbe: 200421 LOCATION_CALLBACK present=true validCoordinates=true
+11-02 02:00:23.060 10767 10767 I PleosProbe: 202409 LOCATION_CALLBACK present=true validCoordinates=true
+11-02 02:00:25.091 10767 10767 I PleosProbe: 204440 LOCATION_CALLBACK present=true validCoordinates=true
+11-02 02:00:26.090 10767 10767 I PleosProbe: 205439 LOCATION_CALLBACK present=true validCoordinates=true
+11-02 02:00:27.112 10767 10767 I PleosProbe: 206461 LOCATION_CALLBACK present=true validCoordinates=true
+11-02 02:00:28.118 10767 10767 I PleosProbe: 207467 LOCATION_CALLBACK present=true validCoordinates=true
+11-02 02:00:30.116 10767 10767 I PleosProbe: 209465 LOCATION_CALLBACK present=true validCoordinates=true
+11-02 02:00:31.117 10767 10767 I PleosProbe: 210466 LOCATION_CALLBACK present=true validCoordinates=true
+11-02 02:00:32.137 10767 10767 I PleosProbe: 211486 LOCATION_CALLBACK present=true validCoordinates=true
+11-02 02:00:33.129 10767 10767 I PleosProbe: 212478 LOCATION_CALLBACK present=true validCoordinates=true
+11-02 02:00:35.131 10767 10767 I PleosProbe: 214480 LOCATION_CALLBACK present=true validCoordinates=true
+11-02 02:00:36.123 10767 10767 I PleosProbe: 215472 LOCATION_CALLBACK present=true validCoordinates=true
+11-02 02:00:36.737 10767 10767 I PleosProbe: 216086 OBSERVATION_60S locationCallbacks=49 validLocationCallbacks=49 naviCallbacks=3 (counts do not imply fresh data)
+11-02 02:00:37.127 10767 10767 I PleosProbe: 216476 LOCATION_CALLBACK present=true validCoordinates=true
+11-02 02:00:38.130 10767 10767 I PleosProbe: 217479 LOCATION_CALLBACK present=true validCoordinates=true
+11-02 02:00:40.131 10767 10767 I PleosProbe: 219480 LOCATION_CALLBACK present=true validCoordinates=true
+11-02 02:00:41.151 10767 10767 I PleosProbe: 220500 LOCATION_CALLBACK present=true validCoordinates=true
+11-02 02:00:43.136 10767 10767 I PleosProbe: 222485 LOCATION_CALLBACK present=true validCoordinates=true
+11-02 02:00:44.135 10767 10767 I PleosProbe: 223484 LOCATION_CALLBACK present=true validCoordinates=true
+11-02 02:00:45.161 10767 10767 I PleosProbe: 224510 LOCATION_CALLBACK present=true validCoordinates=true
+11-02 02:00:46.138 10767 10767 I PleosProbe: 225487 LOCATION_CALLBACK present=true validCoordinates=true
+11-02 02:00:47.140 10767 10767 I PleosProbe: 226490 LOCATION_CALLBACK present=true validCoordinates=true
+11-02 02:00:48.154 10767 10767 I PleosProbe: 227503 LOCATION_CALLBACK present=true validCoordinates=true
+11-02 02:00:49.179 10767 10767 I PleosProbe: 228528 LOCATION_CALLBACK present=true validCoordinates=true
+11-02 02:00:50.210 10767 10767 I PleosProbe: 229559 LOCATION_CALLBACK present=true validCoordinates=true
+11-02 02:00:52.179 10767 10767 I PleosProbe: 231527 LOCATION_CALLBACK present=true validCoordinates=true
+11-02 02:00:53.179 10767 10767 I PleosProbe: 232528 LOCATION_CALLBACK present=true validCoordinates=true
+11-02 02:00:54.214 10767 10767 I PleosProbe: 233563 LOCATION_CALLBACK present=true validCoordinates=true
+11-02 02:00:55.228 10767 10767 I PleosProbe: 234577 LOCATION_CALLBACK present=true validCoordinates=true
+11-02 02:00:57.222 10767 10767 I PleosProbe: 236571 LOCATION_CALLBACK present=true validCoordinates=true
+11-02 02:00:58.243 10767 10767 I PleosProbe: 237592 LOCATION_CALLBACK present=true validCoordinates=true
+11-02 02:00:59.244 10767 10767 I PleosProbe: 238593 LOCATION_CALLBACK present=true validCoordinates=true
+11-02 02:01:00.266 10767 10767 I PleosProbe: 239614 LOCATION_CALLBACK present=true validCoordinates=true
+11-02 02:01:02.279 10767 10767 I PleosProbe: 241628 LOCATION_CALLBACK present=true validCoordinates=true
+11-02 02:01:03.241 10767 10767 I PleosProbe: 242590 LOCATION_CALLBACK present=true validCoordinates=true
+11-02 02:01:05.253 10767 10767 I PleosProbe: 244602 LOCATION_CALLBACK present=true validCoordinates=true
+11-02 02:01:07.249 10767 10767 I PleosProbe: 246598 LOCATION_CALLBACK present=true validCoordinates=true
+11-02 02:01:09.245 10767 10767 I PleosProbe: 248594 LOCATION_CALLBACK present=true validCoordinates=true
+11-02 02:01:10.259 10767 10767 I PleosProbe: 249608 LOCATION_CALLBACK present=true validCoordinates=true
+11-02 02:01:12.257 10767 10767 I PleosProbe: 251605 LOCATION_CALLBACK present=true validCoordinates=true
+11-02 02:01:13.274 10767 10767 I PleosProbe: 252623 LOCATION_CALLBACK present=true validCoordinates=true

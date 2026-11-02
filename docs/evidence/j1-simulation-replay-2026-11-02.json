@@ -1,0 +1,397 @@
+{
+  "source": "synthetic",
+  "scope": "offline-policy-replay",
+  "mediaPlayback": false,
+  "sdkValidated": false,
+  "rows": [
+    {
+      "event": "begin",
+      "at": 100,
+      "input": {
+        "accepted": true
+      },
+      "context": {
+        "status": "unknown",
+        "reason": "no-observation",
+        "candidates": [],
+        "purposeHint": null
+      },
+      "proposal": "story",
+      "mode": "taste-only",
+      "current": null,
+      "next": "story",
+      "queuedMode": "taste-only",
+      "changed": true,
+      "replacements": 0
+    },
+    {
+      "event": "point",
+      "at": 200,
+      "input": {
+        "accepted": true,
+        "count": 1
+      },
+      "context": {
+        "status": "hypothesis",
+        "reason": "synthetic-coordinate-alignment",
+        "candidates": [
+          {
+            "id": "work",
+            "purpose": "commute"
+          },
+          {
+            "id": "shop",
+            "purpose": "errand"
+          }
+        ],
+        "purposeHint": null
+      },
+      "proposal": "story",
+      "mode": "journey",
+      "current": null,
+      "next": "story",
+      "queuedMode": "taste-only",
+      "changed": false,
+      "replacements": 0
+    },
+    {
+      "event": "point",
+      "at": 300,
+      "input": {
+        "accepted": true,
+        "count": 2
+      },
+      "context": {
+        "status": "hypothesis",
+        "reason": "synthetic-coordinate-alignment",
+        "candidates": [
+          {
+            "id": "work",
+            "purpose": "commute"
+          },
+          {
+            "id": "shop",
+            "purpose": "errand"
+          }
+        ],
+        "purposeHint": null
+      },
+      "proposal": "story",
+      "mode": "journey",
+      "current": null,
+      "next": "story",
+      "queuedMode": "taste-only",
+      "changed": false,
+      "replacements": 0
+    },
+    {
+      "event": "consume",
+      "at": 301,
+      "input": {
+        "consumed": "story"
+      },
+      "context": {
+        "status": "hypothesis",
+        "reason": "synthetic-coordinate-alignment",
+        "candidates": [
+          {
+            "id": "work",
+            "purpose": "commute"
+          },
+          {
+            "id": "shop",
+            "purpose": "errand"
+          }
+        ],
+        "purposeHint": null
+      },
+      "proposal": "story2",
+      "mode": "journey",
+      "current": "story",
+      "next": "story2",
+      "queuedMode": "journey",
+      "changed": true,
+      "replacements": 0
+    },
+    {
+      "event": "point",
+      "at": 400,
+      "input": {
+        "accepted": true,
+        "count": 3
+      },
+      "context": {
+        "status": "hypothesis",
+        "reason": "synthetic-coordinate-alignment",
+        "candidates": [
+          {
+            "id": "work",
+            "purpose": "commute"
+          }
+        ],
+        "purposeHint": "commute"
+      },
+      "proposal": "pause",
+      "mode": "journey",
+      "current": "story",
+      "next": "story2",
+      "queuedMode": "journey",
+      "changed": false,
+      "replacements": 0
+    },
+    {
+      "event": "point",
+      "at": 30400,
+      "input": {
+        "accepted": true,
+        "count": 4
+      },
+      "context": {
+        "status": "hypothesis",
+        "reason": "synthetic-coordinate-alignment",
+        "candidates": [
+          {
+            "id": "work",
+            "purpose": "commute"
+          }
+        ],
+        "purposeHint": "commute"
+      },
+      "proposal": "pause",
+      "mode": "journey",
+      "current": "story",
+      "next": "story2",
+      "queuedMode": "journey",
+      "changed": false,
+      "replacements": 0
+    },
+    {
+      "event": "point",
+      "at": 60400,
+      "input": {
+        "accepted": true,
+        "count": 5
+      },
+      "context": {
+        "status": "hypothesis",
+        "reason": "synthetic-coordinate-alignment",
+        "candidates": [
+          {
+            "id": "work",
+            "purpose": "commute"
+          }
+        ],
+        "purposeHint": "commute"
+      },
+      "proposal": "pause",
+      "mode": "journey",
+      "current": "story",
+      "next": "pause",
+      "queuedMode": "journey",
+      "changed": true,
+      "replacements": 1
+    },
+    {
+      "event": "point",
+      "at": 60500,
+      "input": {
+        "accepted": true,
+        "count": 6
+      },
+      "context": {
+        "status": "unknown",
+        "reason": "no-pattern",
+        "candidates": [],
+        "purposeHint": null
+      },
+      "proposal": "story2",
+      "mode": "taste-only",
+      "current": "story",
+      "next": null,
+      "queuedMode": null,
+      "changed": false,
+      "replacements": 1
+    },
+    {
+      "event": "disconnect",
+      "at": 60600,
+      "input": null,
+      "context": {
+        "status": "unknown",
+        "reason": "disconnect",
+        "candidates": [],
+        "purposeHint": null
+      },
+      "proposal": "story2",
+      "mode": "taste-only",
+      "current": "story",
+      "next": null,
+      "queuedMode": null,
+      "changed": false,
+      "replacements": 1
+    },
+    {
+      "event": "point",
+      "at": 60700,
+      "input": {
+        "accepted": false,
+        "reason": "inactive-session"
+      },
+      "context": {
+        "status": "unknown",
+        "reason": "disconnect",
+        "candidates": [],
+        "purposeHint": null
+      },
+      "proposal": "story2",
+      "mode": "taste-only",
+      "current": "story",
+      "next": null,
+      "queuedMode": null,
+      "changed": false,
+      "replacements": 1
+    },
+    {
+      "event": "begin",
+      "at": 60800,
+      "input": {
+        "accepted": true
+      },
+      "context": {
+        "status": "unknown",
+        "reason": "no-observation",
+        "candidates": [],
+        "purposeHint": null
+      },
+      "proposal": "story2",
+      "mode": "taste-only",
+      "current": "story",
+      "next": null,
+      "queuedMode": null,
+      "changed": false,
+      "replacements": 1
+    },
+    {
+      "event": "point",
+      "at": 60900,
+      "input": {
+        "accepted": true,
+        "count": 1
+      },
+      "context": {
+        "status": "hypothesis",
+        "reason": "synthetic-coordinate-alignment",
+        "candidates": [
+          {
+            "id": "work",
+            "purpose": "commute"
+          },
+          {
+            "id": "shop",
+            "purpose": "errand"
+          }
+        ],
+        "purposeHint": null
+      },
+      "proposal": "story2",
+      "mode": "journey",
+      "current": "story",
+      "next": null,
+      "queuedMode": null,
+      "changed": false,
+      "replacements": 1
+    },
+    {
+      "event": "point",
+      "at": 61000,
+      "input": {
+        "accepted": true,
+        "count": 2
+      },
+      "context": {
+        "status": "hypothesis",
+        "reason": "synthetic-coordinate-alignment",
+        "candidates": [
+          {
+            "id": "work",
+            "purpose": "commute"
+          },
+          {
+            "id": "shop",
+            "purpose": "errand"
+          }
+        ],
+        "purposeHint": null
+      },
+      "proposal": "story2",
+      "mode": "journey",
+      "current": "story",
+      "next": null,
+      "queuedMode": null,
+      "changed": false,
+      "replacements": 1
+    },
+    {
+      "event": "point",
+      "at": 61100,
+      "input": {
+        "accepted": true,
+        "count": 3
+      },
+      "context": {
+        "status": "hypothesis",
+        "reason": "synthetic-coordinate-alignment",
+        "candidates": [
+          {
+            "id": "shop",
+            "purpose": "errand"
+          }
+        ],
+        "purposeHint": "errand"
+      },
+      "proposal": "story2",
+      "mode": "journey",
+      "current": "story",
+      "next": null,
+      "queuedMode": null,
+      "changed": false,
+      "replacements": 1
+    },
+    {
+      "event": "arrival",
+      "at": 61200,
+      "input": null,
+      "context": {
+        "status": "unknown",
+        "reason": "arrival",
+        "candidates": [],
+        "purposeHint": null
+      },
+      "proposal": "story2",
+      "mode": "taste-only",
+      "current": "story",
+      "next": null,
+      "queuedMode": null,
+      "changed": false,
+      "replacements": 1
+    },
+    {
+      "event": "tick",
+      "at": 121000,
+      "input": null,
+      "context": {
+        "status": "unknown",
+        "reason": "arrival",
+        "candidates": [],
+        "purposeHint": null
+      },
+      "proposal": "story2",
+      "mode": "taste-only",
+      "current": "story",
+      "next": "story2",
+      "queuedMode": "taste-only",
+      "changed": true,
+      "replacements": 2
+    }
+  ]
+}

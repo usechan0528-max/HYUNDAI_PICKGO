@@ -1,0 +1,69 @@
+--------- beginning of main
+11-02 02:10:23.203  6501  6501 I PleosProbe: 802552 START
+11-02 02:10:23.233  6501  6501 I PleosProbe: 802582 LOCATION_SUPPORTED=true
+11-02 02:10:23.242  6501  6501 I PleosProbe: 802591 LOCATION_REQUESTED
+11-02 02:10:24.023  6501  6501 I PleosProbe: 803372 LOCATION_CALLBACK present=true validCoordinates=true
+11-02 02:10:24.035  6501  6501 I PleosProbe: 803384 LOCATION_CALLBACK present=true validCoordinates=true
+11-02 02:10:24.041  6501  6501 I PleosProbe: 803390 NAVI_CONNECTED
+11-02 02:10:24.047  6501  6501 I PleosProbe: 803394 NAVI_REQUESTED
+11-02 02:10:25.087  6501  6501 I PleosProbe: 804436 NAVI_CURRENT_LOCATION present=true
+11-02 02:10:25.115  6501  6501 I PleosProbe: 804464 NAVI_DESTINATION present=true
+11-02 02:10:25.140  6501  6501 I PleosProbe: 804489 DESTINATION_TIME remainTimeRaw=0
+11-02 02:10:25.174  6501  6501 I PleosProbe: 804523 NAVI_ROUTE_STATE present=true
+11-02 02:10:25.204  6501  6501 I PleosProbe: 804553 ROUTE_STATUS mode=SAFE_GUIDING routing=false
+11-02 02:10:25.573  6501  6501 I PleosProbe: 804922 LOCATION_CALLBACK present=true validCoordinates=true
+11-02 02:10:26.574  6501  6501 I PleosProbe: 805923 LOCATION_CALLBACK present=true validCoordinates=true
+11-02 02:10:27.083  6501  6501 I PleosProbe: 806432 TEST_ROUTE_REQUESTED fixture=official_42dot
+11-02 02:10:27.702  6501  6501 I PleosProbe: 807051 LOCATION_CALLBACK present=true validCoordinates=true
+11-02 02:10:27.835  6501  6501 I PleosProbe: 807184 LOCATION_REQUERY
+11-02 02:10:27.893  6501  6501 I PleosProbe: 807242 LOCATION_CALLBACK present=true validCoordinates=true
+11-02 02:10:28.623  6501  6501 I PleosProbe: 807972 LOCATION_CALLBACK present=true validCoordinates=true
+11-02 02:10:30.630  6501  6501 I PleosProbe: 809979 LOCATION_CALLBACK present=true validCoordinates=true
+11-02 02:10:32.618  6501  6501 I PleosProbe: 811967 LOCATION_CALLBACK present=true validCoordinates=true
+11-02 02:10:33.660  6501  6501 I PleosProbe: 813009 LOCATION_CALLBACK present=true validCoordinates=true
+11-02 02:10:34.025  6501  6501 I PleosProbe: 813374 ROUTE_REQUERY
+11-02 02:10:34.047  6501  6501 I PleosProbe: 813396 NAVI_ROUTE_STATE present=true
+11-02 02:10:34.062  6501  6501 I PleosProbe: 813411 ROUTE_STATUS mode=SAFE_GUIDING routing=false
+11-02 02:10:34.064  6501  6501 I PleosProbe: 813413 NAVI_DESTINATION present=true
+11-02 02:10:34.065  6501  6501 I PleosProbe: 813414 DESTINATION_TIME remainTimeRaw=0
+11-02 02:10:34.652  6501  6501 I PleosProbe: 814001 LOCATION_CALLBACK present=true validCoordinates=true
+11-02 02:10:36.617  6501  6501 I PleosProbe: 815966 LOCATION_CALLBACK present=true validCoordinates=true
+11-02 02:10:37.351  6501  6501 I PleosProbe: 816700 ROUTE_STARTED
+11-02 02:10:37.365  6501  6501 I PleosProbe: 816714 NAVI_NAVIGATION_STATUS present=true
+11-02 02:10:37.367  6501  6501 I PleosProbe: 816716 NAVIGATION_STATUS_VALUE=ROUTE_DRIVE
+11-02 02:10:37.370  6501  6501 I PleosProbe: 816719 NAVI_ROUTE_STATE present=true
+11-02 02:10:37.371  6501  6501 I PleosProbe: 816720 ROUTE_STATUS mode=ROUTE_GUIDING routing=false
+11-02 02:10:37.625  6501  6501 I PleosProbe: 816974 LOCATION_CALLBACK present=true validCoordinates=true
+11-02 02:10:37.814  6501  6501 I PleosProbe: 817163 LOCATION_REQUERY
+11-02 02:10:37.817  6501  6501 I PleosProbe: 817166 LOCATION_CALLBACK present=true validCoordinates=true
+11-02 02:10:38.385  6501  6501 I PleosProbe: 817734 NAVI_DRIVING present=true
+11-02 02:10:38.390  6501  6501 I PleosProbe: 817739 DRIVING_DURATION seconds=60
+11-02 02:10:38.621  6501  6501 I PleosProbe: 817971 LOCATION_CALLBACK present=true validCoordinates=true
+11-02 02:10:39.759  6501  6501 I PleosProbe: 819108 LOCATION_CALLBACK present=true validCoordinates=true
+11-02 02:10:41.649  6501  6501 I PleosProbe: 820998 LOCATION_CALLBACK present=true validCoordinates=true
+11-02 02:10:43.664  6501  6501 I PleosProbe: 823013 LOCATION_CALLBACK present=true validCoordinates=true
+11-02 02:10:45.682  6501  6501 I PleosProbe: 825031 LOCATION_CALLBACK present=true validCoordinates=true
+11-02 02:10:47.701  6501  6501 I PleosProbe: 827050 LOCATION_CALLBACK present=true validCoordinates=true
+11-02 02:10:48.701  6501  6501 I PleosProbe: 828050 LOCATION_CALLBACK present=true validCoordinates=true
+11-02 02:10:49.728  6501  6501 I PleosProbe: 829077 LOCATION_CALLBACK present=true validCoordinates=true
+11-02 02:10:51.772  6501  6501 I PleosProbe: 831121 LOCATION_CALLBACK present=true validCoordinates=true
+11-02 02:10:52.811  6501  6501 I PleosProbe: 832160 LOCATION_REQUERY
+11-02 02:10:52.865  6501  6501 I PleosProbe: 832214 LOCATION_CALLBACK present=true validCoordinates=true
+11-02 02:10:53.726  6501  6501 I PleosProbe: 833075 LOCATION_CALLBACK present=true validCoordinates=true
+11-02 02:10:54.025  6501  6501 I PleosProbe: 833374 ROUTE_REQUERY
+11-02 02:10:54.073  6501  6501 I PleosProbe: 833422 NAVI_ROUTE_STATE present=true
+11-02 02:10:54.081  6501  6501 I PleosProbe: 833430 ROUTE_STATUS mode=ROUTE_GUIDING routing=false
+11-02 02:10:55.120  6501  6501 I PleosProbe: 834469 NAVI_DESTINATION present=true
+11-02 02:10:55.130  6501  6501 I PleosProbe: 834479 DESTINATION_TIME remainTimeRaw=60
+11-02 02:10:55.755  6501  6501 I PleosProbe: 835104 LOCATION_CALLBACK present=true validCoordinates=true
+11-02 02:10:57.761  6501  6501 I PleosProbe: 837110 LOCATION_CALLBACK present=true validCoordinates=true
+11-02 02:10:59.811  6501  6501 I PleosProbe: 839160 LOCATION_CALLBACK present=true validCoordinates=true
+11-02 02:11:01.767  6501  6501 I PleosProbe: 841116 LOCATION_CALLBACK present=true validCoordinates=true
+11-02 02:11:02.789  6501  6501 I PleosProbe: 842138 LOCATION_CALLBACK present=true validCoordinates=true
+11-02 02:11:04.758  6501  6501 I PleosProbe: 844107 LOCATION_CALLBACK present=true validCoordinates=true
+11-02 02:11:05.794  6501  6501 I PleosProbe: 845143 LOCATION_CALLBACK present=true validCoordinates=true
+11-02 02:11:06.788  6501  6501 I PleosProbe: 846136 LOCATION_CALLBACK present=true validCoordinates=true
+11-02 02:11:07.808  6501  6501 I PleosProbe: 847157 LOCATION_CALLBACK present=true validCoordinates=true
+11-02 02:11:09.781  6501  6501 I PleosProbe: 849130 LOCATION_CALLBACK present=true validCoordinates=true
+11-02 02:11:10.810  6501  6501 I PleosProbe: 850159 LOCATION_CALLBACK present=true validCoordinates=true
+11-02 02:11:12.836  6501  6501 I PleosProbe: 852185 LOCATION_CALLBACK present=true validCoordinates=true

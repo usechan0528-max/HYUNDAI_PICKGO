@@ -1,0 +1,19 @@
+# Local tools, credentials, caches and private drafts
+work/*
+!work/idea-tournament/
+!work/gleo-gap-research/
+output/*
+!output/J1_Android_Listening_0.1.0_debug.apk
+!output/J1_Android_Journey_0.2.0_debug.apk
+.taste-skill/
+**/.gradle/
+**/build/
+**/local.properties
+**/node_modules/
+**/__pycache__/
+*.keystore
+*.jks
+*.pem
+*.key
+.env
+.env.*

@@ -1,0 +1,287 @@
+{
+  "health-final": {
+    "status": "ok",
+    "device": "cuda (NVIDIA GeForce RTX 3060)",
+    "version": "0.5.7"
+  },
+  "setup-final": {
+    "models_ready": true,
+    "missing": [],
+    "hf_cache_dir": "C:\\Users\\dldyd\\AppData\\Local\\OmniVoice\\hf_cache",
+    "disk_free_gb": 177.88,
+    "min_free_gb": 10,
+    "enough_disk": true
+  },
+  "startup": {
+    "status": "ready",
+    "step": null,
+    "label": null,
+    "steps": [
+      {
+        "id": "env_prefs",
+        "label": "Restoring settings…",
+        "state": "done",
+        "t": 1.78
+      },
+      {
+        "id": "native_preload",
+        "label": "Preparing GPU libraries…",
+        "state": "done",
+        "t": 0.52
+      },
+      {
+        "id": "ml_imports",
+        "label": "Loading ML runtime (PyTorch)…",
+        "state": "done",
+        "t": 11.16
+      },
+      {
+        "id": "api_routes",
+        "label": "Loading API routes…",
+        "state": "done",
+        "t": 13.42
+      },
+      {
+        "id": "db_migrate",
+        "label": "Preparing database…",
+        "state": "done",
+        "t": 7.36
+      },
+      {
+        "id": "services_start",
+        "label": "Starting background services…",
+        "state": "done",
+        "t": 0.12
+      }
+    ],
+    "elapsed_s": 262.97,
+    "error": null,
+    "app_version": "0.5.7"
+  },
+  "preflight": {
+    "ok": true,
+    "has_warnings": false,
+    "checks": [
+      {
+        "id": "os",
+        "label": "Operating system",
+        "status": "pass",
+        "detail": "Windows-10 (AMD64)",
+        "fix": null
+      },
+      {
+        "id": "python",
+        "label": "Python runtime",
+        "status": "pass",
+        "detail": "Python 3.11.16",
+        "fix": null
+      },
+      {
+        "id": "ram",
+        "label": "System RAM",
+        "status": "pass",
+        "detail": "15.9 GB total",
+        "fix": null
+      },
+      {
+        "id": "disk",
+        "label": "Disk space",
+        "status": "pass",
+        "detail": "180.9 GB free at C:\\Users\\dldyd\\AppData\\Local\\OmniVoice\\hf_cache",
+        "fix": null
+      },
+      {
+        "id": "hf_cache_writable",
+        "label": "HuggingFace cache writable",
+        "status": "pass",
+        "detail": "C:\\Users\\dldyd\\AppData\\Local\\OmniVoice\\hf_cache",
+        "fix": null
+      },
+      {
+        "id": "gpu",
+        "label": "GPU acceleration",
+        "status": "pass",
+        "detail": "NVIDIA GeForce RTX 3060 (driver 595.95) — CUDA ready",
+        "fix": null
+      },
+      {
+        "id": "gpu_routing",
+        "label": "Active engine routing",
+        "status": "pass",
+        "detail": "kittentts → cpu (no accelerator on this host)",
+        "fix": null
+      },
+      {
+        "id": "network",
+        "label": "Network (huggingface.co)",
+        "status": "pass",
+        "detail": "Reachable (125 ms)",
+        "fix": null,
+        "mirror_reachable": true,
+        "endpoint": "https://huggingface.co"
+      }
+    ],
+    "device": {
+      "os": "win32",
+      "arch": "AMD64",
+      "gpu_vendor": "nvidia",
+      "gpu_backend": "cuda",
+      "gpu_available": true,
+      "gpu_driver": "595.95",
+      "gpu_device_name": "NVIDIA GeForce RTX 3060",
+      "gpu_family": "cuda",
+      "vram_gb": 12.0,
+      "ram_gb": 15.9,
+      "disk_free_gb": 180.9
+    },
+    "gpu_routing": {
+      "engine": "kittentts",
+      "effective_device": "cpu",
+      "routing_status": "cpu_only",
+      "routing_reason": null,
+      "host_family": "cuda",
+      "vram_gb": 12.0
+    },
+    "media_tools": {
+      "ready": true,
+      "acquire": {
+        "state": "done",
+        "progress": 1.0,
+        "error": null
+      }
+    }
+  },
+  "diagnose-deep": {
+    "app_version": "0.5.7",
+    "platform": "Windows-10-10.0.26200-SP0",
+    "checks": [
+      {
+        "id": "python",
+        "label": "Python runtime",
+        "status": "ok",
+        "detail": "3.11.16 on Windows-10-10.0.26200-SP0",
+        "hint": null
+      },
+      {
+        "id": "device",
+        "label": "Compute device",
+        "status": "ok",
+        "detail": "cuda (NVIDIA GeForce RTX 3060)",
+        "hint": null
+      },
+      {
+        "id": "ffmpeg",
+        "label": "Media engine (ffmpeg)",
+        "status": "ok",
+        "detail": "ffmpeg: ~\\AppData\\Roaming\\VoiceStudio\\runtime\\project\\.venv\\Lib\\site-packages\\imageio_ffmpeg\\binaries\\ffmpeg-win-x86_64-v7.1.exe; ffprobe: ~\\AppData\\Roaming\\OmniVoice\\media_tools\\ffbin-df95abcb0ce6\\win32\\ffprobe.exe",
+        "hint": null
+      },
+      {
+        "id": "hf_token",
+        "label": "HuggingFace token",
+        "status": "warn",
+        "detail": "not set",
+        "hint": "Downloads may be rate-limited and speaker diarization won't work. Set one in Settings > Credentials."
+      },
+      {
+        "id": "disk",
+        "label": "Disk space",
+        "status": "ok",
+        "detail": "178.3 GB free at ~\\AppData\\Roaming\\OmniVoice",
+        "hint": null
+      },
+      {
+        "id": "data_dir",
+        "label": "Data directory",
+        "status": "ok",
+        "detail": "writable: ~\\AppData\\Roaming\\OmniVoice",
+        "hint": null
+      },
+      {
+        "id": "ram",
+        "label": "System memory",
+        "status": "ok",
+        "detail": "15.9 GB total",
+        "hint": null
+      },
+      {
+        "id": "engines",
+        "label": "TTS engines",
+        "status": "ok",
+        "detail": "active: kittentts; available: omnivoice, kittentts, omnivoice-subprocess",
+        "hint": null
+      },
+      {
+        "id": "gpu_routing",
+        "label": "GPU routing",
+        "status": "ok",
+        "detail": "kittentts -> cpu (no accelerator on this host)",
+        "hint": null
+      },
+      {
+        "id": "deep_synth",
+        "label": "Deep synthesis",
+        "status": "ok",
+        "detail": "engine 'kittentts' produced 3.8s of audio in 13.1s",
+        "hint": null
+      }
+    ],
+    "engine_execution": [
+      {
+        "family": "tts",
+        "engine_id": "kittentts",
+        "implementation_variant": "services.tts_backend.KittenTTSBackend",
+        "declared_device_families": [
+          "cpu"
+        ],
+        "evidence_state": "loaded",
+        "actual_execution_provider": null,
+        "actual_execution_device": null,
+        "gpu_name": "NVIDIA GeForce RTX 3060",
+        "gpu_architecture": "sm_86",
+        "runtime_vram_gb": null,
+        "precision_or_quantization": null,
+        "cpu_fallback_reason": null,
+        "cpu_fallback_stage": null,
+        "parent_memory_observable": true,
+        "runtime_versions": {
+          "python": "3.11.16",
+          "torch": "2.8.0+cu128"
+        }
+      },
+      {
+        "family": "asr",
+        "engine_id": "whisperx",
+        "implementation_variant": "services.asr_backend.WhisperXBackend",
+        "declared_device_families": [
+          "cuda",
+          "cpu"
+        ],
+        "evidence_state": "not_loaded",
+        "actual_execution_provider": null,
+        "actual_execution_device": null,
+        "gpu_name": "NVIDIA GeForce RTX 3060",
+        "gpu_architecture": "sm_86",
+        "runtime_vram_gb": null,
+        "precision_or_quantization": null,
+        "cpu_fallback_reason": null,
+        "cpu_fallback_stage": null,
+        "parent_memory_observable": true,
+        "runtime_versions": {
+          "python": "3.11.16",
+          "torch": "2.8.0+cu128",
+          "ctranslate2": "4.4.0",
+          "faster-whisper": "1.2.1"
+        }
+      }
+    ],
+    "summary": {
+      "ok": true,
+      "passed": 9,
+      "warnings": 1,
+      "failures": 0
+    }
+  },
+  "ui_verification": "First-run wizard completed; native VoiceStudio main studio observed. Active TTS kittentts; no voice design capability inferred.",
+  "scope": "Local installation and initial setup only. No Korean quality, voice cloning, ASR, or Pleos integration verification."
+}

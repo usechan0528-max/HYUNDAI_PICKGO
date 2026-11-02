@@ -1,0 +1,505 @@
+{
+  "source": "synthetic",
+  "policyVersion": "rules-v1",
+  "userBenefitMeasured": false,
+  "cases": [
+    {
+      "name": "first-use",
+      "policyVersion": "rules-v1",
+      "status": "selected",
+      "selected": {
+        "id": "news",
+        "score": 0,
+        "reasons": {
+          "taste": 0,
+          "contextual": 0,
+          "explicitLike": 0,
+          "mode": "taste-only",
+          "diverse": false,
+          "coldStart": true,
+          "summary": "이 항목의 선호 점수는 없습니다.",
+          "tieBreak": "동점이면 ID 순서"
+        }
+      },
+      "ranked": [
+        {
+          "id": "news",
+          "score": 0,
+          "reasons": {
+            "taste": 0,
+            "contextual": 0,
+            "explicitLike": 0,
+            "mode": "taste-only",
+            "diverse": false,
+            "coldStart": true,
+            "summary": "이 항목의 선호 점수는 없습니다.",
+            "tieBreak": "동점이면 ID 순서"
+          }
+        },
+        {
+          "id": "reflection",
+          "score": 0,
+          "reasons": {
+            "taste": 0,
+            "contextual": 0,
+            "explicitLike": 0,
+            "mode": "taste-only",
+            "diverse": false,
+            "coldStart": true,
+            "summary": "이 항목의 선호 점수는 없습니다.",
+            "tieBreak": "동점이면 ID 순서"
+          }
+        },
+        {
+          "id": "story",
+          "score": 0,
+          "reasons": {
+            "taste": 0,
+            "contextual": 0,
+            "explicitLike": 0,
+            "mode": "taste-only",
+            "diverse": false,
+            "coldStart": true,
+            "summary": "이 항목의 선호 점수는 없습니다.",
+            "tieBreak": "동점이면 ID 순서"
+          }
+        },
+        {
+          "id": "story2",
+          "score": 0,
+          "reasons": {
+            "taste": 0,
+            "contextual": 0,
+            "explicitLike": 0,
+            "mode": "taste-only",
+            "diverse": false,
+            "coldStart": true,
+            "summary": "이 항목의 선호 점수는 없습니다.",
+            "tieBreak": "동점이면 ID 순서"
+          }
+        }
+      ],
+      "excluded": [],
+      "mode": "taste-only",
+      "stopReason": null
+    },
+    {
+      "name": "taste-only",
+      "policyVersion": "rules-v1",
+      "status": "selected",
+      "selected": {
+        "id": "story",
+        "score": 3,
+        "reasons": {
+          "taste": 3,
+          "contextual": 0,
+          "explicitLike": 0,
+          "mode": "taste-only",
+          "diverse": false,
+          "coldStart": false,
+          "summary": "주제 취향 점수를 반영했습니다.",
+          "tieBreak": "동점이면 ID 순서"
+        }
+      },
+      "ranked": [
+        {
+          "id": "story",
+          "score": 3,
+          "reasons": {
+            "taste": 3,
+            "contextual": 0,
+            "explicitLike": 0,
+            "mode": "taste-only",
+            "diverse": false,
+            "coldStart": false,
+            "summary": "주제 취향 점수를 반영했습니다.",
+            "tieBreak": "동점이면 ID 순서"
+          }
+        },
+        {
+          "id": "story2",
+          "score": 3,
+          "reasons": {
+            "taste": 3,
+            "contextual": 0,
+            "explicitLike": 0,
+            "mode": "taste-only",
+            "diverse": false,
+            "coldStart": false,
+            "summary": "주제 취향 점수를 반영했습니다.",
+            "tieBreak": "동점이면 ID 순서"
+          }
+        },
+        {
+          "id": "news",
+          "score": 2,
+          "reasons": {
+            "taste": 2,
+            "contextual": 0,
+            "explicitLike": 0,
+            "mode": "taste-only",
+            "diverse": false,
+            "coldStart": false,
+            "summary": "주제 취향 점수를 반영했습니다.",
+            "tieBreak": "동점이면 ID 순서"
+          }
+        },
+        {
+          "id": "reflection",
+          "score": 1,
+          "reasons": {
+            "taste": 1,
+            "contextual": 0,
+            "explicitLike": 0,
+            "mode": "taste-only",
+            "diverse": false,
+            "coldStart": false,
+            "summary": "주제 취향 점수를 반영했습니다.",
+            "tieBreak": "동점이면 ID 순서"
+          }
+        }
+      ],
+      "excluded": [],
+      "mode": "taste-only",
+      "stopReason": null
+    },
+    {
+      "name": "commute",
+      "policyVersion": "rules-v1",
+      "status": "selected",
+      "selected": {
+        "id": "news",
+        "score": 6,
+        "reasons": {
+          "taste": 2,
+          "contextual": 4,
+          "explicitLike": 0,
+          "mode": "journey",
+          "diverse": false,
+          "coldStart": false,
+          "summary": "주제 취향 점수를 반영했습니다. 가능한 운행 맥락에서 적합도가 올라갑니다.",
+          "tieBreak": "동점이면 ID 순서"
+        }
+      },
+      "ranked": [
+        {
+          "id": "news",
+          "score": 6,
+          "reasons": {
+            "taste": 2,
+            "contextual": 4,
+            "explicitLike": 0,
+            "mode": "journey",
+            "diverse": false,
+            "coldStart": false,
+            "summary": "주제 취향 점수를 반영했습니다. 가능한 운행 맥락에서 적합도가 올라갑니다.",
+            "tieBreak": "동점이면 ID 순서"
+          }
+        },
+        {
+          "id": "story",
+          "score": 3,
+          "reasons": {
+            "taste": 3,
+            "contextual": 0,
+            "explicitLike": 0,
+            "mode": "journey",
+            "diverse": false,
+            "coldStart": false,
+            "summary": "주제 취향 점수를 반영했습니다.",
+            "tieBreak": "동점이면 ID 순서"
+          }
+        },
+        {
+          "id": "story2",
+          "score": 3,
+          "reasons": {
+            "taste": 3,
+            "contextual": 0,
+            "explicitLike": 0,
+            "mode": "journey",
+            "diverse": false,
+            "coldStart": false,
+            "summary": "주제 취향 점수를 반영했습니다.",
+            "tieBreak": "동점이면 ID 순서"
+          }
+        },
+        {
+          "id": "reflection",
+          "score": 1,
+          "reasons": {
+            "taste": 1,
+            "contextual": 0,
+            "explicitLike": 0,
+            "mode": "journey",
+            "diverse": false,
+            "coldStart": false,
+            "summary": "주제 취향 점수를 반영했습니다.",
+            "tieBreak": "동점이면 ID 순서"
+          }
+        }
+      ],
+      "excluded": [],
+      "mode": "journey",
+      "stopReason": null
+    },
+    {
+      "name": "ambiguous-route",
+      "policyVersion": "rules-v1",
+      "status": "selected",
+      "selected": {
+        "id": "story",
+        "score": 3,
+        "reasons": {
+          "taste": 3,
+          "contextual": 0,
+          "explicitLike": 0,
+          "mode": "journey",
+          "diverse": false,
+          "coldStart": false,
+          "summary": "주제 취향 점수를 반영했습니다.",
+          "tieBreak": "동점이면 ID 순서"
+        }
+      },
+      "ranked": [
+        {
+          "id": "story",
+          "score": 3,
+          "reasons": {
+            "taste": 3,
+            "contextual": 0,
+            "explicitLike": 0,
+            "mode": "journey",
+            "diverse": false,
+            "coldStart": false,
+            "summary": "주제 취향 점수를 반영했습니다.",
+            "tieBreak": "동점이면 ID 순서"
+          }
+        },
+        {
+          "id": "story2",
+          "score": 3,
+          "reasons": {
+            "taste": 3,
+            "contextual": 0,
+            "explicitLike": 0,
+            "mode": "journey",
+            "diverse": false,
+            "coldStart": false,
+            "summary": "주제 취향 점수를 반영했습니다.",
+            "tieBreak": "동점이면 ID 순서"
+          }
+        },
+        {
+          "id": "reflection",
+          "score": 1,
+          "reasons": {
+            "taste": 1,
+            "contextual": 0,
+            "explicitLike": 0,
+            "mode": "journey",
+            "diverse": false,
+            "coldStart": false,
+            "summary": "주제 취향 점수를 반영했습니다.",
+            "tieBreak": "동점이면 ID 순서"
+          }
+        },
+        {
+          "id": "news",
+          "score": -1,
+          "reasons": {
+            "taste": 2,
+            "contextual": -3,
+            "explicitLike": 0,
+            "mode": "journey",
+            "diverse": false,
+            "coldStart": false,
+            "summary": "주제 취향 점수를 반영했습니다. 가능한 운행 맥락에서 적합도가 내려갑니다.",
+            "tieBreak": "동점이면 ID 순서"
+          }
+        }
+      ],
+      "excluded": [],
+      "mode": "journey",
+      "stopReason": null
+    },
+    {
+      "name": "context-lost",
+      "policyVersion": "rules-v1",
+      "status": "selected",
+      "selected": {
+        "id": "story",
+        "score": 3,
+        "reasons": {
+          "taste": 3,
+          "contextual": 0,
+          "explicitLike": 0,
+          "mode": "taste-only",
+          "diverse": false,
+          "coldStart": false,
+          "summary": "주제 취향 점수를 반영했습니다.",
+          "tieBreak": "동점이면 ID 순서"
+        }
+      },
+      "ranked": [
+        {
+          "id": "story",
+          "score": 3,
+          "reasons": {
+            "taste": 3,
+            "contextual": 0,
+            "explicitLike": 0,
+            "mode": "taste-only",
+            "diverse": false,
+            "coldStart": false,
+            "summary": "주제 취향 점수를 반영했습니다.",
+            "tieBreak": "동점이면 ID 순서"
+          }
+        },
+        {
+          "id": "story2",
+          "score": 3,
+          "reasons": {
+            "taste": 3,
+            "contextual": 0,
+            "explicitLike": 0,
+            "mode": "taste-only",
+            "diverse": false,
+            "coldStart": false,
+            "summary": "주제 취향 점수를 반영했습니다.",
+            "tieBreak": "동점이면 ID 순서"
+          }
+        },
+        {
+          "id": "news",
+          "score": 2,
+          "reasons": {
+            "taste": 2,
+            "contextual": 0,
+            "explicitLike": 0,
+            "mode": "taste-only",
+            "diverse": false,
+            "coldStart": false,
+            "summary": "주제 취향 점수를 반영했습니다.",
+            "tieBreak": "동점이면 ID 순서"
+          }
+        },
+        {
+          "id": "reflection",
+          "score": 1,
+          "reasons": {
+            "taste": 1,
+            "contextual": 0,
+            "explicitLike": 0,
+            "mode": "taste-only",
+            "diverse": false,
+            "coldStart": false,
+            "summary": "주제 취향 점수를 반영했습니다.",
+            "tieBreak": "동점이면 ID 순서"
+          }
+        }
+      ],
+      "excluded": [],
+      "mode": "taste-only",
+      "stopReason": null
+    },
+    {
+      "name": "disliked-news",
+      "policyVersion": "rules-v1",
+      "status": "selected",
+      "selected": {
+        "id": "story",
+        "score": 3,
+        "reasons": {
+          "taste": 3,
+          "contextual": 0,
+          "explicitLike": 0,
+          "mode": "journey",
+          "diverse": false,
+          "coldStart": false,
+          "summary": "주제 취향 점수를 반영했습니다.",
+          "tieBreak": "동점이면 ID 순서"
+        }
+      },
+      "ranked": [
+        {
+          "id": "story",
+          "score": 3,
+          "reasons": {
+            "taste": 3,
+            "contextual": 0,
+            "explicitLike": 0,
+            "mode": "journey",
+            "diverse": false,
+            "coldStart": false,
+            "summary": "주제 취향 점수를 반영했습니다.",
+            "tieBreak": "동점이면 ID 순서"
+          }
+        },
+        {
+          "id": "story2",
+          "score": 3,
+          "reasons": {
+            "taste": 3,
+            "contextual": 0,
+            "explicitLike": 0,
+            "mode": "journey",
+            "diverse": false,
+            "coldStart": false,
+            "summary": "주제 취향 점수를 반영했습니다.",
+            "tieBreak": "동점이면 ID 순서"
+          }
+        },
+        {
+          "id": "reflection",
+          "score": 1,
+          "reasons": {
+            "taste": 1,
+            "contextual": 0,
+            "explicitLike": 0,
+            "mode": "journey",
+            "diverse": false,
+            "coldStart": false,
+            "summary": "주제 취향 점수를 반영했습니다.",
+            "tieBreak": "동점이면 ID 순서"
+          }
+        }
+      ],
+      "excluded": [
+        {
+          "id": "news",
+          "reason": "explicit-dislike"
+        }
+      ],
+      "mode": "journey",
+      "stopReason": null
+    },
+    {
+      "name": "session-exhausted",
+      "policyVersion": "rules-v1",
+      "status": "exhausted",
+      "selected": null,
+      "ranked": [],
+      "excluded": [
+        {
+          "id": "story",
+          "reason": "already-heard"
+        },
+        {
+          "id": "news",
+          "reason": "already-heard"
+        },
+        {
+          "id": "story2",
+          "reason": "already-heard"
+        },
+        {
+          "id": "reflection",
+          "reason": "already-heard"
+        }
+      ],
+      "mode": "taste-only",
+      "stopReason": "no-eligible-content"
+    }
+  ]
+}
