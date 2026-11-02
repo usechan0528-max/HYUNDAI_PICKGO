@@ -1,0 +1,114 @@
+이전 검수 후 수정 재검수. 도구/파일 수정 없이 읽기 전용. P2-1 응답시 ageMs/status 재계산, P2-2 performance.now 경과+서버 ageMs (전체 요청 지연을 더해 보수적), P2-3 차이 UI 제거, P2-4 시연·보안잠금아님 명시. P3-1 기존 CSS [hidden]{display:none!important} 존재 및 브라우저에서 제한전환시 상세 제거 확인. P3-2 실패60초는 요청부담 제한 위해 유지·UI명시. P3-3 if(pending)return pending 경로는 하단 try/finally에 진입하지 않고 최초 호출자만 정리하므로 재현근거 없어 미반영. P3-4 오류본문cancel 추가. P3-5 고정 대상명/주소는 원응답과 일치한 정적 표기. P3-6 KST는 실제 관측값과 요청UTC+9 비교해1분이내 일치했으며 공급자 timezone 명시확인은 별도한계. P3-7 200/헤더/CSP 및 cache경계 추가해20/20통과. P3-8 API HEAD405 의도됨. 수정 중 변수 중복 치환은 수동 코드검사로 발견해 바로 수정, 브라우저 재검증 예정. 아래 최종 소스만 보고 남는 P0-P2 짧게(600단어내) 검토.
+
+FILE mvp/parking.mjs
+export const SOURCE = 'http://openapi.seoul.go.kr:8088/sample/json/GetParkingInfo/1/5/';
+export const LOT_ID = '171721';
+export function normalize(payload, now = Date.now()) {
+  const api = payload?.GetParkingInfo;
+  if (api?.RESULT?.CODE !== 'INFO-000' || !Array.isArray(api.row)) throw Error('provider');
+  const row = api.row.find(r => r.PKLT_CD === LOT_ID);
+  if (!row) throw Error('missing');
+  const stamp = row.NOW_PRK_VHCL_UPDT_TM;
+  const observed = typeof stamp === 'string' && /^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/.test(stamp) ? Date.parse(stamp.replace(' ', 'T') + '+09:00') : NaN;
+  const validTime = Number.isFinite(observed) && new Date(observed + 9*3600000).toISOString().slice(0,19).replace('T',' ') === stamp;
+  const capacity = row.TPKCT, occupied = row.NOW_PRK_VHCL_CNT;
+  const validCounts = Number.isInteger(capacity) && capacity > 0 && Number.isInteger(occupied) && occupied >= 0 && occupied <= capacity;
+  const age = now - observed;
+  const status = !validTime || age < 0 || row.PRK_STTS_YN !== '1' || !validCounts ? 'unknown' : age >= 300000 ? 'stale' : 'fresh';
+  return { id: LOT_ID, name: '세종로 공영주차장(시)', address: '종로구 세종로 80-1', status, observedAt: validTime ? observed : null, fetchedAt: now,
+    capacity: status === 'fresh' ? capacity : null, occupied: status === 'fresh' ? occupied : null,
+    difference: status === 'fresh' ? capacity - occupied : null };
+}
+export function createParkingService({fetchImpl = fetch, clock = Date.now} = {}) {
+  let cached, expires = 0, pending;
+  function responseAtNow(value) {
+    const now = clock();
+    const ageMs = value.observedAt === null ? null : now - value.observedAt;
+    const expired = value.status === 'fresh' && (ageMs < 0 || ageMs >= 300000);
+    return {...value, ageMs, respondedAt: now, ...(expired ? {status: ageMs < 0 ? 'unknown' : 'stale', capacity:null, occupied:null, difference:null} : {})};
+  }
+  return async function getParking() {
+    if (cached && clock() < expires) return responseAtNow(cached);
+    if (pending) return pending;
+    pending = (async () => {
+      try {
+        const response = await fetchImpl(SOURCE, {signal: AbortSignal.timeout(8000), redirect: 'error'});
+        if (!response.ok) { await response.body?.cancel(); throw Error('http'); }
+        const reader = response.body.getReader();
+        const chunks = []; let size = 0;
+        try { while (true) { const {done,value} = await reader.read(); if(done) break; size += value.length; if(size > 262144) throw Error('size'); chunks.push(value); } }
+        finally { await reader.cancel(); }
+        cached = normalize(JSON.parse(Buffer.concat(chunks).toString('utf8')), clock());
+      } catch { cached = {id: LOT_ID, status: 'unavailable', fetchedAt: clock(), observedAt: null, capacity:null, occupied:null, difference:null}; }
+      expires = clock() + 60000;
+      return responseAtNow(cached);
+    })();
+    try { return await pending; } finally { pending = null; }
+  };
+}
+
+FILE mvp/live.js
+const $ = id => document.getElementById(id);
+let data = null, loading = false, generation = 0, controller, requestStarted = 0;
+const time = n => n === null ? '없음' : new Intl.DateTimeFormat('ko-KR',{dateStyle:'short',timeStyle:'medium',timeZone:'Asia/Seoul'}).format(n);
+function render() {
+  const allowed = $('mode').value === 'parked';
+  $('lock').hidden = allowed; $('result').hidden = !allowed; $('refresh').disabled = !allowed || loading;
+  $('counts').textContent = ''; $('times').textContent = '';
+  if (!allowed) { $('status').textContent = ''; return; }
+  if (loading) { $('status').textContent = '공급자에 확인 중…'; return; }
+  if (!data) { $('status').textContent = '확인 버튼을 눌러주세요'; return; }
+  const fresh = data.status === 'fresh' && Number.isFinite(data.ageMs) && data.ageMs >= 0 && data.ageMs + (performance.now() - requestStarted) < 300000;
+  $('status').textContent = fresh ? '최근 공급자 관측 · 일반 여석 미확인' : data.status === 'unavailable' ? '연결 실패 · 수치 표시 안 함' : '오래되거나 확인할 수 없는 관측 · 수치 표시 안 함';
+  if(fresh) $('counts').textContent = `총 ${data.capacity}면 · 주차 차량 ${data.occupied}대`;
+  $('times').textContent = `공급자 관측: ${time(data.observedAt)} (KST) / 서버 수신: ${time(data.fetchedAt)} (KST)`;
+}
+$('mode').addEventListener('change',()=>{generation++; controller?.abort(); loading=false; data=null; render();});
+$('refresh').addEventListener('click',async()=>{
+  requestStarted = performance.now(); const current = ++generation; controller = new AbortController(); const requestController = controller; loading=true; data=null; render();
+  const timeout = setTimeout(()=>requestController.abort(),10000);
+  try { const response = await fetch('/api/parking',{signal:requestController.signal,cache:'no-store'}); const result = await response.json(); if(current===generation) data=result; }
+  catch { if(current===generation) data={status:'unavailable',observedAt:null,fetchedAt:Date.now()}; }
+  finally { clearTimeout(timeout); if(current===generation){loading=false;render();} }
+});
+setInterval(render,1000);
+render();
+
+FILE mvp/parking.test.js
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {readFile} from 'node:fs/promises';
+import {normalize,createParkingService} from './parking.mjs';
+import {createServer} from './server.mjs';
+const fixture=JSON.parse(await readFile(new URL('../docs/evidence/seoul-parking-first-response-2026-11-02.json',import.meta.url)));
+const row=fixture.selected_row;
+const now=Date.parse(row.NOW_PRK_VHCL_UPDT_TM.replace(' ','T')+'+09:00')+60000;
+const payload=(patch={})=>({GetParkingInfo:{RESULT:{CODE:'INFO-000'},row:[{...row,...patch}]}});
+test('real response fixture preserves reported quantities and distinguishes arithmetic difference',()=>{const x=normalize(payload(),now); assert.equal(x.status,'fresh'); assert.equal(x.difference,1150); assert.equal(x.occupied,110);});
+test('stale, future, impossible dates/counts, and disabled feed hide numbers',()=>{
+ for(const [patch,at] of [[{},now+240000],[{},now-60001],[{NOW_PRK_VHCL_UPDT_TM:'2026-02-30 00:00:00'},now],[{NOW_PRK_VHCL_CNT:1261},now],[{NOW_PRK_VHCL_CNT:-1},now],[{NOW_PRK_VHCL_CNT:'110'},now],[{PRK_STTS_YN:'0'},now]]) { const x=normalize(payload(patch),at);assert.equal(x.difference,null); }
+ assert.equal(normalize(payload({NOW_PRK_VHCL_CNT:1260}),now).difference,0);
+ assert.throws(()=>normalize(payload({PKLT_CD:'other'}),now)); assert.throws(()=>normalize({RESULT:{CODE:'ERROR'}},now));
+});
+test('single flight and cache suppress requests; refresh failure never returns old success',async()=>{
+ let calls=0,t=now; const svc=createParkingService({clock:()=>t,fetchImpl:async()=>{calls++; if(calls>1)throw Error('offline');return new Response(JSON.stringify(payload()));}});
+ const pair=await Promise.all([svc(),svc()]);assert.equal(calls,1);assert.equal(pair[0].status,'fresh');await svc();assert.equal(calls,1);t+=60000;assert.equal((await svc()).status,'unavailable');assert.equal(calls,2);
+});
+test('oversize and malformed responses fail closed',async()=>{for(const body of ['invalid','x'.repeat(262145)]) {const svc=createParkingService({fetchImpl:async()=>new Response(body)});assert.equal((await svc()).status,'unavailable');}});
+test('same-origin API returns data, failures and method policy',async()=>{
+ const server=createServer({parkingService:async()=>({status:'unavailable'})}); await new Promise(r=>server.listen(0,'127.0.0.1',r));
+ try{ const url=`http://127.0.0.1:${server.address().port}`;assert.equal((await fetch(url+'/api/parking')).status,503);assert.equal((await fetch(url+'/api/parking',{method:'HEAD'})).status,405);assert.equal((await fetch(url+'/live')).status,200); }
+ finally{await new Promise(r=>server.close(r));}
+});
+
+test('cached observation is re-evaluated across five-minute boundary',async()=>{
+ let t=now+239000,calls=0;
+ const svc=createParkingService({clock:()=>t,fetchImpl:async()=>{calls++;return new Response(JSON.stringify(payload()));}});
+ assert.equal((await svc()).status,'fresh'); t+=1000;
+ const result=await svc(); assert.equal(result.status,'stale'); assert.equal(result.capacity,null); assert.equal(result.ageMs,300000); assert.equal(calls,1);
+});
+test('API success contract and same-origin browser policy',async()=>{
+ const server=createServer({parkingService:async()=>({...normalize(payload(),now),ageMs:60000})});await new Promise(r=>server.listen(0,'127.0.0.1',r));
+ try{const url=`http://127.0.0.1:${server.address().port}`;const r=await fetch(url+'/api/parking');assert.equal(r.status,200);assert.equal(r.headers.get('cache-control'),'no-store');assert.equal(r.headers.get('x-content-type-options'),'nosniff');assert.equal((await r.json()).occupied,110);assert.match((await fetch(url+'/live')).headers.get('content-security-policy'),/connect-src 'self'/);}
+ finally{await new Promise(r=>server.close(r));}
+});

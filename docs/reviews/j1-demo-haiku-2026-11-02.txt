@@ -1,0 +1,190 @@
+Haiku5.5 독립 개발 검수, 읽기전용/도구·파일수정금지. 목표 J1 로컬합성여정→추천→실제WAV듣기. 서버127.0.0.1:4177만,외부공개없음. 작성원고4개/macOS say Yuna 로컬음성. SDK연결없음/효과주장없음. UI actual 재생21초음원 currentTime증가,scene work로변경후동일src/pausedfalse유지/next추천변경 확인. 원고저작권은직접작성,시스템음성재배포허가주장없고로컬시연만. important P1/P2 근거와최소수정,500단어 이내. 합성시계 매interaction61초증가 의도; 실제로주행중조작하라는UI아님.
+
+FILE core.mjs
+const dedupe = zones => zones.filter((z, i) => !i || z !== zones[i - 1]);
+
+// Synthetic zone-sequence experiment; no GPS/SDK adapter or calibrated probabilities.
+export function inferJourney({ history = [], profile, consent, permission, observations = [],
+  now, startedAt, maxAgeMs = 30_000 }) {
+  const unknown = reason => ({ status: 'unknown', reason, candidates: [], purposeHint: null });
+  if (!profile || !consent || !permission) return unknown('unavailable');
+  if (!Number.isFinite(now) || !Number.isFinite(startedAt) || startedAt > now ||
+      !Number.isFinite(maxAgeMs) || maxAgeMs < 0) return unknown('invalid-clock');
+  if (!observations.length) return unknown('no-observation');
+  let last = startedAt;
+  for (const o of observations) {
+    if (!o.zone || !Number.isFinite(o.at) || o.at < last || o.at > now)
+      return unknown('invalid-observation');
+    last = o.at;
+  }
+  if (now - last > maxAgeMs) return unknown('stale');
+  const prefix = dedupe(observations.map(o => o.zone));
+  const candidates = history.filter(h => h.profile === profile && Number.isFinite(h.endedAt) &&
+    h.endedAt < startedAt && Array.isArray(h.zones) && dedupe(h.zones).length >= prefix.length &&
+    prefix.every((z, i) => dedupe(h.zones)[i] === z));
+  if (!candidates.length) return unknown('no-pattern');
+  // Even a single match is a hypothesis, never a confirmed destination.
+  const purposes = new Set(candidates.map(h => h.confirmedPurpose || null));
+  return { status: 'hypothesis', reason: 'synthetic-prefix-match',
+    candidates: candidates.map(h => ({ id: h.id,
+      purpose: h.confirmedPurpose || null, distanceKm: h.distanceKm,
+      durationMinutes: h.durationMinutes })),
+    purposeHint: purposes.size === 1 ? [...purposes][0] : null };
+}
+
+export function recommend({ catalog, preferences, context = null, recent = [], currentId = null }) {
+  const candidates = context?.status === 'hypothesis' ? context.candidates : [];
+  const ranked = catalog.filter(c => c.testOnly === true && c.id !== currentId &&
+    !recent.includes(c.id)).map(c => {
+    const taste = preferences.topics?.[c.topic] || 0;
+    const contextual = candidates.length ? Math.min(...candidates.map(h =>
+      preferences.byPurpose?.[h.purpose]?.[c.topic] || 0)) : 0;
+    return { id: c.id, score: taste + contextual,
+      reasons: { taste, contextual, mode: candidates.length ? 'journey' : 'taste-only' } };
+  }).sort((a, b) => b.score - a.score || a.id.localeCompare(b.id));
+  return ranked[0] || null;
+}
+
+// A fresh, explicitly supplied destination only. Inferred routes cannot open this gate.
+export function informationDestination(nav, now, maxAgeMs = 30_000) {
+  if (!nav || !['navigation', 'parked-confirmation'].includes(nav.source) ||
+      !nav.destination || !Number.isFinite(maxAgeMs) || maxAgeMs < 0 || !Number.isFinite(now) || !Number.isFinite(nav.at) ||
+      nav.at > now || now - nav.at > maxAgeMs) return null;
+  return nav.destination;
+}
+
+// Caller supplies current from player events; this policy does not implement playback.
+export class QueuePolicy {
+  constructor({ minIntervalMs = 60_000, maxChanges = 3 } = {}) {
+    this.current = null; this.next = null; this.lastChange = -Infinity;
+    this.changes = 0; this.minIntervalMs = minIntervalMs; this.maxChanges = maxChanges;
+  }
+  update(id, now) {
+    if (!id || id === this.current || id === this.next || !Number.isFinite(now)) return false;
+    if (now - this.lastChange < this.minIntervalMs ||
+        this.changes > this.maxChanges) return false;
+    this.changes++; // Initial placement plus at most maxChanges replacements per session.
+    this.next = id; this.lastChange = now;
+    return true;
+  }
+  resetForProfile() {
+    this.current = null; this.next = null; this.lastChange = -Infinity; this.changes = 0;
+  }
+}
+
+// Single-session coordinator: no persistence; caller supplies current permission each tick.
+export class JourneySession {
+  constructor(history = []) {
+    this.history = structuredClone(history);
+    this.context = { status: 'unknown', candidates: [], purposeHint: null };
+    this.queue = new QueuePolicy();
+    this.profile = null;
+  }
+  clearDerived() {
+    this.context = { status: 'unknown', candidates: [], purposeHint: null };
+    this.queue.next = null;
+    // Invalidation must not reset the session-wide replacement budget.
+  }
+  eraseHistory() {
+    this.history = [];
+    this.clearDerived(); // Does not interrupt already playing content.
+  }
+  tick(input) {
+    if (input.profile !== this.profile || !input.consent || !input.permission)
+      this.clearDerived();
+    this.profile = input.profile;
+    this.context = inferJourney({ ...input, history: this.history });
+    if (this.context.status !== 'hypothesis') this.queue.next = null;
+    // Caller: tick -> recommend using returned context -> queue.update.
+    // Unknown context uses taste-only recommendations, subject to the same queue budget.
+    return this.context;
+  }
+}
+
+FILE demo/server.mjs
+import http from 'node:http';
+import {readFile} from 'node:fs/promises';
+const root=new URL('./',import.meta.url);
+const routes=new Map([['/', ['index.html','text/html']],['/app.mjs',['app.mjs','text/javascript']],
+ ['/content.mjs',['content.mjs','text/javascript']],['/style.css',['style.css','text/css']],['/core.mjs',['../core.mjs','text/javascript']]]);
+for(const id of ['story','pause','story2','pause2']) routes.set(`/audio/${id}.wav`,[`audio/${id}.wav`,'audio/wav']);
+http.createServer(async(req,res)=>{
+ const route=routes.get(new URL(req.url,'http://localhost').pathname);
+ if(!['GET','HEAD'].includes(req.method)){res.writeHead(405);res.end();return;}
+ if(!route){res.writeHead(404);res.end();return;}
+ try {const bytes=await readFile(new URL(route[0],root));
+ res.writeHead(200,{'Content-Type':route[1],'Content-Length':bytes.length,'Cache-Control':'no-store','X-Content-Type-Options':'nosniff',
+ 'Content-Security-Policy':"default-src 'self'; script-src 'self'; style-src 'self'; media-src 'self'; connect-src 'none'; object-src 'none'; base-uri 'none'; frame-ancestors 'none'"});
+ res.end(req.method==='HEAD'?undefined:bytes);
+ }catch{res.writeHead(404);res.end();}
+}).listen(4177,'127.0.0.1',()=>process.stdout.write('J1 local demo: http://127.0.0.1:4177\n'));
+
+FILE demo/app.mjs
+import {JourneySession,QueuePolicy,recommend,informationDestination} from '/core.mjs';
+import {catalog} from '/content.mjs';
+const $=id=>document.getElementById(id);
+const history=[{id:'work',profile:'owner',endedAt:10,zones:['home','shared','work'],confirmedPurpose:'commute'},
+ {id:'shop',profile:'owner',endedAt:20,zones:['home','shared','shop'],confirmedPurpose:'errand'}];
+let session,now,recent=[],appliedReason='',currentId=null;
+const audio=$('audio');
+const item=id=>catalog.find(c=>c.id===id);
+function reset(){audio.pause();audio.removeAttribute('src');audio.load();
+ session=new JourneySession(history);session.queue=new QueuePolicy({minIntervalMs:60_000,maxChanges:3});
+ now=100_000;recent=[];currentId=null;appliedReason='';$('play-status').textContent='';
+ $('now-title').textContent='아직 재생하지 않았어요';$('now-caption').textContent='아래 추천을 선택하면 시작합니다.';update();}
+function update(){
+ now+=61_000; // Explicit synthetic clock: each scenario interaction advances simulated time.
+ const scene=$('scene').value,profile=$('profile').value,consent=$('consent').checked;
+ const zones=scene==='unknown'?['new-road']:['home','shared',...(scene==='work'?['work']:scene==='shop'?['shop']:[])];
+ const observations=zones.map((zone,i)=>({zone,at:now-(zones.length-i)*1000-(scene==='stale'?31_000:0)}));
+ let context=session.tick({profile:profile==='guest'?null:profile,consent,permission:true,startedAt:100,now,observations});
+ const nav=scene==='explicit'&&consent&&profile==='owner'?{source:'navigation',destination:'시험 사무실',at:now}:null;
+ const destination=informationDestination(nav,now);
+ // Explicit route does not reveal purpose. The fixture's office has a user-confirmed label.
+ if(destination)context={status:'hypothesis',candidates:[{purpose:'commute'}],purposeHint:'commute'};
+ const status=context.status==='hypothesis'?(context.candidates.length>1?'두 경로가 아직 겹칩니다. 목적지는 미확인입니다.':`${destination?'지정한 내비 목적지':'과거 패턴과 일치하는 경로 후보'}를 사용합니다.`):'경로를 판단할 수 없어 취향을 사용합니다.';
+ $('context').textContent=status;
+ $('info').textContent=destination?`명시 목적지: ${destination}. 실제 날씨·교통 정보는 연결하지 않았습니다.`:'목적지 관련 정보는 제공하지 않습니다.';
+ const strategy=$('strategy').value;
+ if(strategy==='A')context={status:'unknown',candidates:[]};
+ if(strategy==='B')context=consent&&profile==='owner'?{status:'hypothesis',candidates:[{purpose:'commute'}]}:{status:'unknown',candidates:[]};
+ const taste=$('taste').value;
+ const preferences={topics:{story:taste==='story'?3:1,reflection:taste==='reflection'?3:1},
+ byPurpose:{commute:{reflection:4},errand:{reflection:-3}}};
+ const proposal=recommend({catalog,preferences,context,currentId,recent});
+ const before=session.queue.next;
+ const changed=proposal&&session.queue.update(proposal.id,now);
+ if(changed)appliedReason=proposal.reasons.mode==='journey'?'선택한 취향과 시연용 운행별 선호를 함께 반영했습니다.':'경로 판단 대신 선택한 취향을 반영했습니다.';
+ if(!session.queue.next)appliedReason='';
+ const next=item(session.queue.next);
+ $('mode-label').textContent=`${strategy} 방식`;
+ $('next-title').textContent=next?.title||'다음 추천이 없습니다';
+ $('transcript').textContent=next?.text||'새로운 시연 세션에서 다시 확인할 수 있습니다.';
+ $('reason').textContent=next?appliedReason+(!changed&&proposal?.id!==before?' 이번 세션의 잦은 교체를 막기 위해 기존 추천을 유지합니다.':''):'현재/최근 재생 제외 또는 세션 갱신 제한에 도달했습니다. 시연을 처음부터 시작할 수 있습니다.';
+ $('play').disabled=!next;
+ $('play').textContent=currentId?'다음 추천 듣기':'추천 듣기';
+}
+$('play').addEventListener('click',async()=>{
+ const next=item(session.queue.next);if(!next)return;
+ // Only an explicit user action changes the media source.
+ audio.pause();currentId=next.id;session.queue.current=next.id;session.queue.next=null;
+ recent=[...recent,next.id].slice(-2);audio.src=`/audio/${next.id}.wav`;
+ $('now-title').textContent=next.title;$('now-caption').textContent=next.label+' · 직접 작성한 시연 콘텐츠';
+ $('play-status').textContent='재생을 준비합니다.';update();
+ try{await audio.play();$('play-status').textContent='재생 중 · 상황을 바꿔도 이 콘텐츠는 유지됩니다.';}
+ catch{$('play-status').textContent='자동 재생 요청이 허용되지 않았거나 음원을 불러오지 못했습니다. 오디오 재생 버튼으로 다시 시도하세요.';}
+});
+audio.addEventListener('pause',()=>{if(currentId&&!audio.ended)$('play-status').textContent='일시정지 · 오디오 재생 버튼으로 이어 들을 수 있습니다.';});
+audio.addEventListener('play',()=>{$('play-status').textContent='재생 중 · 현재 콘텐츠를 유지합니다.';});
+audio.addEventListener('ended',()=>{$('play-status').textContent='재생이 끝났습니다. 다음 추천은 직접 선택하면 시작합니다.';});
+audio.addEventListener('error',()=>{$('play-status').textContent='음원을 불러오지 못했습니다. 로컬 서버와 음원 파일을 확인하세요.';});
+for(const id of ['scene','strategy','taste','profile','consent'])$(id).addEventListener('change',update);
+$('reset').addEventListener('click',reset);reset();
+
+FILE demo/index.html
+<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>이번 길 — 운행 맥락 시연</title><link rel="stylesheet" href="/style.css"></head><body>
+<header><span class="brand">이번 길 <small>JOURNEY MIX</small></span><span class="badge">합성 운행 · 로컬 시연</span></header>
+<main><section class="intro"><p class="eyebrow">선택은 줄이고, 듣는 흐름은 이어서</p><h1>이번 길에 어울리는<br>이야기를 준비했어요.</h1><p>운행 맥락과 취향을 함께 봅니다. 확실하지 않을 때는 아는 만큼만 추천합니다.</p></section>
+<div class="layout"><section class="panel player"><p class="eyebrow">지금 듣기</p><h2 id="now-title">아직 재생하지 않았어요</h2><p id="now-caption">아래 추천을 선택하면 시작합니다.</p><audio id="audio" controls preload="none"></audio><p id="play-status" role="status"></p><hr><div class="next-head"><p class="eyebrow">준비된 다음 콘텐츠</p><span id="mode-label"></span></div><h2 id="next-title"></h2><p id="reason"></p><button id="play" class="primary">추천 듣기</button><p class="quiet">상황이 바뀌어도 현재 재생은 유지합니다. 다음 콘텐츠는 버튼을 눌러 시작합니다.</p><details><summary>직접 작성한 콘텐츠 원문</summary><p id="transcript"></p></details></section>
+<aside class="panel"><h2>상황을 바꿔 보세요</h2><p class="quiet">실제 운전용 조작 화면이 아닌 시연 제어입니다. 위치를 수집하지 않습니다.</p><label>추천 방식<select id="strategy"><option value="C">C · 경로 맥락 + 취향</option><option value="B">B · 시간대 + 취향</option><option value="A">A · 취향만</option></select></label><label>좋아하는 콘텐츠<select id="taste"><option value="story">짧은 이야기</option><option value="reflection">생각 한 조각</option></select></label><label>합성 운행<select id="scene"><option value="shared">목적지 없음 · 분기 전</option><option value="work">출근 방향으로 분기</option><option value="shop">같은 아침 · 장보기 방향</option><option value="explicit">내비 목적지 지정 · 시험 사무실</option><option value="stale">위치 업데이트 지연</option><option value="unknown">처음 가는 경로</option></select></label><label>프로필<select id="profile"><option value="owner">차주 시연</option><option value="guest">게스트 · 이력 사용 안 함</option></select></label><label class="check"><input type="checkbox" id="consent" checked>합성 이력 사용</label><p id="context" role="status"></p><p id="info"></p><button id="reset">시연 처음부터</button></aside></div>
+<footer>직접 작성한 짧은 원고와 macOS 로컬 합성음성으로 구성했습니다. 실제 SDK·차량·서비스 연결 및 추천 효과를 입증하는 시연이 아닙니다. 재생·선택 상태는 새로고침하면 사라집니다.</footer></main><script type="module" src="/app.mjs"></script></body></html>

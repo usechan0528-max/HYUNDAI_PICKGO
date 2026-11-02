@@ -1,0 +1,53 @@
+[
+  {
+    "path": "/",
+    "method": "GET",
+    "status": 200,
+    "bytes": 3094,
+    "type": "text/html"
+  },
+  {
+    "path": "/app.mjs",
+    "method": "GET",
+    "status": 200,
+    "bytes": 6409,
+    "type": "text/javascript"
+  },
+  {
+    "path": "/audio/story.wav",
+    "method": "GET",
+    "status": 200,
+    "bytes": 931988,
+    "type": "audio/wav"
+  },
+  {
+    "path": "/../AGENTS.md",
+    "method": "GET",
+    "status": 404,
+    "bytes": 0,
+    "type": null
+  },
+  {
+    "path": "/",
+    "method": "POST",
+    "status": 405,
+    "bytes": 0,
+    "type": null
+  },
+  {
+    "audio": "story",
+    "seconds": 21.040634920634922
+  },
+  {
+    "audio": "pause",
+    "seconds": 18.460045351473923
+  },
+  {
+    "audio": "story2",
+    "seconds": 17.519410430839002
+  },
+  {
+    "audio": "pause2",
+    "seconds": 17.303809523809523
+  }
+]

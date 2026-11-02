@@ -1,0 +1,66 @@
+{
+  "date_kst": "2026-11-02",
+  "environment": "macOS; Node.js v25.9.0",
+  "test_command": "node --test (cwd=mvp)",
+  "test_runs": [
+    {
+      "execution": "sandbox",
+      "pass": 11,
+      "fail": 1,
+      "reason": "HTTP listen EPERM"
+    },
+    {
+      "execution": "require_escalated",
+      "pass": 12,
+      "fail": 0
+    },
+    {
+      "execution": "require_escalated after path fix and new regression test",
+      "pass": 12,
+      "fail": 1,
+      "reason": "symlink path mismatch; process exited before readiness"
+    },
+    {
+      "execution": "require_escalated after realpath fix",
+      "pass": 13,
+      "fail": 0,
+      "exit_code": 0
+    }
+  ],
+  "browser": "Codex in-app browser, default desktop viewport",
+  "ui_checks": [
+    "initial unknown locked",
+    "parked candidates visible",
+    "community details no vacancy count",
+    "sparse sample suppressed",
+    "zero distinct from unknown",
+    "advance expires count",
+    "offline hides count",
+    "reconnect retains stale timestamp",
+    "restricted clears detail and hides workspace",
+    "feedback visible in memory",
+    "switch lot clears feedback",
+    "final console error query empty"
+  ],
+  "not_tested": [
+    "real API",
+    "Pleos SDK",
+    "Android emulator",
+    "real vehicle",
+    "real user study",
+    "mobile viewport",
+    "automatic DOM regression",
+    "prediction accuracy"
+  ],
+  "files_sha256": {
+    "mvp/app.js": "2b19286962d8ffeec67e191751c2f39ffd574e00ab2384e6603a2cbc6fb21331",
+    "mvp/domain.js": "0b73e5ae5cf404abcc68a0f34519ab2c55e76325385c75dc215271e0c19c364b",
+    "mvp/domain.test.js": "1dcbaba9320bf109b422bdfc4a07bd9200926fd5a15a81e193b0da8400e64f26",
+    "mvp/fixtures.js": "084ea325e6e92ca14a33326da7365931d955b262a9989993c507363df6b3a725",
+    "mvp/index.html": "6e5853091cd407784649fbbf21e8880e832c065cc55db8f2635154cc6ba7feae",
+    "mvp/package.json": "ff5a870e2f222871c935d6c9256108597beb3654a50bb04084d914f576e5a165",
+    "mvp/server.mjs": "6fd63f8866ec59f78c5fb7b76f550c18dfe71620fb178f735a733d91ac41aa62",
+    "mvp/server.test.js": "23fd80e13d2449a9759021ae48fc9f86240f20217ed3b052eb0035fa52d44162",
+    "mvp/styles.css": "b1927b7ee4fc19fc2daa52cdd14338ff7aedcefcaa4a0f8abcdb4b9b599615f3"
+  }
+}

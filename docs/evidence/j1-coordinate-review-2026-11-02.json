@@ -1,0 +1,50 @@
+[
+  {
+    "stage": "initial",
+    "is_error": false,
+    "session_id": "17cd8349-04ee-4894-bcef-e23a1c4fb6e3",
+    "modelUsage": {
+      "claude-haiku-5-5": {
+        "inputTokens": 2,
+        "outputTokens": 7867,
+        "cacheReadInputTokens": 2319,
+        "cacheCreationInputTokens": 6726,
+        "webSearchRequests": 0,
+        "costUSD": 0.005302090000000001,
+        "contextWindow": 1000000,
+        "maxOutputTokens": 128000,
+        "thinkingTokens": 6543,
+        "cacheCreationEphemeral5mInputTokens": 0,
+        "cacheCreationEphemeral1hInputTokens": 6726,
+        "canonicalModel": "claude-haiku-5-5",
+        "provider": "firstParty",
+        "costBasis": "list"
+      }
+    },
+    "result": "## 독립 검수 결과 (읽기 전용, 수정 없음)\n\n붙여넣은 코드 기준으로 **차단 수준의 논리 오류는 찾지 못했습니다.** 게이팅, 시간 순서 검사, 분기 전복수 후보, `unknown` 처리는 명시된 테스트와 일치합니다. 다만 아래 항목은 UI 검증 전에 확인이 필요합니다.\n\n**1. 흔들림 과장 위험 (중요)**\n`observationInput`의 `jitter`는 모든 점에 같은 `+0.0001°`를 더하는 고정 편향입니다. 무작위 오차가 아니므로 \"흔들림 허용\"을 검증하지 못합니다. 제한 반경 안의 시드 고정 잡음 테스트를 추가하고, `toleranceMeters`는 GPS 정확도가 아니라 **매칭 반경**이라고 문서에 명시해야 합니다.\n\n**2. 허용 반경과 경로 간격 (중요)**\n분기점 간격이 약 111m인데 허용 반경이 60m입니다. 두 점의 중간(약 55.6m)에 있는 관측은 인접한 두 점에 모두 매칭됩니다. 반경을 경로 간격에 맞춰 조정하거나, 이 경계를 테스트로 고정해야 합니다.\n\n**3. 시간 제약 부족**\n- 같은 지점에 머무르는 동안(`j=position` 허용) 제자리 관측이 무한히 매칭됩니다.\n- 연속 관측 사이의 시간 간격에 상한이 없습니다. 검사하는 것은 마지막 관측의 나이(`maxAgeMs`)뿐입니다.\n- `maxGapMs` 추가를 권합니다.\n\n**4. 입력 및 복잡도 경계**\n- `observations`, `history`, `route.points`의 길이에 상한이 없습니다.\n- 비용은 틱마다 `경로 수 × 관측 수 × 경로 길이 × (maxAdvance+1)`입니다.\n- 실험 단계라도 상한(예: 관측 수, 이력 수)을 두는 것이 안전합니다.\n\n**5. 정확도 과장 경계**\n- 실제 SDK 소스는 항상 `unknown`이므로 현재 실험은 합성 데이터에서만 동작합니다.\n- UI에서 실제 위치 추론처럼 보이지 않도록 해야 합니다.\n- 시작점은 경로의 첫 점에 고정되어 있습니다. 경로 중간에서 시작하면 `no-pattern`이 됩니다. 이 제한을 명시해야 합니다.\n\n**6. 테스트 공백**\n- `demo-observations.test.mjs`의 세션 테스트는 `core.mjs`의 `queue.update` 동작에 의존하는데, 이 코드는 확인할 수 없습니다.\n- `new JourneySession(history)`처럼 기본 `inferJourney`가 유지되는지 확인하는 테스트가 없습니다.\n- 복수 후보 상태에서 관측이 쌓인 뒤 분기가 확정되어 추천이 바뀌는 흐름을 단일 틱 테스트 외에 검증하지 않습니다.\n\n**7. 검증 상태**\n- \"node 28/28\"은 사용자가 보고한 결과입니다. 읽기 전용 모드라서 재실행하지 않았고, 확인할 수 없습니다.\n- UI 검증은 아직 진행되지 않았습니다.\n- 자동 이어듣기 코드는 건드리지 않았습니다.\n\n**권장 순서:** 1, 2, 4번을 UI 검증 전에 처리하고, 3, 6번은 다음 단계에서 다루는 것을 제안합니다."
+  },
+  {
+    "stage": "followup",
+    "is_error": false,
+    "session_id": "17cd8349-04ee-4894-bcef-e23a1c4fb6e3",
+    "modelUsage": {
+      "claude-haiku-5-5": {
+        "inputTokens": 4,
+        "outputTokens": 9577,
+        "thinkingTokens": 7641,
+        "cacheReadInputTokens": 11364,
+        "cacheCreationInputTokens": 16345,
+        "cacheCreationEphemeral5mInputTokens": 0,
+        "cacheCreationEphemeral1hInputTokens": 16345,
+        "webSearchRequests": 0,
+        "costUSD": 0.008171540000000001,
+        "contextWindow": 1000000,
+        "maxOutputTokens": 128000,
+        "canonicalModel": "claude-haiku-5-5",
+        "provider": "firstParty",
+        "costBasis": "list"
+      }
+    },
+    "result": "## 후속 검수 결과 (읽기 전용, 수정 없음)\n\n**결론:** 지적 사항은 대부분 반영되었습니다. 차단 수준의 문제는 찾지 못했습니다.\n\n**반영 확인**\n- 입력 상한과 비교 상한 초과 시 전체를 `unknown`으로 처리하므로 부분 후보 선택이 없습니다.\n- `maxGapMs`는 연속 관측 사이에 적용됩니다.\n- 비교 상한 검사는 내부 루프에 있어서 상한 도달 즉시 중단됩니다.\n\n**남은 지적**\n1. **출발점과 첫 관측 사이 간격은 검사하지 않습니다.** `maxGapMs`는 관측끼리만 확인하므로, 출발 후 첫 관측이 늦게 와도 통과합니다. 첫 관측과 `startedAtMs`의 차이도 검사하거나 문서화해야 합니다.\n2. **이력 128개 초과 시 추정 전체가 멈춥니다.** 실패 방식(fail-closed)으로는 옳지만, 장기 사용 시 추천이 계속 `unknown`이 되므로 제품 동작으로 명시해야 합니다.\n3. **시드 1729 잡음 시험은 한 가지 표본만 확인합니다.** 실제 오차 분포를 대표하지 않는다는 점을 테스트 주석에 적어야 합니다.\n\n**미검증**\n- 32개 시험 통과는 보고된 결과이며, 이번 읽기 전용 검수에서 재실행하지 않았습니다.\n- UI 확인(jitter→work 추천, 재생 중 shop→다음 story 변경)은 아직 확인되지 않았습니다."
+  }
+]

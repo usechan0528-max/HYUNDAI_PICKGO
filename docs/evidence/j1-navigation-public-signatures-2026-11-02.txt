@@ -1,0 +1,90 @@
+Compiled from "DrivingInfo.kt"
+public final class ai.pleos.playground.navi.data.DrivingInfo {
+  public static final ai.pleos.playground.navi.data.DrivingInfo$Companion Companion;
+  public ai.pleos.playground.navi.data.DrivingInfo(ai.pleos.playground.navi.data.DrivingState, java.util.List<ai.pleos.playground.navi.data.DrivingState>);
+  public final ai.pleos.playground.navi.data.DrivingState getDestination();
+  public final java.util.List<ai.pleos.playground.navi.data.DrivingState> getWaypoints();
+  public final ai.pleos.playground.navi.data.DrivingState component1();
+  public final java.util.List<ai.pleos.playground.navi.data.DrivingState> component2();
+  public final ai.pleos.playground.navi.data.DrivingInfo copy(ai.pleos.playground.navi.data.DrivingState, java.util.List<ai.pleos.playground.navi.data.DrivingState>);
+  public static ai.pleos.playground.navi.data.DrivingInfo copy$default(ai.pleos.playground.navi.data.DrivingInfo, ai.pleos.playground.navi.data.DrivingState, java.util.List, int, java.lang.Object);
+  public java.lang.String toString();
+  public int hashCode();
+  public boolean equals(java.lang.Object);
+  public static final void write$Self$data_release(ai.pleos.playground.navi.data.DrivingInfo, kotlinx.serialization.encoding.CompositeEncoder, kotlinx.serialization.descriptors.SerialDescriptor);
+  public ai.pleos.playground.navi.data.DrivingInfo(int, ai.pleos.playground.navi.data.DrivingState, java.util.List, kotlinx.serialization.internal.SerializationConstructorMarker);
+  public static final kotlinx.serialization.KSerializer[] access$get$childSerializers$cp();
+  static {};
+}
+Compiled from "DrivingState.kt"
+public final class ai.pleos.playground.navi.data.DrivingState {
+  public static final ai.pleos.playground.navi.data.DrivingState$Companion Companion;
+  public ai.pleos.playground.navi.data.DrivingState(java.lang.String, int, int, int, boolean, boolean, int, int, int, ai.pleos.playground.navi.data.ChargingPlan);
+  public ai.pleos.playground.navi.data.DrivingState(java.lang.String, int, int, int, boolean, boolean, int, int, int, ai.pleos.playground.navi.data.ChargingPlan, int, kotlin.jvm.internal.DefaultConstructorMarker);
+  public final java.lang.String getName();
+  public final int getDuration();
+  public final int getDistance();
+  public final int getRemainDestinationChargingValue();
+  public final boolean isChargingStation();
+  public final boolean isRecommendedChargingStation();
+  public final int getMaxChargingPower();
+  public final int getTargetSoc();
+  public final int getChargerCount();
+  public final ai.pleos.playground.navi.data.ChargingPlan getChargingPlan();
+  public final java.lang.String component1();
+  public final int component2();
+  public final int component3();
+  public final int component4();
+  public final boolean component5();
+  public final boolean component6();
+  public final int component7();
+  public final int component8();
+  public final int component9();
+  public final ai.pleos.playground.navi.data.ChargingPlan component10();
+  public final ai.pleos.playground.navi.data.DrivingState copy(java.lang.String, int, int, int, boolean, boolean, int, int, int, ai.pleos.playground.navi.data.ChargingPlan);
+  public static ai.pleos.playground.navi.data.DrivingState copy$default(ai.pleos.playground.navi.data.DrivingState, java.lang.String, int, int, int, boolean, boolean, int, int, int, ai.pleos.playground.navi.data.ChargingPlan, int, java.lang.Object);
+  public java.lang.String toString();
+  public int hashCode();
+  public boolean equals(java.lang.Object);
+  public static final void write$Self$data_release(ai.pleos.playground.navi.data.DrivingState, kotlinx.serialization.encoding.CompositeEncoder, kotlinx.serialization.descriptors.SerialDescriptor);
+  public ai.pleos.playground.navi.data.DrivingState(int, java.lang.String, int, int, int, boolean, boolean, int, int, int, ai.pleos.playground.navi.data.ChargingPlan, kotlinx.serialization.internal.SerializationConstructorMarker);
+  static {};
+}
+Compiled from "DestinationInfo.kt"
+public final class ai.pleos.playground.navi.data.DestinationInfo {
+  public static final ai.pleos.playground.navi.data.DestinationInfo$Companion Companion;
+  public ai.pleos.playground.navi.data.DestinationInfo(double, double, java.lang.Double, java.lang.Double, java.lang.String, java.lang.String, int, int, int, java.lang.String, java.lang.String, java.lang.String);
+  public ai.pleos.playground.navi.data.DestinationInfo(double, double, java.lang.Double, java.lang.Double, java.lang.String, java.lang.String, int, int, int, java.lang.String, java.lang.String, java.lang.String, int, kotlin.jvm.internal.DefaultConstructorMarker);
+  public final double getLatitude();
+  public final double getLongitude();
+  public final java.lang.Double getDisplayLatitude();
+  public final java.lang.Double getDisplayLongitude();
+  public final java.lang.String getName();
+  public final java.lang.String getAddress();
+  public final int getRemainDistance();
+  public final int getRemainTime();
+  public final int getTollFare();
+  public final java.lang.String getPoiId();
+  public final java.lang.String getPoiSubId();
+  public final java.lang.String getPoiProvider();
+  public final double component1();
+  public final double component2();
+  public final java.lang.Double component3();
+  public final java.lang.Double component4();
+  public final java.lang.String component5();
+  public final java.lang.String component6();
+  public final int component7();
+  public final int component8();
+  public final int component9();
+  public final java.lang.String component10();
+  public final java.lang.String component11();
+  public final java.lang.String component12();
+  public final ai.pleos.playground.navi.data.DestinationInfo copy(double, double, java.lang.Double, java.lang.Double, java.lang.String, java.lang.String, int, int, int, java.lang.String, java.lang.String, java.lang.String);
+  public static ai.pleos.playground.navi.data.DestinationInfo copy$default(ai.pleos.playground.navi.data.DestinationInfo, double, double, java.lang.Double, java.lang.Double, java.lang.String, java.lang.String, int, int, int, java.lang.String, java.lang.String, java.lang.String, int, java.lang.Object);
+  public java.lang.String toString();
+  public int hashCode();
+  public boolean equals(java.lang.Object);
+  public static final void write$Self$data_release(ai.pleos.playground.navi.data.DestinationInfo, kotlinx.serialization.encoding.CompositeEncoder, kotlinx.serialization.descriptors.SerialDescriptor);
+  public ai.pleos.playground.navi.data.DestinationInfo(int, double, double, java.lang.Double, java.lang.Double, java.lang.String, java.lang.String, int, int, int, java.lang.String, java.lang.String, java.lang.String, kotlinx.serialization.internal.SerializationConstructorMarker);
+  static {};
+}

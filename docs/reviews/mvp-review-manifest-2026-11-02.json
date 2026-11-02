@@ -1,0 +1,11 @@
+{
+  "mvp/domain.js": "0b73e5ae5cf404abcc68a0f34519ab2c55e76325385c75dc215271e0c19c364b",
+  "mvp/app.js": "9858274804aeabf7b92a67d1521a1e02b928075b08cf744f2927d3361afd1275",
+  "mvp/fixtures.js": "084ea325e6e92ca14a33326da7365931d955b262a9989993c507363df6b3a725",
+  "mvp/index.html": "6e5853091cd407784649fbbf21e8880e832c065cc55db8f2635154cc6ba7feae",
+  "mvp/styles.css": "b1927b7ee4fc19fc2daa52cdd14338ff7aedcefcaa4a0f8abcdb4b9b599615f3",
+  "mvp/server.mjs": "adfb3fc1f5a7502babe91e5ac1a91e6b60f9e0cd6eac1e084c28ae8dcc0bcd6c",
+  "mvp/domain.test.js": "1dcbaba9320bf109b422bdfc4a07bd9200926fd5a15a81e193b0da8400e64f26",
+  "mvp/server.test.js": "bc284f7c609d1891bccaf34fe380018dce60f3c676886e5fa3aed75b346484b1",
+  "README.md": "b55477cc14f004bfb0d0a0d2a7109bea1b95db5a42c84047de8c86d58cfde0aa"
+}

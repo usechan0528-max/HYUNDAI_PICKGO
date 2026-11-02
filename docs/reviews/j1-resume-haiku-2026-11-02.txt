@@ -1,0 +1,147 @@
+Haiku5.5 읽기전용검수,도구/수정금지. 사용자D015반복조작줄이기 위해취향/중간재생위치브라우저localStorage추가. 위치/경로이력저장없음. owner만저장,guest저장없음. schema화이트리스트/오류fallback/7일유효/카탈로그ID검증/끝부분resume제외. 초기로드는자동재생안함,첫버튼으로resume. reset(true)삭제와저장금지flag,새재생/취향변경시재활성. 실제unit36통과,브라우저통합검증진행중. 중요한데이터누출/삭제후재생성/이벤트race/이어듣기실패지적400단어이내. 고정전체코드:
+
+FILE demo/listening-store.mjs
+export const STORAGE_KEY='journey-demo-listening-v1';
+const TTL=7*24*60*60*1000;
+const tastes=new Set(['story','reflection']);
+function clean(value,ids,now){
+ if(!value||value.version!==1||!tastes.has(value.taste)||!Number.isFinite(value.savedAt)||
+ value.savedAt>now||now-value.savedAt>TTL)return null;
+ let checkpoint=null;
+ const c=value.checkpoint;
+ if(c&&ids.includes(c.id)&&Number.isFinite(c.seconds)&&Number.isFinite(c.duration)&&
+ c.seconds>=1&&c.duration>1&&c.duration<=3600&&c.seconds<c.duration-1)
+ checkpoint={id:c.id,seconds:c.seconds,duration:c.duration};
+ return {version:1,taste:value.taste,checkpoint,savedAt:value.savedAt};
+}
+export function loadListening(storage,ids,now=Date.now()){
+ try{const raw=storage.getItem(STORAGE_KEY);if(!raw||raw.length>2048)return null;
+ return clean(JSON.parse(raw),ids,now);}catch{return null;}
+}
+export function saveListening(storage,{taste,checkpoint},ids,now=Date.now()){
+ const value=clean({version:1,taste,checkpoint,savedAt:now},ids,now);if(!value)return false;
+ try{storage.setItem(STORAGE_KEY,JSON.stringify(value));return true;}catch{return false;}
+}
+export function clearListening(storage){try{storage.removeItem(STORAGE_KEY);return true;}catch{return false;}}
+
+FILE demo/app.mjs
+import {JourneySession,QueuePolicy,recommend,informationDestination} from '/core.mjs';
+import {catalog} from '/content.mjs';
+import {loadListening,saveListening,clearListening} from '/listening-store.mjs';
+let storage;try{storage=window.localStorage;}catch{storage=null;}
+const contentIds=catalog.map(c=>c.id);
+let resumePending=null,lastSavedSecond=-1,savingAllowed=false;
+import {inferCoordinateJourney} from '/coordinates.mjs';
+import {history,observationInput} from '/observations.mjs';
+const $=id=>document.getElementById(id);
+let session,now,recent=[],appliedReason='',appliedMode='',currentId=null,playGeneration=0,playbackPhase='idle',autoContinue=false;
+const audio=$('audio');
+const item=id=>catalog.find(c=>c.id===id);
+function reset(forget=false){
+ const cleared=forget?clearListening(storage):true;
+ savingAllowed=false;
+ $('storage-status').textContent=forget?(cleared?'저장한 취향과 재생 위치를 삭제했습니다.':'브라우저 저장에 접근할 수 없어 삭제 여부를 확인하지 못했습니다.'):'취향과 중간 재생 위치만 이 브라우저에 저장합니다. 위치·경로는 저장하지 않습니다.';
+ const saved=forget?null:loadListening(storage,contentIds);
+ resumePending=saved?.checkpoint||null;lastSavedSecond=-1;playGeneration++;playbackPhase='idle';autoContinue=false;
+ $('strategy').value='C';$('taste').value=saved?.taste||'story';$('scene').value='shared';$('profile').value='owner';$('consent').checked=true;
+ audio.pause();audio.removeAttribute('src');audio.load();audio.hidden=true;
+ session=new JourneySession(history,inferCoordinateJourney);session.queue=new QueuePolicy({minIntervalMs:60_000,maxChanges:3});
+ now=100_000;recent=[];currentId=null;appliedReason='';appliedMode='';$('play-status').textContent='';
+ $('now-title').textContent='아직 재생하지 않았어요';$('now-caption').textContent='이동 시작을 한 번 누르면 다음 콘텐츠까지 이어서 듣습니다.';update();}
+function update(){
+ now+=61_000; // Explicit synthetic clock: each scenario interaction advances simulated time.
+ const scene=$('scene').value,profile=$('profile').value,consent=$('consent').checked;
+ let context=session.tick(observationInput({scene,profile,consent,now}));
+ const nav=scene==='explicit'&&consent&&profile==='owner'?{source:'navigation',destination:'시험 사무실',at:now}:null;
+ const destination=informationDestination(nav,now);
+ // Fixture-only mapping: this destination was labelled commute in the synthetic setup, not inferred from an address.
+ if(destination)context={status:'hypothesis',candidates:[{purpose:'commute'}],purposeHint:'commute'};
+ const status=context.status==='hypothesis'?(context.candidates.length>1?'두 경로가 아직 겹칩니다. 목적지는 미확인입니다.':`${destination?'지정한 내비 목적지':'과거 패턴과 일치하는 경로 후보'}를 사용합니다.`):'경로를 판단할 수 없어 취향을 사용합니다.';
+ $('context').textContent=status;
+ $('info').textContent=destination?`명시 목적지: ${destination}. 실제 날씨·교통 정보는 연결하지 않았습니다.`:'목적지 관련 정보는 제공하지 않습니다.';
+ const strategy=$('strategy').value;
+ if(strategy==='A')context={status:'unknown',candidates:[]};
+ if(strategy==='B')context=consent&&profile==='owner'?{status:'hypothesis',candidates:history.filter(h=>h.departureSlot==='morning'&&h.profile===profile&&h.endedAtMs<100).map(h=>({purpose:h.confirmedPurpose}))}:{status:'unknown',candidates:[]};
+ const taste=$('taste').value;
+ const preferences={topics:{story:taste==='story'?3:1,reflection:taste==='reflection'?3:1},
+ byPurpose:{commute:{reflection:4},errand:{reflection:-3}}};
+ let proposal=recommend({catalog,preferences,context,currentId,recent});
+ if(!currentId&&resumePending&&profile==='owner')proposal={id:resumePending.id,reasons:{mode:'resume'}};
+ const before=session.queue.next;
+ const changed=proposal&&session.queue.update(proposal.id,now);
+ if(changed)appliedMode=strategy;
+ if(changed)appliedReason=proposal.reasons.mode==='resume'?`이전에 멈춘 ${Math.floor(resumePending.seconds)}초부터 이어듣습니다.`:proposal.reasons.mode==='journey'?'선택한 취향과 시연용 운행별 선호를 함께 반영했습니다.':'경로 판단 대신 선택한 취향을 반영했습니다.';
+ if(!session.queue.next)appliedReason='';
+ const next=item(session.queue.next);
+ $('mode-label').textContent=next&&appliedMode!==strategy?`${appliedMode} 추천 유지 · 선택 ${strategy}`:`${strategy} 방식`;
+ if(strategy==='A')$('context').textContent='A 방식은 경로와 시간대를 사용하지 않고 취향만 반영합니다.';
+ if(strategy==='B')$('context').textContent=consent&&profile==='owner'?'B 방식은 합성 아침 시간대의 과거 패턴을 사용합니다.':'이력 사용이 없어 취향만 반영합니다.';
+ $('next-title').textContent=next?.title||'다음 추천이 없습니다';
+ $('transcript').textContent=next?.text||'새로운 시연 세션에서 다시 확인할 수 있습니다.';
+ $('reason').textContent=next?appliedReason+(!changed&&proposal?.id!==before?' 이번 세션의 잦은 교체를 막기 위해 기존 추천을 유지합니다.':''):'현재/최근 재생 제외 또는 세션 갱신 제한에 도달했습니다. 시연을 처음부터 시작할 수 있습니다.';
+ $('play').disabled=!next||playbackPhase==='loading';
+ $('play').textContent=currentId?'다음으로':resumePending&&profile==='owner'?'이동 시작 · 이어듣기':'이동 시작 · 바로 듣기';
+ $('stop').disabled=!autoContinue;
+}
+async function startNext(){
+ if(playbackPhase==='loading')return;
+ const next=item(session.queue.next);if(!next){autoContinue=false;$('stop').disabled=true;$('play-status').textContent='다음 콘텐츠가 없어 자동 이어듣기를 멈췄습니다.';return;}
+ // A user starts the listening session; natural completion may advance within that session.
+ savingAllowed=$('profile').value==='owner';lastSavedSecond=-1;
+ const resumeSeconds=resumePending?.id===next.id?resumePending.seconds:0;resumePending=null;
+ const generation=++playGeneration;playbackPhase='loading';
+ if(resumeSeconds)audio.addEventListener('loadedmetadata',()=>{if(generation===playGeneration&&Number.isFinite(audio.duration)&&resumeSeconds<audio.duration-1)audio.currentTime=resumeSeconds;},{once:true});
+ audio.pause();currentId=session.queue.consumeNext();
+ recent=[...recent,next.id];audio.hidden=false;audio.src=`/audio/${next.id}.wav`;
+ $('now-title').textContent=next.title;$('now-caption').textContent=next.label+' · 직접 작성한 시연 콘텐츠';
+ $('play-status').textContent='재생을 준비합니다.';update();
+ try{await audio.play();if(generation!==playGeneration)return;playbackPhase='playing';$('play').disabled=!session.queue.next;$('play-status').textContent='자동 이어듣기 중 · 상황이 바뀌어도 현재 콘텐츠는 유지합니다.';}
+ catch{if(generation!==playGeneration)return;playbackPhase='error';autoContinue=false;$('stop').disabled=true;$('play').disabled=!session.queue.next;$('play-status').textContent='자동 재생 요청이 허용되지 않았거나 음원을 불러오지 못했습니다. 오디오 재생 버튼으로 다시 시도하세요.';}
+}
+$('play').addEventListener('click',()=>{if(playbackPhase==='loading')return;autoContinue=true;void startNext();});
+$('stop').addEventListener('click',()=>{persistListening();autoContinue=false;playGeneration++;playbackPhase='stopped';audio.pause();$('stop').disabled=true;$('play').disabled=!session.queue.next;$('play-status').textContent='이동 듣기를 종료했습니다. 다시 들으려면 오디오 재생 버튼 또는 다음으로를 누르세요.';});
+audio.addEventListener('pause',()=>{if(currentId&&!audio.ended&&audio.paused&&playbackPhase==='playing'){playbackPhase='paused';$('play-status').textContent='일시정지 · 오디오 재생 버튼으로 이어 들을 수 있습니다.';}});
+audio.addEventListener('play',()=>{if(audio.paused||playbackPhase==='loading')return;playbackPhase='playing';$('play-status').textContent='재생 중 · 현재 콘텐츠를 유지합니다.';});
+audio.addEventListener('ended',()=>{if(!audio.ended)return;persistListening(true);playbackPhase='ended';if(autoContinue){void startNext();}else{$('play-status').textContent='재생이 끝났습니다.';}});
+audio.addEventListener('error',()=>{playbackPhase='error';autoContinue=false;$('stop').disabled=true;$('play-status').textContent='음원을 불러오지 못했습니다. 로컬 서버와 음원 파일을 확인하세요.';});
+for(const id of ['scene','strategy','taste','profile','consent'])$(id).addEventListener('change',update);
+$('reset').addEventListener('click',()=>reset(true));
+function persistListening(completed=false){
+ if(!savingAllowed||$('profile').value!=='owner')return;
+ const checkpoint=completed?null:currentId&&audio.readyState>0?{id:currentId,seconds:audio.currentTime,duration:audio.duration}:resumePending;
+ const ok=saveListening(storage,{taste:$('taste').value,checkpoint},contentIds);
+ $('storage-status').textContent=ok?'취향과 중간 재생 위치만 이 브라우저에 저장했습니다. 위치·경로는 저장하지 않습니다.':'브라우저 저장이 불가능합니다. 이번 듣기는 계속할 수 있습니다.';
+}
+$('taste').addEventListener('change',()=>{savingAllowed=$('profile').value==='owner';persistListening();});
+$('profile').addEventListener('change',()=>{resumePending=null;lastSavedSecond=-1;});
+audio.addEventListener('timeupdate',()=>{const second=Math.floor(audio.currentTime);if(second!==lastSavedSecond&&second%2===0&&playbackPhase!=='loading'){lastSavedSecond=second;persistListening();}});
+window.addEventListener('pagehide',()=>persistListening());
+reset();
+
+FILE listening-store.test.mjs
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {STORAGE_KEY,saveListening,loadListening,clearListening} from './demo/listening-store.mjs';
+const store=()=>{const map=new Map();return {getItem:k=>map.get(k),setItem:(k,v)=>map.set(k,v),removeItem:k=>map.delete(k)};};
+test('preferences and incomplete media roundtrip, only whitelisted fields persist',()=>{
+ const s=store();saveListening(s,{taste:'story',checkpoint:{id:'a',seconds:5,duration:20,latitude:42},location:'private'},['a'],100);
+ assert.deepEqual(loadListening(s,['a'],101),{version:1,taste:'story',checkpoint:{id:'a',seconds:5,duration:20},savedAt:100});
+ assert.equal(s.getItem(STORAGE_KEY).includes('latitude'),false);
+});
+test('completed, unknown and invalid checkpoints cannot resume',()=>{
+ for(const checkpoint of [{id:'a',seconds:19,duration:20},{id:'unknown',seconds:5,duration:20},{id:'a',seconds:-1,duration:20},{id:'a',seconds:5,duration:Infinity}]){
+ const s=store();saveListening(s,{taste:'story',checkpoint},['a'],100);
+ assert.equal(loadListening(s,['a'],100).checkpoint,null);
+ }
+});
+test('expiry, future clock, invalid JSON, schema and size do not block listening',()=>{
+ const s=store();saveListening(s,{taste:'story'},['a'],100);
+ assert.equal(loadListening(s,['a'],99),null);assert.equal(loadListening(s,['a'],100+8*86400000),null);
+ for(const raw of ['not-json','{}','x'.repeat(2049)]){s.setItem(STORAGE_KEY,raw);assert.equal(loadListening(s,['a']),null);}
+ const blocked={getItem(){throw Error();},setItem(){throw Error();},removeItem(){throw Error();}};
+ assert.equal(loadListening(blocked,['a']),null);assert.equal(saveListening(blocked,{taste:'story'},['a']),false);assert.equal(clearListening(blocked),false);
+});
+test('clear removes stored preference and checkpoint',()=>{
+ const s=store();saveListening(s,{taste:'reflection',checkpoint:{id:'a',seconds:5,duration:20}},['a'],100);
+ assert.equal(clearListening(s),true);assert.equal(loadListening(s,['a'],100),null);
+});

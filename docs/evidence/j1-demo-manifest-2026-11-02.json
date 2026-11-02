@@ -1,0 +1,32 @@
+{
+  "testPass": 19,
+  "testFail": 0,
+  "url": "http://127.0.0.1:4177",
+  "files": {
+    "experiments/journey-context/demo/index.html": "909dd6baf204bd7d09eddb1e4d2f0d1857df16911fe577f5b0d49b111fd35549",
+    "experiments/journey-context/demo/style.css": "82d829c4c4697f5690b295daa22a02de774452c68c020ade2d0ff66cbbfdca20",
+    "experiments/journey-context/demo/app.mjs": "58d97ec3e4dce1f28e3f4d3a9628b6072a816c4545dce46b80dd80be0abe7d52",
+    "experiments/journey-context/demo/server.mjs": "05ef6b781fa8bc01d155047576b480e442f59390434a17aaef54ed2dfa2d425b",
+    "experiments/journey-context/demo/content.mjs": "b0ebadddfc3b0045024bb14615f539aeedef303448a884f5c43b371ee50aaafa",
+    "experiments/journey-context/demo/audio/pause2.wav": "36322c3461298c890e140b2dc418f95fb6a82d10a169f07ff7255c0f62a85e56",
+    "experiments/journey-context/demo/audio/story.wav": "f7028b18070b1d96a30021e7922abc0a0b3b9f4f78e5006f6b83db04967d6acf",
+    "experiments/journey-context/demo/audio/story2.wav": "6f5fab04900365c07c4f9ed67c4271643e40a739b23b8502c6f8c47b4c647159",
+    "experiments/journey-context/demo/audio/pause.wav": "8204a04b0822a2ea9dcdc2497a075487690c418d797106cae47ab735f10375c6",
+    "experiments/journey-context/core.mjs": "a9a4519cf210a046c7706d4d6218f3b217136611c48576a455c7666924ea2076",
+    "experiments/journey-context/core.test.mjs": "51f9b2c9ab86bfd68dff82d3674784a9ca1524ba82a4d7a951384c4de4b5f61f"
+  },
+  "browserObservations": [
+    "IAB actual audio/story.wav duration21.04s currentTime5.30 then12.79 pausedfalse during scene change",
+    "work changes next to reflection while current story stays",
+    "consent false/guest/stale fallback, explicit destination info gate",
+    "A/B explanation fixed, reset returns controls to defaults"
+  ],
+  "unverified": [
+    "actual vehicle SDK",
+    "Android APK",
+    "recommendation benefit",
+    "Safari Range seeking",
+    "mobile viewport",
+    "audio-focus interruptions"
+  ]
+}

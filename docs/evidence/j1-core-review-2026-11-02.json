@@ -1,0 +1,50 @@
+[
+  {
+    "stage": "initial",
+    "is_error": false,
+    "session_id": "e1a48321-7f92-4cf4-9f58-32dfe5e18ff0",
+    "modelUsage": {
+      "claude-haiku-5-5": {
+        "inputTokens": 2,
+        "outputTokens": 7726,
+        "cacheReadInputTokens": 649,
+        "cacheCreationInputTokens": 7563,
+        "webSearchRequests": 0,
+        "costUSD": 0.0053822900000000005,
+        "contextWindow": 1000000,
+        "maxOutputTokens": 128000,
+        "thinkingTokens": 6410,
+        "cacheCreationEphemeral5mInputTokens": 0,
+        "cacheCreationEphemeral1hInputTokens": 7563,
+        "canonicalModel": "claude-haiku-5-5",
+        "provider": "firstParty",
+        "costBasis": "list"
+      }
+    },
+    "result": "## 검수 결과 (읽기 전용, 정적 검토)\n\nplan 모드라 `node --test`와 SHA256 확인은 실행하지 않았습니다. 테스트 8개 구성은 일치하고 주요 케이스를 손으로 추적해 통과 가능성은 확인했지만, **실행 결과와 해시 일치는 미검증**입니다.\n\n### P1\n\n1. **목적지 노출 계약 위반.** `inferJourney`가 `candidates[].destination: h.zones.at(-1)`을 hypothesis 객체에 싣습니다. \"목적지 없는 복수 경로 추정\" 목표와 충돌하며, 소비자가 이 필드를 표시하면 `informationDestination` 게이트가 우회됩니다.\n   - 최소수정: `destination` 필드를 제거하고 `assert.ok(!('destination' in c.candidates[0]))`를 추가합니다.\n\n2. **삭제 계약이 큐 상태에 닿지 않음.** 마지막 테스트는 무상태 함수만 확인합니다. `QueuePolicy.next`는 삭제된 이력에서 파생된 항목을 계속 들고 있습니다.\n   - 최소수정: 이력 삭제 시 `queue.resetForProfile()` 호출을 규약으로 명시하고, 삭제 후 `next === null`을 확인하는 테스트를 추가합니다.\n\n### P2\n\n3. **zone 정규화 불일치.** `prefix`는 연속 중복을 제거하지만 `h.zones`는 그대로 비교합니다. `['home','home','shared']` 이력은 `['home','shared']` 관측과 매칭되지 않습니다(false negative).\n   - 수정: 같은 dedupe 함수를 `h.zones`에도 적용합니다.\n\n4. **provenance 미검증.** `recommend`는 임의 객체 `{status:'hypothesis', candidates}`를 받습니다. 동의 게이트가 호출자 규약에만 기대고 있습니다.\n   - 수정: `inferJourney`가 반환 객체를 `WeakSet`에 등록하고 `recommend`에서 확인합니다.\n\n5. **입력 기본값 부재.** `observations`나 `context`가 undefined이면 TypeError가 납니다.\n   - 수정: `observations = []`, `context = null`(taste-only 처리)로 기본값을 줍니다.\n\n6. **테스트명 과장.** \"branch distinguishes purpose from long distance and duration\"은 `distanceKm`만 확인하며, 목적과 거리/시간을 구분하는 단언이 없습니다.\n   - 수정: 이름을 바꾸거나, 거리와 시간이 다른 두 후보의 순위를 단언합니다.\n\n7. **필드명과 주석 불일치.** 주석은 \"hypothesis, never confirmed\"인데 단일 후보일 때 `purpose`가 `confirmedPurpose` 값을 그대로 노출합니다. `purposeHint` 같은 이름을 권장합니다.\n\n### 확인된 부분 (읽기 기준)\n\n- 동의/권한/시계/stale/미래 관측 차단 분기가 테스트와 일치합니다.\n- 취향결합 수치가 맞습니다. 분기 전 science 3 > news 2+min(4,−3)=1, 분기 후 news 2+4=6 > science 3입니다.\n- QueuePolicy의 0/20/100/200ms 시퀀스 단언이 코드 로직과 일치합니다.\n\n### 범위\n\n코드에는 실제 정확도나 수요에 대한 주장이 없어 검수 대상이 아닙니다. 모든 수정은 수 줄 규모이며 전체 재구현은 필요하지 않습니다. 파일은 수정하지 않았습니다."
+  },
+  {
+    "stage": "followup",
+    "is_error": false,
+    "session_id": "e1a48321-7f92-4cf4-9f58-32dfe5e18ff0",
+    "modelUsage": {
+      "claude-haiku-5-5": {
+        "inputTokens": 4,
+        "outputTokens": 9808,
+        "thinkingTokens": 7667,
+        "cacheReadInputTokens": 8861,
+        "cacheCreationInputTokens": 18133,
+        "cacheCreationEphemeral5mInputTokens": 0,
+        "cacheCreationEphemeral1hInputTokens": 18133,
+        "webSearchRequests": 0,
+        "costUSD": 0.00861961,
+        "contextWindow": 1000000,
+        "maxOutputTokens": 128000,
+        "canonicalModel": "claude-haiku-5-5",
+        "provider": "firstParty",
+        "costBasis": "list"
+      }
+    },
+    "result": "## 후속 검수 (읽기 전용, 실행 없음)\n\n**P1: 남은 항목 없음.** 목적지 필드 제거, 삭제 후 파생 context/next 무효화, 중복 구역 정규화는 소스 기준으로 계약을 충족합니다. WeakSet 미반영 판단도 타당합니다. 프로세스 내부 객체는 인증 경계가 아니고, 동의 철회 전에 만든 context를 승인하므로 freshness 문제를 해결하지 못합니다.\n\n**P2 (잔존, 근거 포함)**\n\n1. **`tick`이 staleness/no-pattern 전환 시 `queue.next`를 무효화하지 않음.** `tick`의 무효화 조건은 profile, consent, permission 변화뿐입니다. 관측이 stale해져 context가 `unknown`이 되어도 외부에서 설정된 `next`는 남습니다. \"파생 next 무효화\" 계약이 전부 커버되지 않습니다.\n   - 최소수정: `tick` 결과가 `status !== 'hypothesis'`이면 `queue.next = null`을 설정하고, stale 전환 테스트 1개를 추가합니다.\n\n2. **무효화가 큐 rate limit 카운터를 초기화함.** `clearDerived`가 `changes = 0`으로 되돌리므로 erase나 profile 전환을 반복하면 `maxChanges` 제한을 우회할 수 있습니다.\n   - 최소수정: 큐 카운터 리셋을 profile 변경 때만 하고, erase에서는 `next`만 비웁니다. 또는 이 동작을 의도로 문서화합니다.\n\n3. **`JourneySession`이 큐를 구동하지 않음.** `recommend`와 `queue.update` 호출이 세션에 없어, `next`가 어떤 경로로 채워지는지 계약이 불명확합니다. 호출 규약을 주석으로 명시하거나 세션에서 연결하세요.\n\n**검증 한계.** 12/12 통과는 보고된 결과이며, 이번 검수에서 재실행하지 않았습니다. 공개 API의 임의 입력 검증과 `informationDestination`의 provenance 신뢰(`source` 문자열 기반)는 여전히 호출자 규약에 의존합니다. 이는 명시된 미구현 범위입니다."
+  }
+]

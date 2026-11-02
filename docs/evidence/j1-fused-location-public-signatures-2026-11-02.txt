@@ -1,0 +1,40 @@
+Compiled from "SourceFile"
+public final class ai.pleos.playground.location.fused.model.LocationData {
+  public ai.pleos.playground.location.fused.model.LocationData(double, double, double, float, float, long);
+  public static ai.pleos.playground.location.fused.model.LocationData copy$default(ai.pleos.playground.location.fused.model.LocationData, double, double, double, float, float, long, int, java.lang.Object);
+  public final double getLatitude();
+  public final double getLongitude();
+  public final double getAltitude();
+  public final float getHeading();
+  public final float getConfidence();
+  public final long getTimestampMillis();
+  public final double component1();
+  public final double component2();
+  public final double component3();
+  public final float component4();
+  public final float component5();
+  public final long component6();
+  public final ai.pleos.playground.location.fused.model.LocationData copy(double, double, double, float, float, long);
+  public java.lang.String toString();
+  public int hashCode();
+  public boolean equals(java.lang.Object);
+}
+Compiled from "SourceFile"
+public final class ai.pleos.playground.location.fused.FusedLocation {
+  public ai.pleos.playground.location.fused.FusedLocation(android.content.Context);
+  public static final android.content.Context access$getContext$p(ai.pleos.playground.location.fused.FusedLocation);
+  public final void initialize();
+  public final void release();
+  public final boolean isSupported();
+  public final void getLastKnownLocation(ai.pleos.playground.location.fused.listener.FusedLocationListener);
+  public final void registerFusedLocationCallback(ai.pleos.playground.location.fused.listener.FusedLocationListener);
+  public final void unregisterFusedLocationCallback(ai.pleos.playground.location.fused.listener.FusedLocationListener);
+  public final void addProximityAlert(ai.pleos.playground.location.fused.model.ProximityAlertRequest, ai.pleos.playground.location.fused.listener.ProximityAlertListener);
+  public final void removeProximityAlert(java.lang.String);
+  public final void showLocationAccessBlockedPopup();
+}
+Compiled from "SourceFile"
+public interface ai.pleos.playground.location.fused.listener.FusedLocationListener {
+  public abstract void onChanged(ai.pleos.playground.location.fused.model.LocationData);
+  public abstract void onError(java.lang.Exception);
+}

@@ -1,0 +1,226 @@
+{
+  "notice": "합성 기능 비교: 사용자 선호 정답·정확도·만족도·우위 측정 없음.",
+  "methods": {
+    "A": "taste-only",
+    "B": "departure-slot plus taste",
+    "C": "observed route-prefix plus taste"
+  },
+  "cases": [
+    {
+      "name": "usual-morning-commute",
+      "A": {
+        "id": "science",
+        "score": 3,
+        "reasons": {
+          "taste": 3,
+          "contextual": 0,
+          "mode": "taste-only"
+        }
+      },
+      "B": {
+        "id": "news",
+        "score": 6,
+        "reasons": {
+          "taste": 2,
+          "contextual": 4,
+          "mode": "journey"
+        }
+      },
+      "C": {
+        "id": "news",
+        "score": 6,
+        "reasons": {
+          "taste": 2,
+          "contextual": 4,
+          "mode": "journey"
+        }
+      },
+      "journey": {
+        "status": "hypothesis",
+        "reason": "synthetic-prefix-match",
+        "candidateCount": 1
+      },
+      "comparison": "synthetic-functional-only"
+    },
+    {
+      "name": "morning-errand",
+      "A": {
+        "id": "science",
+        "score": 3,
+        "reasons": {
+          "taste": 3,
+          "contextual": 0,
+          "mode": "taste-only"
+        }
+      },
+      "B": {
+        "id": "news",
+        "score": 6,
+        "reasons": {
+          "taste": 2,
+          "contextual": 4,
+          "mode": "journey"
+        }
+      },
+      "C": {
+        "id": "science",
+        "score": 3,
+        "reasons": {
+          "taste": 3,
+          "contextual": 0,
+          "mode": "journey"
+        }
+      },
+      "journey": {
+        "status": "hypothesis",
+        "reason": "synthetic-prefix-match",
+        "candidateCount": 1
+      },
+      "comparison": "synthetic-functional-only"
+    },
+    {
+      "name": "shared-segment",
+      "A": {
+        "id": "science",
+        "score": 3,
+        "reasons": {
+          "taste": 3,
+          "contextual": 0,
+          "mode": "taste-only"
+        }
+      },
+      "B": {
+        "id": "news",
+        "score": 6,
+        "reasons": {
+          "taste": 2,
+          "contextual": 4,
+          "mode": "journey"
+        }
+      },
+      "C": {
+        "id": "science",
+        "score": 3,
+        "reasons": {
+          "taste": 3,
+          "contextual": 0,
+          "mode": "journey"
+        }
+      },
+      "journey": {
+        "status": "hypothesis",
+        "reason": "synthetic-prefix-match",
+        "candidateCount": 2
+      },
+      "comparison": "synthetic-functional-only"
+    },
+    {
+      "name": "unseen-route",
+      "A": {
+        "id": "science",
+        "score": 3,
+        "reasons": {
+          "taste": 3,
+          "contextual": 0,
+          "mode": "taste-only"
+        }
+      },
+      "B": {
+        "id": "news",
+        "score": 6,
+        "reasons": {
+          "taste": 2,
+          "contextual": 4,
+          "mode": "journey"
+        }
+      },
+      "C": {
+        "id": "science",
+        "score": 3,
+        "reasons": {
+          "taste": 3,
+          "contextual": 0,
+          "mode": "taste-only"
+        }
+      },
+      "journey": {
+        "status": "unknown",
+        "reason": "no-pattern",
+        "candidateCount": 0
+      },
+      "comparison": "synthetic-functional-only"
+    },
+    {
+      "name": "permission-denied",
+      "A": {
+        "id": "science",
+        "score": 3,
+        "reasons": {
+          "taste": 3,
+          "contextual": 0,
+          "mode": "taste-only"
+        }
+      },
+      "B": {
+        "id": "science",
+        "score": 3,
+        "reasons": {
+          "taste": 3,
+          "contextual": 0,
+          "mode": "taste-only"
+        }
+      },
+      "C": {
+        "id": "science",
+        "score": 3,
+        "reasons": {
+          "taste": 3,
+          "contextual": 0,
+          "mode": "taste-only"
+        }
+      },
+      "journey": {
+        "status": "unknown",
+        "reason": "unavailable",
+        "candidateCount": 0
+      },
+      "comparison": "synthetic-functional-only"
+    },
+    {
+      "name": "no-context-preferences",
+      "A": {
+        "id": "science",
+        "score": 3,
+        "reasons": {
+          "taste": 3,
+          "contextual": 0,
+          "mode": "taste-only"
+        }
+      },
+      "B": {
+        "id": "science",
+        "score": 3,
+        "reasons": {
+          "taste": 3,
+          "contextual": 0,
+          "mode": "journey"
+        }
+      },
+      "C": {
+        "id": "science",
+        "score": 3,
+        "reasons": {
+          "taste": 3,
+          "contextual": 0,
+          "mode": "journey"
+        }
+      },
+      "journey": {
+        "status": "hypothesis",
+        "reason": "synthetic-prefix-match",
+        "candidateCount": 1
+      },
+      "comparison": "synthetic-functional-only"
+    }
+  ]
+}

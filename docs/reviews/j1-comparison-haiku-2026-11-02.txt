@@ -1,0 +1,171 @@
+읽기 전용 개발 검수. 도구/소스 수정금지. J1 합성 기능비교 A취향/B시간슬롯+취향/C경로prefix+취향. 실제 성능벤치마크 아님, 정답라벨없음, 승률/정확도없음. 실제 17개 테스트 통과. 코드가 동일카탈로그·과거같은프로필 조건 유지하는지, 차이 해석이 과장인지, 중요한 결함만 300단어 이내 검토.
+
+FILE core.mjs
+const dedupe = zones => zones.filter((z, i) => !i || z !== zones[i - 1]);
+
+// Synthetic zone-sequence experiment; no GPS/SDK adapter or calibrated probabilities.
+export function inferJourney({ history = [], profile, consent, permission, observations = [],
+  now, startedAt, maxAgeMs = 30_000 }) {
+  const unknown = reason => ({ status: 'unknown', reason, candidates: [], purposeHint: null });
+  if (!profile || !consent || !permission) return unknown('unavailable');
+  if (!Number.isFinite(now) || !Number.isFinite(startedAt) || startedAt > now ||
+      !Number.isFinite(maxAgeMs) || maxAgeMs < 0) return unknown('invalid-clock');
+  if (!observations.length) return unknown('no-observation');
+  let last = startedAt;
+  for (const o of observations) {
+    if (!o.zone || !Number.isFinite(o.at) || o.at < last || o.at > now)
+      return unknown('invalid-observation');
+    last = o.at;
+  }
+  if (now - last > maxAgeMs) return unknown('stale');
+  const prefix = dedupe(observations.map(o => o.zone));
+  const candidates = history.filter(h => h.profile === profile && Number.isFinite(h.endedAt) &&
+    h.endedAt < startedAt && Array.isArray(h.zones) && dedupe(h.zones).length >= prefix.length &&
+    prefix.every((z, i) => dedupe(h.zones)[i] === z));
+  if (!candidates.length) return unknown('no-pattern');
+  // Even a single match is a hypothesis, never a confirmed destination.
+  const purposes = new Set(candidates.map(h => h.confirmedPurpose || null));
+  return { status: 'hypothesis', reason: 'synthetic-prefix-match',
+    candidates: candidates.map(h => ({ id: h.id,
+      purpose: h.confirmedPurpose || null, distanceKm: h.distanceKm,
+      durationMinutes: h.durationMinutes })),
+    purposeHint: purposes.size === 1 ? [...purposes][0] : null };
+}
+
+export function recommend({ catalog, preferences, context = null, recent = [], currentId = null }) {
+  const candidates = context?.status === 'hypothesis' ? context.candidates : [];
+  const ranked = catalog.filter(c => c.testOnly === true && c.id !== currentId &&
+    !recent.includes(c.id)).map(c => {
+    const taste = preferences.topics?.[c.topic] || 0;
+    const contextual = candidates.length ? Math.min(...candidates.map(h =>
+      preferences.byPurpose?.[h.purpose]?.[c.topic] || 0)) : 0;
+    return { id: c.id, score: taste + contextual,
+      reasons: { taste, contextual, mode: candidates.length ? 'journey' : 'taste-only' } };
+  }).sort((a, b) => b.score - a.score || a.id.localeCompare(b.id));
+  return ranked[0] || null;
+}
+
+// A fresh, explicitly supplied destination only. Inferred routes cannot open this gate.
+export function informationDestination(nav, now, maxAgeMs = 30_000) {
+  if (!nav || !['navigation', 'parked-confirmation'].includes(nav.source) ||
+      !nav.destination || !Number.isFinite(maxAgeMs) || maxAgeMs < 0 || !Number.isFinite(now) || !Number.isFinite(nav.at) ||
+      nav.at > now || now - nav.at > maxAgeMs) return null;
+  return nav.destination;
+}
+
+export class QueuePolicy {
+  constructor({ minIntervalMs = 60_000, maxChanges = 3 } = {}) {
+    this.current = null; this.next = null; this.lastChange = -Infinity;
+    this.changes = 0; this.minIntervalMs = minIntervalMs; this.maxChanges = maxChanges;
+  }
+  update(id, now) {
+    if (!id || id === this.current || id === this.next || !Number.isFinite(now)) return false;
+    if (now - this.lastChange < this.minIntervalMs ||
+        this.changes > this.maxChanges) return false;
+    this.changes++; // Initial placement plus at most maxChanges replacements per session.
+    this.next = id; this.lastChange = now;
+    return true;
+  }
+  resetForProfile() {
+    this.current = null; this.next = null; this.lastChange = -Infinity; this.changes = 0;
+  }
+}
+
+// Single-session coordinator: no persistence; caller supplies current permission each tick.
+export class JourneySession {
+  constructor(history = []) {
+    this.history = structuredClone(history);
+    this.context = { status: 'unknown', candidates: [], purposeHint: null };
+    this.queue = new QueuePolicy();
+    this.profile = null;
+  }
+  clearDerived() {
+    this.context = { status: 'unknown', candidates: [], purposeHint: null };
+    this.queue.next = null;
+    // Invalidation must not reset the session-wide replacement budget.
+  }
+  eraseHistory() {
+    this.history = [];
+    this.clearDerived(); // Does not interrupt already playing content.
+  }
+  tick(input) {
+    if (input.profile !== this.profile || !input.consent || !input.permission)
+      this.clearDerived();
+    this.profile = input.profile;
+    this.context = inferJourney({ ...input, history: this.history });
+    if (this.context.status !== 'hypothesis') this.queue.next = null;
+    // Caller: tick -> recommend using returned context -> queue.update.
+    // Unknown context uses taste-only recommendations, subject to the same queue budget.
+    return this.context;
+  }
+}
+
+FILE compare.mjs
+import { inferJourney, recommend } from './core.mjs';
+import { pathToFileURL } from 'node:url';
+
+// Functional ablation, not a benchmark: hand-authored synthetic cases, no target preference labels.
+export function compare({ history, input, catalog, preferences, departureSlot }) {
+  const eligible = history.filter(h => input.profile && input.consent && input.permission &&
+    h.profile === input.profile && Number.isFinite(h.endedAt) && h.endedAt < input.startedAt);
+  const slotMatches = eligible.filter(h => h.departureSlot === departureSlot);
+  const clockContext = slotMatches.length ? {status:'hypothesis', candidates:slotMatches.map(h =>
+    ({purpose:h.confirmedPurpose || null}))} : {status:'unknown', candidates:[]};
+  const journey = inferJourney({...input, history});
+  const pick = context => recommend({catalog,preferences,context});
+  return { A:pick(null), B:pick(clockContext), C:pick(journey),
+    journey:{status:journey.status, reason:journey.reason, candidateCount:journey.candidates.length},
+    comparison:'synthetic-functional-only' };
+}
+
+export function fixtures() {
+  const history = [
+    {id:'work',profile:'a',endedAt:100,departureSlot:'morning',zones:['home','shared','work'],confirmedPurpose:'commute'},
+    {id:'shop',profile:'a',endedAt:110,departureSlot:'afternoon',zones:['home','shared','shop'],confirmedPurpose:'errand'}
+  ];
+  const input={profile:'a',consent:true,permission:true,now:500,startedAt:200,
+    observations:[{zone:'home',at:200},{zone:'shared',at:300},{zone:'work',at:400}]};
+  const catalog=[{id:'science',topic:'science',testOnly:true},{id:'news',topic:'news',testOnly:true}];
+  const preferences={topics:{science:3,news:2},byPurpose:{commute:{news:4},errand:{news:-3}}};
+  const base={history,input,catalog,preferences,departureSlot:'morning'};
+  return [
+    {name:'usual-morning-commute',...base},
+    {name:'morning-errand',...base,input:{...input,observations:[...input.observations.slice(0,2),{zone:'shop',at:400}]}},
+    {name:'shared-segment',...base,input:{...input,observations:input.observations.slice(0,2)}},
+    {name:'unseen-route',...base,input:{...input,observations:[{zone:'elsewhere',at:400}]}},
+    {name:'permission-denied',...base,input:{...input,permission:false}},
+    {name:'no-context-preferences',...base,preferences:{topics:preferences.topics}}
+  ];
+}
+export function runComparison() {
+  return {notice:'합성 기능 비교: 사용자 선호 정답·정확도·만족도·우위 측정 없음.',
+    methods:{A:'taste-only',B:'departure-slot plus taste',C:'observed route-prefix plus taste'},
+    cases:fixtures().map(f => ({name:f.name,...compare(f)}))};
+}
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href)
+  process.stdout.write(JSON.stringify(runComparison(),null,2)+'\n');
+
+FILE compare.test.mjs
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {compare,fixtures,runComparison} from './compare.mjs';
+test('ablation exposes agreement, differences and fallback without scoring winners',()=>{
+ const cases=runComparison().cases;
+ assert.deepEqual(cases.map(c=>[c.A.id,c.B.id,c.C.id]),[
+ ['science','news','news'],['science','news','science'],['science','news','science'],
+ ['science','news','science'],['science','science','science'],['science','science','science']]);
+ assert.equal(cases[3].journey.status,'unknown');
+ assert.equal(cases[2].journey.candidateCount,2);
+ assert.ok(cases.every(c=>!('accuracy' in c) && !('winner' in c)));
+});
+test('future and other-driver training records cannot alter any method',()=>{
+ const f=fixtures()[0]; const before=compare(f);
+ const extra=[{...f.history[1],endedAt:600,departureSlot:'morning'},
+ {...f.history[1],profile:'b',departureSlot:'morning'}];
+ assert.deepEqual(compare({...f,history:[...f.history,...extra]}),before);
+});
+test('identical candidate catalog is shared, filtering cannot favor one method',()=>{
+ const f=fixtures()[0];
+ const out=compare({...f,catalog:f.catalog.filter(c=>c.id==='science')});
+ assert.equal(out.A.id,out.B.id);assert.equal(out.B.id,out.C.id);
+});

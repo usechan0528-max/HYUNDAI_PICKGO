@@ -1,0 +1,34 @@
+✔ ablation exposes agreement, differences and fallback without scoring winners (3.671083ms)
+✔ future and other-driver training records cannot alter any method (0.824708ms)
+✔ single-item catalog yields the same available item in all methods (0.316666ms)
+✔ history ending at departure is excluded and invalid clocks prevent contextual scoring (0.332583ms)
+✔ distance uses angular geometry including dateline (1.290375ms)
+✔ coordinate jitter keeps shared alternatives then identifies a branch as hypothesis (1.132917ms)
+✔ off-route and returning to origin do not fabricate a matched continuation (0.158458ms)
+✔ missing, stale, out-of-order, future, invalid coordinates and actual SDK clock all abstain (0.144209ms)
+✔ future and other-driver histories never become candidates (0.111708ms)
+✔ repeated historical paths remain ambiguous rather than claiming probability (0.063375ms)
+✔ coordinate output connects to the existing recommender without exposing raw locations (0.186084ms)
+✔ shared segment preserves alternatives and excludes other drivers and future history (1.664208ms)
+✔ branch distinguishes purpose from long distance and duration (0.084292ms)
+✔ refusal, guest, stale, future observations and off-pattern all abstain (0.084959ms)
+✔ ambiguous contexts use common suitability, branch can change topic, fallback is taste (0.235708ms)
+✔ recent and currently playing items are excluded (0.079625ms)
+✔ inferred destination cannot produce destination-specific information (0.06075ms)
+✔ queue changes never interrupt current content and suppress oscillation (0.133958ms)
+✔ deleting supplied history removes derived candidates on recomputation (0.16175ms)
+✔ history and current observations use the same duplicate-zone normalization (0.353333ms)
+✔ missing observation and recommendation context safely fall back (0.110333ms)
+✔ deletion invalidates derived context and queued content without interrupting playback (0.731459ms)
+✔ profile changes and permission revocation invalidate previously queued recommendations (0.249917ms)
+✔ stale and off-pattern transitions clear next while keeping playback (0.169667ms)
+✔ invalidating derived data cannot reset the per-session replacement budget (0.076583ms)
+✔ consuming a queue slot allows refill without spending context replacement budget (0.231958ms)
+ℹ tests 26
+ℹ suites 0
+ℹ pass 26
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 177.662958

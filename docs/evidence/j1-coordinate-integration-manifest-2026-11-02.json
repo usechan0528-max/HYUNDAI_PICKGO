@@ -1,0 +1,14 @@
+{
+  "testsPassed": 32,
+  "source": "synthetic only",
+  "files": {
+    "core.mjs": "1121e22fde6b533b16fa16b480f7c779eaa05f076827534a5d6e12aaf898086d",
+    "coordinates.mjs": "9067b390efa3bf812e1db9acf60548827677a13ce5c1bfdfa31ea18ba1eacc0f",
+    "coordinates.test.mjs": "f2d66b1b66c157b31e7d45449dea9c4f345bfd4237494d7e98a1917c04f73ff6",
+    "demo-observations.test.mjs": "6bc32d7c113244409487e6aa983c10c3ffa7a643b6f39f1fabadf009b009dc02",
+    "demo/observations.mjs": "6293ea6357022fec2f5a18c7ca1e7f7a0bbedc9494e82f95865661c218a7b489",
+    "demo/app.mjs": "fe889118af14ef910010f1f9441d91959fec96cc3890caa38c13c0ae5c47bf79",
+    "demo/server.mjs": "444ee409af468a966c3fdc5667b99a6398c54484106a905f97a26a7c2c33da6a",
+    "demo/index.html": "7d668e8721aefc49306ede92677280f994ff79d16fcf7512c44ef1a4cfd6d2f0"
+  }
+}

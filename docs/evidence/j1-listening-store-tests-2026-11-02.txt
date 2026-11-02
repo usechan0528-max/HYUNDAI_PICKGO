@@ -1,0 +1,46 @@
+✔ ablation exposes agreement, differences and fallback without scoring winners (1.8945ms)
+✔ future and other-driver training records cannot alter any method (0.162625ms)
+✔ single-item catalog yields the same available item in all methods (0.086709ms)
+✔ history ending at departure is excluded and invalid clocks prevent contextual scoring (0.110625ms)
+✔ distance uses angular geometry including dateline (0.799875ms)
+✔ coordinate jitter keeps shared alternatives then identifies a branch as hypothesis (0.921583ms)
+✔ off-route and returning to origin do not fabricate a matched continuation (0.114625ms)
+✔ missing, stale, out-of-order, future, invalid coordinates and actual SDK clock all abstain (0.085167ms)
+✔ future and other-driver histories never become candidates (0.096708ms)
+✔ repeated historical paths remain ambiguous rather than claiming probability (0.06525ms)
+✔ coordinate output connects to the existing recommender without exposing raw locations (0.18975ms)
+✔ seeded per-point noise preserves a known branch within matching radius (1.093209ms)
+✔ overlapping matching radii keep ambiguity near adjacent shared and branch points (0.104875ms)
+✔ gaps, malformed collections and excessive inputs abstain without trimming candidates (0.143666ms)
+✔ alignment work budget stops pathological overlapping samples (12.522625ms)
+✔ shared segment preserves alternatives and excludes other drivers and future history (1.569541ms)
+✔ branch distinguishes purpose from long distance and duration (0.097792ms)
+✔ refusal, guest, stale, future observations and off-pattern all abstain (0.091042ms)
+✔ ambiguous contexts use common suitability, branch can change topic, fallback is taste (0.174917ms)
+✔ recent and currently playing items are excluded (0.0605ms)
+✔ inferred destination cannot produce destination-specific information (0.066083ms)
+✔ queue changes never interrupt current content and suppress oscillation (0.095375ms)
+✔ deleting supplied history removes derived candidates on recomputation (0.054208ms)
+✔ history and current observations use the same duplicate-zone normalization (0.154792ms)
+✔ missing observation and recommendation context safely fall back (0.139ms)
+✔ deletion invalidates derived context and queued content without interrupting playback (0.12375ms)
+✔ profile changes and permission revocation invalidate previously queued recommendations (0.766875ms)
+✔ stale and off-pattern transitions clear next while keeping playback (0.188584ms)
+✔ invalidating derived data cannot reset the per-session replacement budget (0.113834ms)
+✔ consuming a queue slot allows refill without spending context replacement budget (0.469834ms)
+✔ demo coordinates pass through session and change recommendations at branch (8.977417ms)
+✔ coordinate session invalidates stale or revoked derived queues without interrupting playback (0.250208ms)
+✔ preferences and incomplete media roundtrip, only whitelisted fields persist (2.010333ms)
+✔ completed, unknown and invalid checkpoints cannot resume (0.1125ms)
+✔ expiry, future clock, invalid JSON, schema and size do not block listening (0.137958ms)
+✔ clear removes stored preference and checkpoint (0.077375ms)
+✔ audio byte ranges support bounded, open and suffix requests and reject invalid input (0.165792ms)
+✔ invalid taste/version are rejected while preference-only storage remains supported (0.068958ms)
+ℹ tests 38
+ℹ suites 0
+ℹ pass 38
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 110.089291

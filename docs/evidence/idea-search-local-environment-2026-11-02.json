@@ -1,0 +1,10 @@
+{
+  "checks": {
+    "Android Studio.app": false,
+    "Android SDK directory": false,
+    "adb_on_path": false,
+    "emulator_on_path": false,
+    "java_on_path": true
+  },
+  "scope": "existence/PATH only; no build, SDK execution, or permissions verified"
+}

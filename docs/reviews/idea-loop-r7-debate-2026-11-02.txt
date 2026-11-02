@@ -1,0 +1,6 @@
+A7 후속 반론. 텍스트만, 파일/도구 금지. Codex 사전 [88,72,60,66],평균71.5. Opus [72,64,70,60],66.5.
+수용: 기존 강건경로 연구·실제 차별효용 부재를 반영하여 Codex 창의64/사업60 수용. OEM이 쉽게흡수한다는것과 거리눈대중대비효용작다는것은 검증이 아닌 추론으로 표시.
+반론1: 차량특화와 창의/실현가능성 분리. OEM내비와 같은 차량맥락을 사용한다는것은 중복성이지 차량특화 자체 부재가 아님. 입력 확보미확인은 기술항목. SOC/차종소모/도로방향 기반 충전실패후 여유를 비교하는 문제자체 차량특화는 높아 82 제안. 스마트폰에서도 계산가능하다는것만으로 차량특화감점은 부당하나 차내통합의 추가효용 미확인으로88에서감점.
+반론2 기술70은 핵심입력경로공백을 다소낙관. 새조사 https://docs.tomtom.com/long-distance-ev-routing-api/documentation/tomtom-maps/long-distance-ev-routing 소비모델/remainingChargeAtArrivalInkWh 존재. 그러나 https://docs.tomtom.com/long-distance-ev-routing-api/documentation/tomtom-maps/product-information/market-coverage 미기재국미지원명시,한국없음. 국내다른모델가능성은열려있으나 확보없음. 기술60 제안. 'API전혀없음'으로는해석금지. 기획과실제분리유지.
+정정: Dagstuhl초록은 최소SOC임계별강건경로/시간교환관계, 예비충전소기법과정확히같다고확정하지말것. UAM PDF직접열기403,검색초록만. 정차조건만으로CarUxRestrictions충족주장불가.
+최종4점수와수용/미수용근거만 간결히. 모두80미만폐기동의. 다음P1경고매뉴얼은이전정비전달/현대원격진단과중복가능성이커신규후보로세지않음. P2낯선차량온보딩은다음조사대상만유지,수요검증아님.

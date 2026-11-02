@@ -1,0 +1,6 @@
+workspace = "default"
+project = "hyundai_ai"
+
+[profile]
+contribute = false
+consume = false

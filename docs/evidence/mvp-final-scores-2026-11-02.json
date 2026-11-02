@@ -1,0 +1,21 @@
+{
+  "scores": {
+    "codex_final": [
+      45,
+      55,
+      45,
+      35
+    ],
+    "opus_independent": [
+      45,
+      55,
+      50,
+      35
+    ]
+  },
+  "means": {
+    "codex_final": 45.0,
+    "opus_independent": 46.25
+  },
+  "subjective_internal_assessment": true
+}

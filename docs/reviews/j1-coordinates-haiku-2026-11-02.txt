@@ -1,0 +1,145 @@
+Haiku5.5 독립개발검수,읽기전용/도구수정금지. 좌표실험을J1데모세션에연결하는이정표. 핵심은좌표흔들림허용/분기전복수후보/분기후추천변경/취향fallback,단실제GPS정확도주장없음. source synthetic외는시계미확인이라거부. 임의(0,0)근처fixture,실제위치없음. JourneySession constructor에infer주입,기존defaultprefix유지. 별도 관측모듈과좌표matcher 전체아래. 실제node28/28,UI검증예정. 중요한오류/정확도과장/입력/복잡도경계만400단어. 자동이어듣기코드는변경안함.
+
+FILE coordinates.mjs
+// Synthetic-coordinate experiment. SDK timestamp semantics are not yet established.
+const validPoint = p => p && Number.isFinite(p.latitude) && Math.abs(p.latitude) <= 90 &&
+  Number.isFinite(p.longitude) && Math.abs(p.longitude) <= 180;
+export function distanceMeters(a,b) {
+  const rad=Math.PI/180;
+  const dLat=(b.latitude-a.latitude)*rad, dLon=(b.longitude-a.longitude)*rad;
+  const h=Math.sin(dLat/2)**2+Math.cos(a.latitude*rad)*Math.cos(b.latitude*rad)*Math.sin(dLon/2)**2;
+  return 6_371_000*2*Math.atan2(Math.sqrt(Math.min(1,h)),Math.sqrt(Math.max(0,1-h)));
+}
+
+// Bounded monotone alignment to recorded samples, not road map matching or a probability model.
+export function inferCoordinateJourney({history=[],observations=[],profile,consent,permission,
+  source,startedAtMs,nowMs,toleranceMeters=60,maxAdvance=2,maxAgeMs=30_000}) {
+  const unknown=reason=>({status:'unknown',reason,candidates:[],purposeHint:null});
+  if(source!=='synthetic')return unknown('unverified-source-clock');
+  if(!profile||!consent||!permission)return unknown('unavailable');
+  if(!Number.isFinite(nowMs)||!Number.isFinite(startedAtMs)||startedAtMs>nowMs||
+    !Number.isFinite(toleranceMeters)||toleranceMeters<=0||!Number.isInteger(maxAdvance)||maxAdvance<1||
+    !Number.isFinite(maxAgeMs)||maxAgeMs<0)return unknown('invalid-configuration');
+  if(!Array.isArray(observations)||!observations.length)return unknown('no-observation');
+  let previous=startedAtMs;
+  for(const p of observations){
+    if(!validPoint(p)||!Number.isFinite(p.observedAtMs)||p.observedAtMs<previous||p.observedAtMs>nowMs)
+      return unknown('invalid-observation');
+    previous=p.observedAtMs;
+  }
+  if(nowMs-previous>maxAgeMs)return unknown('stale');
+  const candidates=[];
+  for(const route of history){
+    if(route.profile!==profile||!Number.isFinite(route.endedAtMs)||route.endedAtMs>=startedAtMs||
+      !Array.isArray(route.points)||!route.points.length||!route.points.every(validPoint))continue;
+    if(distanceMeters(observations[0],route.points[0])>toleranceMeters)continue;
+    let positions=new Set([0]);
+    for(const sample of observations.slice(1)){
+      const next=new Set();
+      for(const position of positions)
+        for(let j=position;j<=Math.min(route.points.length-1,position+maxAdvance);j++)
+          if(distanceMeters(sample,route.points[j])<=toleranceMeters)next.add(j);
+      positions=next;if(!positions.size)break;
+    }
+    if(positions.size)candidates.push({id:route.id,purpose:route.confirmedPurpose||null});
+  }
+  if(!candidates.length)return unknown('no-pattern');
+  const purposes=new Set(candidates.map(c=>c.purpose));
+  return {status:'hypothesis',reason:'synthetic-coordinate-alignment',candidates,
+    purposeHint:purposes.size===1?[...purposes][0]:null};
+}
+
+FILE demo/observations.mjs
+// Invented coordinates around (0,0); no personal or measured vehicle locations.
+const origin={latitude:0,longitude:0},shared={latitude:0,longitude:.001};
+const work={latitude:.001,longitude:.001},shop={latitude:-.001,longitude:.001};
+export const history=[
+ {id:'work',profile:'owner',endedAtMs:10,points:[origin,shared,work],confirmedPurpose:'commute',departureSlot:'morning'},
+ {id:'shop',profile:'owner',endedAtMs:20,points:[origin,shared,shop],confirmedPurpose:'errand',departureSlot:'afternoon'}
+];
+export function observationInput({scene,profile,consent,now}) {
+ const points=scene==='unknown'?[{latitude:.01,longitude:.01}]:
+ [origin,shared,...(scene==='work'||scene==='jitter'?[work]:scene==='shop'?[shop]:[])];
+ const observations=points.map((p,i)=>({...p,
+   latitude:p.latitude+(scene==='jitter'?.0001:0),
+   observedAtMs:now-(points.length-i)*1000-(scene==='stale'?31_000:0)}));
+ return {source:'synthetic',profile:profile==='guest'?null:profile,consent,permission:true,
+   startedAtMs:100,nowMs:now,observations};
+}
+
+FILE demo-observations.test.mjs
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {JourneySession,recommend} from './core.mjs';
+import {inferCoordinateJourney} from './coordinates.mjs';
+import {history,observationInput} from './demo/observations.mjs';
+import {catalog} from './demo/content.mjs';
+const input=scene=>observationInput({scene,profile:'owner',consent:true,now:100_000});
+const preferences={topics:{story:3,reflection:1},byPurpose:{commute:{reflection:4},errand:{reflection:-3}}};
+test('demo coordinates pass through session and change recommendations at branch',()=>{
+ const session=new JourneySession(history,inferCoordinateJourney);
+ const pick=scene=>recommend({catalog,preferences,context:session.tick(input(scene))});
+ assert.equal(pick('shared').id,'story');
+ assert.equal(pick('work').id,'pause');
+ assert.equal(pick('jitter').id,'pause');
+ assert.equal(pick('shop').id,'story');
+});
+test('coordinate session invalidates stale or revoked derived queues without interrupting playback',()=>{
+ for(const next of [input('stale'),{...input('work'),consent:false},{...input('work'),profile:null},input('unknown')]){
+  const session=new JourneySession(history,inferCoordinateJourney);session.tick(input('work'));
+  session.queue.current='playing';session.queue.update('pause',100_000);session.tick(next);
+  assert.equal(session.context.status,'unknown');assert.equal(session.queue.next,null);
+  assert.equal(session.queue.current,'playing');
+ }
+});
+
+FILE coordinates.test.mjs
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {distanceMeters,inferCoordinateJourney} from './coordinates.mjs';
+import {recommend} from './core.mjs';
+// Invented equatorial coordinates, not a user's route or a real destination.
+const p=(lat,lon,at=200)=>({latitude:lat,longitude:lon,observedAtMs:at});
+const origin=p(0,0),shared=p(0,.001,300),work=p(.001,.001,400),shop=p(-.001,.001,400);
+const history=[{id:'work',profile:'a',endedAtMs:100,points:[origin,shared,work],confirmedPurpose:'commute'},
+ {id:'shop',profile:'a',endedAtMs:100,points:[origin,shared,shop],confirmedPurpose:'errand'}];
+const input={history,observations:[origin,shared],profile:'a',consent:true,permission:true,
+ source:'synthetic',startedAtMs:150,nowMs:500};
+test('distance uses angular geometry including dateline',()=>{
+ assert.ok(distanceMeters(p(0,0),p(0,.001))>110);
+ assert.ok(distanceMeters(p(0,179.999),p(0,-179.999))<225);
+});
+test('coordinate jitter keeps shared alternatives then identifies a branch as hypothesis',()=>{
+ const noisy=[p(.0001,0),p(.0001,.001,300)];
+ assert.deepEqual(inferCoordinateJourney({...input,observations:noisy}).candidates.map(x=>x.id),['work','shop']);
+ const c=inferCoordinateJourney({...input,observations:[...noisy,p(.0011,.001,400)]});
+ assert.equal(c.status,'hypothesis');assert.equal(c.purposeHint,'commute');
+ assert.deepEqual(c.candidates,[{id:'work',purpose:'commute'}]);
+});
+test('off-route and returning to origin do not fabricate a matched continuation',()=>{
+ for(const point of [p(.01,.01,400),p(0,0,400)])
+ assert.equal(inferCoordinateJourney({...input,observations:[...input.observations,point]}).status,'unknown');
+});
+test('missing, stale, out-of-order, future, invalid coordinates and actual SDK clock all abstain',()=>{
+ for(const patch of [{observations:[]},{nowMs:40_000},{observations:[shared,origin]},
+ {observations:[p(0,0,600)]},{observations:[p(91,0)]},{source:'pleos'},
+ {consent:false},{permission:false},{profile:null}])
+ assert.equal(inferCoordinateJourney({...input,...patch}).status,'unknown');
+});
+test('future and other-driver histories never become candidates',()=>{
+ const extra=[{...history[0],id:'future',endedAtMs:150},{...history[0],id:'other',profile:'b'}];
+ assert.deepEqual(inferCoordinateJourney({...input,history:[...history,...extra]}),inferCoordinateJourney(input));
+});
+test('repeated historical paths remain ambiguous rather than claiming probability',()=>{
+ const duplicate={...history[0],id:'alternate-purpose',confirmedPurpose:'other'};
+ const c=inferCoordinateJourney({...input,history:[history[0],duplicate],observations:[origin,shared,work]});
+ assert.equal(c.candidates.length,2);assert.equal(c.purposeHint,null);assert.equal('confidence' in c,false);
+});
+test('coordinate output connects to the existing recommender without exposing raw locations',()=>{
+ const c=inferCoordinateJourney({...input,observations:[origin,shared,work]});
+ const choice=recommend({catalog:[{id:'a',topic:'story',testOnly:true},{id:'b',topic:'reflection',testOnly:true}],
+ preferences:{topics:{story:3,reflection:1},byPurpose:{commute:{reflection:4}}},context:c});
+ assert.equal(choice.id,'b');assert.equal(JSON.stringify(c).includes('latitude'),false);
+});
+
+세션변경: constructor(history=[],infer=inferJourney){this.infer=infer;...}; tick는 this.infer({...input,history:this.history}) 사용,unknown이면queue.next무효화.

@@ -1,0 +1,27 @@
+✔ ablation exposes agreement, differences and fallback without scoring winners (1.643625ms)
+✔ future and other-driver training records cannot alter any method (0.168791ms)
+✔ single-item catalog yields the same available item in all methods (0.085083ms)
+✔ history ending at departure is excluded and invalid clocks prevent contextual scoring (0.106458ms)
+✔ shared segment preserves alternatives and excludes other drivers and future history (1.370166ms)
+✔ branch distinguishes purpose from long distance and duration (0.100875ms)
+✔ refusal, guest, stale, future observations and off-pattern all abstain (0.0925ms)
+✔ ambiguous contexts use common suitability, branch can change topic, fallback is taste (0.167ms)
+✔ recent and currently playing items are excluded (0.057542ms)
+✔ inferred destination cannot produce destination-specific information (0.062959ms)
+✔ queue changes never interrupt current content and suppress oscillation (0.088833ms)
+✔ deleting supplied history removes derived candidates on recomputation (0.051291ms)
+✔ history and current observations use the same duplicate-zone normalization (0.150958ms)
+✔ missing observation and recommendation context safely fall back (0.092917ms)
+✔ deletion invalidates derived context and queued content without interrupting playback (0.520792ms)
+✔ profile changes and permission revocation invalidate previously queued recommendations (0.119209ms)
+✔ stale and off-pattern transitions clear next while keeping playback (0.096542ms)
+✔ invalidating derived data cannot reset the per-session replacement budget (0.055375ms)
+✔ consuming a queue slot allows refill without spending context replacement budget (0.05075ms)
+ℹ tests 19
+ℹ suites 0
+ℹ pass 19
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 76.069625

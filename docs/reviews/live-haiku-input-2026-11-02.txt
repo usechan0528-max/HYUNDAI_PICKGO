@@ -1,0 +1,202 @@
+개발 독립 검수. 모델 Haiku 5.5 지정. 소스 수정/도구 실행 없이 아래 고정 소스만 검토. Codex가 구현 담당. 기존 합성 MVP에 별도 /live 실제 공공 데이터 검증 화면과 /api/parking 추가. 사용자 승인: 실제 주차장 1곳 연동, 낮은 항목 개선 및 재평가. 수용 조건: 실제 공급자 값/시각 구분, 잘못된/오래된 값 숨김, 부분 데이터 여석 과장 금지, 실패 폐쇄, 제한 상태 상세 잠금. 실제 서울시 documented public sample endpoint INFO-000 응답 및 로컬 서버 fresh 결과 확인. 전체 node --test 18/18 통과. SDK/차량 UX는 시연이며 실차·APK 없음, 사용자 연구 없음. HTTP public sample은 개발 한정, 운영 보안 미검증. 과거 13개 테스트에 API 경계 추가. 검수 질문: 핵심 오류/수명주기/시간/cache 결함? 숫자 오인 또는 지침 위반? P0-P3, 위치, 영향, 최소수정, 실제 실행 안한 한계. 전체 재작성 금지.
+
+FILE mvp/parking.mjs sha256 a6b50df682a2da29a29460f3629d7997133074a39a3d67db8e13a1c0f38a9f76
+export const SOURCE = 'http://openapi.seoul.go.kr:8088/sample/json/GetParkingInfo/1/5/';
+export const LOT_ID = '171721';
+export function normalize(payload, now = Date.now()) {
+  const api = payload?.GetParkingInfo;
+  if (api?.RESULT?.CODE !== 'INFO-000' || !Array.isArray(api.row)) throw Error('provider');
+  const row = api.row.find(r => r.PKLT_CD === LOT_ID);
+  if (!row) throw Error('missing');
+  const stamp = row.NOW_PRK_VHCL_UPDT_TM;
+  const observed = typeof stamp === 'string' && /^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/.test(stamp) ? Date.parse(stamp.replace(' ', 'T') + '+09:00') : NaN;
+  const validTime = Number.isFinite(observed) && new Date(observed + 9*3600000).toISOString().slice(0,19).replace('T',' ') === stamp;
+  const capacity = row.TPKCT, occupied = row.NOW_PRK_VHCL_CNT;
+  const validCounts = Number.isInteger(capacity) && capacity > 0 && Number.isInteger(occupied) && occupied >= 0 && occupied <= capacity;
+  const age = now - observed;
+  const status = !validTime || age < 0 || row.PRK_STTS_YN !== '1' || !validCounts ? 'unknown' : age >= 300000 ? 'stale' : 'fresh';
+  return { id: LOT_ID, name: '세종로 공영주차장(시)', address: '종로구 세종로 80-1', status, observedAt: validTime ? observed : null, fetchedAt: now,
+    capacity: status === 'fresh' ? capacity : null, occupied: status === 'fresh' ? occupied : null,
+    difference: status === 'fresh' ? capacity - occupied : null };
+}
+export function createParkingService({fetchImpl = fetch, clock = Date.now} = {}) {
+  let cached, expires = 0, pending;
+  return async function getParking() {
+    if (cached && clock() < expires) return cached;
+    if (pending) return pending;
+    pending = (async () => {
+      try {
+        const response = await fetchImpl(SOURCE, {signal: AbortSignal.timeout(8000), redirect: 'error'});
+        if (!response.ok) throw Error('http');
+        const reader = response.body.getReader();
+        const chunks = []; let size = 0;
+        try { while (true) { const {done,value} = await reader.read(); if(done) break; size += value.length; if(size > 262144) throw Error('size'); chunks.push(value); } }
+        finally { await reader.cancel(); }
+        cached = normalize(JSON.parse(Buffer.concat(chunks).toString('utf8')), clock());
+      } catch { cached = {id: LOT_ID, status: 'unavailable', fetchedAt: clock(), observedAt: null, capacity:null, occupied:null, difference:null}; }
+      expires = clock() + 60000;
+      return cached;
+    })();
+    try { return await pending; } finally { pending = null; }
+  };
+}
+
+FILE mvp/server.mjs sha256 36a8bf21145d1b79857c6846064014f1e52631f2e713729df76aba0f3b465ad6
+import http from 'node:http';
+import { createParkingService } from './parking.mjs';
+import { readFile } from 'node:fs/promises';
+import { pathToFileURL } from 'node:url';
+import { realpathSync } from 'node:fs';
+
+const files = new Map([
+  ['/', ['index.html', 'text/html']],
+  ['/live', ['live.html', 'text/html']],
+  ['/live.js', ['live.js', 'text/javascript']],
+  ['/app.js', ['app.js', 'text/javascript']],
+  ['/domain.js', ['domain.js', 'text/javascript']],
+  ['/fixtures.js', ['fixtures.js', 'text/javascript']],
+  ['/styles.css', ['styles.css', 'text/css']],
+]);
+export function createServer({ parkingService = createParkingService() } = {}) {
+  return http.createServer(async (req, res) => {
+    if (req.method !== 'GET' && req.method !== 'HEAD') {
+      res.writeHead(405, { Allow: 'GET, HEAD' }); res.end(); return;
+    }
+    if (req.url === '/api/parking') {
+      if (req.method !== 'GET') { res.writeHead(405, {Allow:'GET'}); res.end(); return; }
+      try {
+        const data = await parkingService();
+        res.writeHead(data.status === 'unavailable' ? 503 : 200, {'Content-Type':'application/json; charset=utf-8','Cache-Control':'no-store','X-Content-Type-Options':'nosniff'});
+        res.end(JSON.stringify(data));
+      } catch { res.writeHead(503); res.end(); }
+      return;
+    }
+    const entry = files.get(req.url);
+    if (!entry) { res.writeHead(404); res.end('Not found'); return; }
+    try {
+      const body = await readFile(new URL(entry[0], import.meta.url));
+      res.writeHead(200, {
+        'Content-Type': `${entry[1]}; charset=utf-8`, 'Cache-Control': 'no-store',
+        'X-Content-Type-Options': 'nosniff',
+        'Content-Security-Policy': "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self'; connect-src 'self'; base-uri 'none'; frame-ancestors 'none'; form-action 'none'",
+      });
+      res.end(req.method === 'HEAD' ? undefined : body);
+    } catch { res.writeHead(500); res.end('Unable to load page'); }
+  });
+}
+if (process.argv[1] && pathToFileURL(realpathSync(process.argv[1])).href === import.meta.url) {
+  const port = Number(process.env.PARKING_MVP_PORT || 4173);
+  createServer().listen(port, '127.0.0.1', () => console.log(`Parking MVP: http://127.0.0.1:${port}`));
+}
+
+FILE mvp/live.html sha256 60db13ea5916304055c9f9b62426a6d2155c6b17296cca5b43f2111c1544d6d1
+<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>세종로 · 실제 데이터 연결</title><link rel="stylesheet" href="/styles.css"><script type="module" src="/live.js"></script></head><body>
+<header><a class="brand" href="/live">도착 전에<span>SEOUL · PUBLIC DATA</span></a><span class="demo">실제 공공 API · 개발용 sample</span></header><main>
+<section class="hero"><p class="eyebrow">ONE LOT · VERIFIED CONNECTION</p><h1>세종로 주차장,<br>관측 시각부터 확인하세요.</h1><p>서울시가 보고한 총면수와 차량수입니다. 일반 이용 가능한 여석은 확인되지 않았습니다.</p></section>
+<section class="lab"><strong>차량 상태는 시연입니다 · SDK 미연동</strong><div class="controls"><label>플랫폼 상태 시연<select id="mode"><option value="unknown">상태 미확인</option><option value="parked">정차 허용 시연</option><option value="driving">주행 제한</option></select></label><button id="refresh" disabled>공급자 데이터 확인</button></div><p>자동 요청 없음 · 서버는 성공/실패 응답을 60초 보관합니다. 표시 수치는 5분이 지나면 숨깁니다.</p></section>
+<div id="lock">상태 미확인 또는 주행 제한 중에는 상세 정보를 표시하지 않습니다.</div>
+<section id="result" class="detail-body" aria-live="polite" hidden><h2>세종로 공영주차장(시)</h2><p>종로구 세종로 80-1</p><strong id="status" class="status">확인 전</strong><p id="counts"></p><p id="times"></p><div class="notice">총면수 − 주차 차량수는 단순 계산값입니다. 전용면·예약·입차 대기 등이 반영된 일반 여석 수나 도착 시 주차 가능성을 뜻하지 않습니다. 입구·요금·운영시간은 이 화면에서 검증하지 않았습니다.</div></section>
+<section class="explain"><h2>데이터의 범위</h2><p>제공: 서울특별시 열린데이터광장 · GetParkingInfo · 주차장 코드 171721.</p><p>공급자 안내상 실제 현황과 5분 이상 차이가 날 수 있습니다. 공개 sample의 첫 5개 중 이 주차장만 선택하며, 목록에서 사라지면 다른 주차장으로 대체하지 않습니다.</p><p>개발용 공개 HTTP 연결이며 운영용 연동이 아닙니다. 이용자 위치·차량 정보는 수집하지 않습니다. 민영 주차장 추정·출차 예측은 미구현입니다.</p><p><a href="https://data.seoul.go.kr/dataList/OA-21709/A/1/datasetView.do" target="_blank" rel="noopener noreferrer">서울시 원문 · 공공누리 제1유형</a> · <a href="/">별도 합성 데이터 시연</a></p></section></main><footer>실제 공공 데이터 연결 실험<span>차량 SDK · APK · 실차 검증 없음</span></footer></body></html>
+
+FILE mvp/live.js sha256 0747a15692cc92ed7a4db7d487dbfad17e556467d3a0f22879f199004d48149a
+const $ = id => document.getElementById(id);
+let data = null, loading = false, generation = 0, controller;
+const time = n => n === null ? '없음' : new Intl.DateTimeFormat('ko-KR',{dateStyle:'short',timeStyle:'medium',timeZone:'Asia/Seoul'}).format(n);
+function render() {
+  const allowed = $('mode').value === 'parked';
+  $('lock').hidden = allowed; $('result').hidden = !allowed; $('refresh').disabled = !allowed || loading;
+  $('counts').textContent = ''; $('times').textContent = '';
+  if (!allowed) { $('status').textContent = ''; return; }
+  if (loading) { $('status').textContent = '공급자에 확인 중…'; return; }
+  if (!data) { $('status').textContent = '확인 버튼을 눌러주세요'; return; }
+  const fresh = data.status === 'fresh' && Date.now() >= data.observedAt && Date.now() - data.observedAt < 300000;
+  $('status').textContent = fresh ? '최근 공급자 관측 · 일반 여석 미확인' : data.status === 'unavailable' ? '연결 실패 · 수치 표시 안 함' : '오래되거나 확인할 수 없는 관측 · 수치 표시 안 함';
+  if(fresh) $('counts').textContent = `총 ${data.capacity}면 · 주차 차량 ${data.occupied}대 · 단순 차이 ${data.difference}면`;
+  $('times').textContent = `공급자 관측: ${time(data.observedAt)} (KST) / 서버 수신: ${time(data.fetchedAt)} (KST)`;
+}
+$('mode').addEventListener('change',()=>{generation++; controller?.abort(); loading=false; data=null; render();});
+$('refresh').addEventListener('click',async()=>{
+  const current = ++generation; controller = new AbortController(); const requestController = controller; loading=true; data=null; render();
+  const timeout = setTimeout(()=>requestController.abort(),10000);
+  try { const response = await fetch('/api/parking',{signal:requestController.signal,cache:'no-store'}); const result = await response.json(); if(current===generation) data=result; }
+  catch { if(current===generation) data={status:'unavailable',observedAt:null,fetchedAt:Date.now()}; }
+  finally { clearTimeout(timeout); if(current===generation){loading=false;render();} }
+});
+setInterval(render,1000);
+render();
+
+FILE mvp/parking.test.js sha256 6ba8cadedd815554e5186409276068f7d54e7f7ab73a9e371c099271bb59d2f6
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {readFile} from 'node:fs/promises';
+import {normalize,createParkingService} from './parking.mjs';
+import {createServer} from './server.mjs';
+const fixture=JSON.parse(await readFile(new URL('../docs/evidence/seoul-parking-first-response-2026-11-02.json',import.meta.url)));
+const row=fixture.selected_row;
+const now=Date.parse(row.NOW_PRK_VHCL_UPDT_TM.replace(' ','T')+'+09:00')+60000;
+const payload=(patch={})=>({GetParkingInfo:{RESULT:{CODE:'INFO-000'},row:[{...row,...patch}]}});
+test('real response fixture preserves reported quantities and distinguishes arithmetic difference',()=>{const x=normalize(payload(),now); assert.equal(x.status,'fresh'); assert.equal(x.difference,1150); assert.equal(x.occupied,110);});
+test('stale, future, impossible dates/counts, and disabled feed hide numbers',()=>{
+ for(const [patch,at] of [[{},now+240000],[{},now-60001],[{NOW_PRK_VHCL_UPDT_TM:'2026-02-30 00:00:00'},now],[{NOW_PRK_VHCL_CNT:1261},now],[{NOW_PRK_VHCL_CNT:-1},now],[{NOW_PRK_VHCL_CNT:'110'},now],[{PRK_STTS_YN:'0'},now]]) { const x=normalize(payload(patch),at);assert.equal(x.difference,null); }
+ assert.equal(normalize(payload({NOW_PRK_VHCL_CNT:1260}),now).difference,0);
+ assert.throws(()=>normalize(payload({PKLT_CD:'other'}),now)); assert.throws(()=>normalize({RESULT:{CODE:'ERROR'}},now));
+});
+test('single flight and cache suppress requests; refresh failure never returns old success',async()=>{
+ let calls=0,t=now; const svc=createParkingService({clock:()=>t,fetchImpl:async()=>{calls++; if(calls>1)throw Error('offline');return new Response(JSON.stringify(payload()));}});
+ const pair=await Promise.all([svc(),svc()]);assert.equal(calls,1);assert.equal(pair[0].status,'fresh');await svc();assert.equal(calls,1);t+=60000;assert.equal((await svc()).status,'unavailable');assert.equal(calls,2);
+});
+test('oversize and malformed responses fail closed',async()=>{for(const body of ['invalid','x'.repeat(262145)]) {const svc=createParkingService({fetchImpl:async()=>new Response(body)});assert.equal((await svc()).status,'unavailable');}});
+test('same-origin API returns data, failures and method policy',async()=>{
+ const server=createServer({parkingService:async()=>({status:'unavailable'})}); await new Promise(r=>server.listen(0,'127.0.0.1',r));
+ try{ const url=`http://127.0.0.1:${server.address().port}`;assert.equal((await fetch(url+'/api/parking')).status,503);assert.equal((await fetch(url+'/api/parking',{method:'HEAD'})).status,405);assert.equal((await fetch(url+'/live')).status,200); }
+ finally{await new Promise(r=>server.close(r));}
+});
+
+FILE mvp/server.test.js sha256 79cf426cf1de99e84f6e824d5a2e0bb157314d504bbb5e35c111417d85158d29
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import { createServer } from './server.mjs';
+import { mkdtemp, copyFile, rm } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import { spawn } from 'node:child_process';
+test('local server serves only prototype assets and rejects writes', async () => {
+  const server = createServer();
+  await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
+  const base = `http://127.0.0.1:${server.address().port}`;
+  try {
+    for (const path of ['/', '/domain.js', '/app.js', '/fixtures.js', '/styles.css']) {
+      const r = await fetch(base + path); assert.equal(r.status, 200);
+      assert.match(r.headers.get('content-security-policy'), /connect-src 'self'/);
+    }
+    for (const path of ['/../AGENTS.md', '/.ai-memory.toml', '/package.json', '/%2e%2e/CLAUDE.md']) {
+      assert.equal((await fetch(base + path)).status, 404);
+    }
+    assert.equal((await fetch(base, { method: 'POST', body: 'test' })).status, 405);
+  } finally { await new Promise(resolve => server.close(resolve)); }
+});
+
+test('server entry point starts under a path with spaces and Korean characters', async () => {
+  const dir = await mkdtemp(join(tmpdir(), '주차 MVP '));
+  let child;
+  try {
+    await copyFile(new URL('./server.mjs', import.meta.url), join(dir, 'server.mjs'));
+    await copyFile(new URL('./parking.mjs', import.meta.url), join(dir, 'parking.mjs'));
+    child = spawn(process.execPath, [join(dir, 'server.mjs')], { env: { ...process.env, PARKING_MVP_PORT: '0' }, stdio: ['ignore', 'pipe', 'pipe'] });
+    await new Promise((resolve, reject) => {
+      const timer = setTimeout(() => reject(new Error('Server startup timed out')), 3000);
+      child.on('error', e => { clearTimeout(timer); reject(e); });
+      child.on('exit', code => { clearTimeout(timer); reject(new Error(`Server exited before readiness: ${code}`)); });
+      child.stdout.once('data', data => {
+        clearTimeout(timer);
+        if (data.toString().includes('Parking MVP:')) resolve();
+        else reject(new Error('Missing readiness output'));
+      });
+    });
+  } finally {
+    if (child && child.exitCode === null) {
+      const exited = new Promise(resolve => child.once('exit', resolve)); child.kill(); await exited;
+    }
+    await rm(dir, { recursive: true, force: true });
+  }
+});
