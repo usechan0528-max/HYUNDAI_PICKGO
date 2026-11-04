@@ -1,0 +1,60 @@
+import http from 'node:http';
+import { readFile } from 'node:fs/promises';
+import { fileURLToPath } from 'node:url';
+import { Fault } from './domain.mjs';
+import { RecommendationBoard } from './recommendation/board.mjs';
+import { parsePublicOrigin, requestOrigin } from './web-origin.mjs';
+const files = { '/phone': ['phone.html','text/html'], '/phone.css': ['phone.css','text/css'], '/phone-page.mjs': ['phone-page.mjs','text/javascript'], '/phone-controller.mjs': ['phone-controller.mjs','text/javascript'], '/': ['index.html', 'text/html'], '/app.mjs': ['app.mjs', 'text/javascript'], '/style.css': ['style.css', 'text/css'], '/fonts/AstaSans.ttf': ['fonts/AstaSans.ttf', 'font/ttf'], '/fonts/OFL.txt': ['fonts/OFL.txt', 'text/plain'] };
+Object.assign(files, {
+  '/proximity': ['proximity-page.html', 'text/html'],
+  '/proximity-page.mjs': ['proximity-page.mjs', 'text/javascript'],
+  '/proximity-page.css': ['proximity-page.css', 'text/css'],
+  '/proximity/detector.mjs': ['proximity/detector.mjs', 'text/javascript'],
+  '/location-links.css': ['location-links.css', 'text/css']
+});
+for (const [name,mime] of [['page.html','text/html'],['page.css','text/css'],['page.mjs','text/javascript'],['controller.mjs','text/javascript']]) files[name==='page.html'?'/recommendation':`/recommendation/${name}`]=[`recommendation/${name}`,mime];
+export function createServer(board = new RecommendationBoard(), options = {}) {
+  const publicOrigin = parsePublicOrigin(options.publicOrigin);
+  const server = http.createServer(async (req, res) => {
+    const reply = (status, value) => { res.writeHead(status, { 'Content-Type': 'application/json; charset=utf-8' }); res.end(JSON.stringify(value)); };
+    res.setHeader('Cache-Control', 'no-store'); res.setHeader('X-Content-Type-Options', 'nosniff');
+    res.setHeader('Referrer-Policy', 'no-referrer');
+    res.setHeader('Permissions-Policy', 'geolocation=(self)');
+    res.setHeader('Content-Security-Policy', "default-src 'self'; script-src 'self'; style-src 'self'; object-src 'none'; frame-ancestors 'none'; base-uri 'none'; form-action 'self'");
+    try {
+      const origin = requestOrigin(req.headers, res.socket.localPort, publicOrigin);
+      if (!origin) throw new Fault(403, '설정된 서비스 주소에서만 사용할 수 있습니다.');
+      const path = new URL(req.url, origin).pathname;
+      if (req.method === 'GET' && files[path]) {
+        const [name, mime] = files[path]; const body = await readFile(new URL(name, import.meta.url));
+        res.writeHead(200, { 'Content-Type': `${mime}; charset=utf-8` }); res.end(body); return;
+      }
+      let body = {};
+      if (req.method === 'POST') {
+        if (req.headers['content-type'] !== 'application/json') throw new Fault(415, 'JSON 요청만 지원합니다.');
+        const chunks = []; let length = 0; for await (const chunk of req) { length += chunk.length; if (length > 4096) throw new Fault(413, '요청이 너무 큽니다.'); chunks.push(chunk); }
+        const raw = Buffer.concat(chunks).toString('utf8');
+        try { body = JSON.parse(raw); } catch { throw new Fault(400, '잘못된 JSON입니다.'); }
+        if (!body || Array.isArray(body) || typeof body !== 'object') throw new Fault(400, '요청 객체가 필요합니다.');
+      }
+      if (path === '/api/rooms' && req.method === 'POST') return reply(201, board.create(body.place));
+      const match = path.match(/^\/api\/rooms\/([a-f0-9-]{36})(?:\/(join|actions|phone|recommendation))?$/);
+      if (!match) throw new Fault(404, '찾을 수 없습니다.');
+      const [, id, action] = match, credential = req.headers.authorization?.replace(/^Bearer /, '');
+      if (action === 'recommendation' && typeof board.recommend === 'function' && ['GET','POST'].includes(req.method)) return reply(200, await board.recommend(id, credential, req.method === 'POST' ? body : null));
+      if (action === 'phone' && typeof board.phone === 'function' && ['GET','POST'].includes(req.method)) return reply(200, board.phone(id, credential, req.method === 'POST' ? body : null));
+      if (req.method === 'GET' && !action) return reply(200, board.read(id, credential));
+      if (req.method === 'POST' && action === 'join') return reply(200, board.join(id, body.invite, body.joinId));
+      if (req.method === 'POST' && action === 'actions') return reply(200, board.act(id, credential, body));
+      throw new Fault(405, '지원하지 않는 요청입니다.');
+    } catch (error) { if (error instanceof Fault && error.status === 413) res.setHeader('Connection', 'close'); reply(error instanceof Fault ? error.status : 500, { error: error instanceof Fault ? error.message : '서버 오류입니다. 다시 확인해 주세요.' }); }
+  });
+  const cleanup = setInterval(() => { board.prune(); board.sweep?.(); }, 1000); cleanup.unref();
+  server.on('close', () => clearInterval(cleanup));
+  return server;
+}
+if (process.argv[1] === fileURLToPath(import.meta.url)) {
+  const port = Number(process.env.PICKUP_PORT || 4180);
+  const publicOrigin = parsePublicOrigin(process.env.PICKUP_PUBLIC_ORIGIN);
+  createServer(undefined, { publicOrigin: publicOrigin || undefined }).listen(port, '127.0.0.1', () => console.log(`픽업 약속판 ${publicOrigin || `http://127.0.0.1:${port}`} · ${publicOrigin ? 'HTTPS 프록시 구성 필요' : '로컬 시연'} / 메모리 저장`));
+}

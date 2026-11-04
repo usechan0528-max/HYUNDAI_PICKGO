@@ -1,0 +1,28 @@
+**Verdict for the current synthetic scope: no P0. One P1 remains. The live gates stay open.** I did not use tools, per your instruction, and I did not re-run the tests.
+
+**Disputed findings**
+- **Manual proposal "P0 bypass": dismissed.** Manual propose/accept is preserved by the canonical requirement. `select` sets `origin='recommendation'` server-side, and `RecommendationBoard.act` rejects that origin on `/actions`. Recommendation accept needs the `e.proposal` binding, a matching proposal ID, and a fresh `context` check plus re-evaluation. Base `propose` refuses while a proposal is pending, so replacement is blocked. `e.proposal` is cleared only by accept, reject, withdraw, or end, so no unbound recommendation-origin proposal can reach ordinary accept. Keep the regression test.
+- **Retention: holds under `createServer`**, where the 1s interval calls `prune`/`sweep`. Direct `Board` instances need an explicit sweep, which is fine for tests but should not be used in production.
+- **"Missing consent-cap test": incorrect.** The named test exists and fails closed.
+- **Abort/timeout: fixed.** `busy` clears only when the provider settles, and the test asserts `aborted` and a 429 on retry.
+- **Client `ageMs`:** correctly labeled as self-report. It remains a live gate.
+
+**Remaining P1 (current synthetic)**
+1. **Consent survives acceptance.** Accepting a place change, whether by recommendation or ordinary accept, clears phone location through `PhoneBoard.act`. It does not clear `recommendations[id].driver/rider.grant` or `.fix`. Both clients can keep publishing raw coordinates for up to 10 minutes after the place changes. This contradicts the phone-path rule that an accepted change stops collection and requires new consent. Fix: on any accept, clear both grants, fixes, snapshot, and summary, and bump `e.revision`. Add a test that publish after accept fails.
+
+**P2 (material)**
+- A provider that ignores abort keeps `busy` true for that room indefinitely. This is bounded to one call per room, but recommendations are dead there. Add a circuit breaker or a global cap.
+- The revoke response can still include `proposalEvidence`, because sweep runs before the revoke branch. Sweep after the mutation.
+- `select` can offer the current place, and base `propose` then returns 400. Filter out `r.place`.
+- The 1000-request cap can block `end`. Let `end` bypass it.
+
+**Unverifiable from the supplied base**
+`engine.mjs`, `providers.mjs`, `web-origin.mjs`, and the client `page.mjs` are not included. I cannot confirm `freshFix`, that `rankCandidates` keeps coordinates out of `snapshot` and `summary`, or the synthetic provider's behavior.
+
+**Live gates (separate, not resolved)**
+- Real vehicle and rider location, plus an authenticated SDK publisher.
+- Catalog binding and real routing or stopping data.
+- Server-verified freshness. Client `ageMs` cannot be proven.
+- HTTPS deployment with origin enforcement.
+- Durable storage and retention beyond process memory.
+- Legal and privacy review of continuous location sharing.

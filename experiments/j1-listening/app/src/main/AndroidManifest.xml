@@ -1,9 +1,0 @@
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
-    <uses-feature android:name="android.hardware.type.automotive" android:required="false" />
-    <application android:label="이번 길" android:icon="@drawable/ic_listen" android:theme="@android:style/Theme.Material.NoActionBar" android:allowBackup="false" android:dataExtractionRules="@xml/extraction_rules" android:supportsRtl="true">
-        <uses-library android:name="android.car" android:required="false" />
-        <activity android:name=".ListeningActivity" android:exported="true">
-            <intent-filter><action android:name="android.intent.action.MAIN" /><category android:name="android.intent.category.LAUNCHER" /></intent-filter>
-        </activity>
-    </application>
-</manifest>

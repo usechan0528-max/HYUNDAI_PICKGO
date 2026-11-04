@@ -1,0 +1,64 @@
+I'll write the review findings to the plan file, then exit plan mode.
+
+
+<tool_call name="Write">
+<parameter name="file_path">C:\Users\dldyd\.claude\plans\read-only-follow-up-haiku5-5-no-cuddly-knuth.md</parameter>
+<parameter name="content"># Read-only review: join-retry and storage fixes
+
+## Context
+Follow-up to review 5e70db74-5072-4c40-9a64-de119bf85824. Scope: remaining concrete P0/P1/P2 introduced by the fixes. Reviewed only the supplied source (app.mjs, domain.mjs, server.mjs, web-origin.mjs, web-invite.test.mjs, web-http.test.mjs). Not supplied: index.html, phone.html, phone-domain.mjs, recommendation/board.mjs.
+
+## Result
+No P0 or P1 introduced by these fixes in the supplied code. Two P2 items.
+
+### P2-1: Credential loss after final save failure
+- Where: app.mjs, `$('join').onclick`. If `save(joined)` returns false, `incoming` (with `joinId`) is kept, but the rider token exists only in memory.
+- The retry works only while `joinReceipt` exists. domain.mjs `prune` drops it at 300000 ms after join. After that the invite is consumed and the rider is locked out.
+- The notice ("탭을 닫으면 참여 정보를 잃습니다") does not state the 5-minute recovery deadline.
+- Fix: state the deadline in the notice. Add tests: save failure keeps the pending key, a retry within 5 minutes returns the same token, and a retry after 5 minutes is denied.
+
+### P2-2: Dismiss discards the only retry key
+- Where: app.mjs, `$('cancelJoin').onclick` removes `pickupInvitation` (which holds `joinId`) unconditionally.
+- After an ambiguous timeout, the server may already have consumed the invite. Dismissing then makes that room unrecoverable, and nothing warns the user.
+- Fix: when a join request has been sent and its outcome is unknown, relabel or confirm the cancel action: "참여 확인이 안 된 상태입니다. 닫으면 이 초대로 다시 참여할 수 없습니다."
+
+### P3 (non-blocking)
+- The 403 message after expiry says "참여했던 탭으로 돌아가거나". That is misleading when the tab has lost its state.
+- Same-room driver: the join is blocked correctly, and the notice explains that the invite must be closed. Confirm this UX is acceptable.
+
+## Verified by reading
+- The pending `joinId` is written and read back before POST. Storage denial returns before any request (covered by test).
+- The receipt matches only the same `joinId` and `invite`. It is not in `read()`. It is cleared on end and at 300000 ms (inclusive boundary, `prune` runs in `room()`).
+- Same-room driver join is blocked in both the button state and the handler.
+- `refresh` and `render` do not write `#notice`.
+- Retry on the default server board is exercised over HTTP (web-http test 2).
+
+## Pre-existing (not introduced here; gates public mode)
+- `POST /api/rooms` is unauthenticated, and `create` caps total rooms at 100 globally. Rooms persist for 24h, so 100 requests block new driver rooms for up to 24h. The proxy rate limit must cover this. Treat it as a blocker for any public exposure, not just a documented prerequisite.
+- Public-mode configuration: the loopback bind is unchanged, and the Host check is covered by the HTTP test.
+
+## Not verified
+- The node suite (160 pass) predates these fixes. This review did not run it.
+- The browser recheck of the new code is pending.
+- index.html was not supplied. Confirm `joinBox` is inside `#welcome`. If it is not, a rider who reopens the link sees the join box.
+- phone-domain.mjs and recommendation/board.mjs were not supplied. The HTTP test suggests no join or read override bypasses the receipt logic, but this is unconfirmed.
+
+## Verification (after edits are approved)
+- Add the node tests for P2-1 and the browser test for P2-2.
+- Re-run the full node suite and the browser flow: invite, reload, join, decline location, ready, place acceptance, arrival, boarding.
+</parameter>
+</invoke>
+<invoke name="ExitPlanMode">
+</invoke>
+The review is written to the plan file. The findings are below, and I'm waiting for you to approve the plan before any edits. Nothing in the repo was modified.
+
+**Result:** I found no P0 or P1 introduced by these fixes in the supplied code. Two P2 items:
+
+- **P2-1, credential loss after final save failure.** If `save(joined)` fails, the rider token exists only in memory. The server retry works only for 5 minutes, and the notice does not tell the user that deadline. After 5 minutes the rider is locked out.
+- **P2-2, dismiss discards the only retry key.** `cancelJoin` deletes `joinId` with no warning, even after an ambiguous timeout where the invite may already be consumed.
+
+Non-blocking items (P3): the expired-invite message points users back to a tab that may have lost its state, and the same-room driver view stays hidden until the invite is closed.
+
+**Pre-existing, gates public mode:** `POST /api/rooms` is unauthenticated, and the global cap of 100 rooms can block new driver rooms for up to 24 hours. The proxy rate limit needs to cover this, and it should be treated as a blocker for any public exposure.
+
+**Not verified:** `index.html`, `phone-domain.mjs`, and `recommendation/board.mjs` were not supplied, so I did not check them. Confirm that `joinBox` sits inside `#welcome`. The node suite (160 pass) predates these fixes and was not re-run, and the browser recheck of the new code is still pending.

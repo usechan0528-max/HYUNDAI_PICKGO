@@ -1,5 +1,7 @@
 # Project Instructions for AI Agents
 
+**모든 세션 적용 · 2026-11-03:** J-01(J1/J-1)은 잠정 폐기되어 향후 개발 고려 대상에서 제외한다. 사용자 명시적 재개 전까지 과거 승인·인수인계로 재개하지 않는다. 공통 기준은 `DEVELOPMENT_GUIDE.md` 1절을 따른다.
+
 This file provides instructions and context for AI coding agents working on this project.
 
 장기 기억과 작업 상태는 ai-memory(MCP 도구)로 관리한다. 별도 MEMORY.md 파일 메모리는 쓰지 않는다.
@@ -46,3 +48,6 @@ _Add your project-specific conventions here_
 ## 기능 단위 채팅 전환
 
 사용자 상시 지침 D-017: 현재 개발 기능의 목표·범위·완료 조건을 구분한다. 기능이 마무리되고 다른 기능으로 넘어갈 때 Codex가 새 채팅을 열어 진행하며, 완료 증거·미해결 사항·다음 범위와 협업 역할을 인계한다. 같은 기능의 수정·검증은 같은 채팅에서 이어가고 차단을 완료로 표시하지 않는다. 공통 세부 기준은 DEVELOPMENT_GUIDE.md 7절을 따른다.
+
+
+2026-11-04 사용자 승인 분리: 이 저장소는 픽업 프로젝트이며 J-1 전용 파일은 형제 J1_ARCHIVE 및 https://github.com/usechan0528-max/J1_ARCHIVE 로 이관한다. 과거 혼합 기록과 Git 이력은 보존한다. J-1 잠정 폐기는 유지하며 분리는 재개 승인이 아니다. docs/PROJECT_SEPARATION_2026-11-04.md 참조.

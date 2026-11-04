@@ -1,0 +1,316 @@
+Read-only narrow re-review of previous integration review a41d60ee-9822-4a82-80c2-0eafdf82fe73. No tools/files mutation. Review these changes and remaining severity; do not re-review unrelated scope.
+P1-1 (strict immediate invalidation): bounded polling is deliberate in this local synthetic app, not immediate push. At most 4s from request start freshness; pending/unknown/background stop hints. Added explicit last-confirmed-place and <=4s delay disclosure. Near is synthetic only and never arrival. No real-world safety assurance. Is this truthful and sufficient within stated scope?
+P2-2 fixed: successful Board accept clears both PhoneBoard grant and sample; phone UI notices placeRevision and stops current capture/sharing. HTTP/domain and fake-DOM regressions added. P2-6 bind errors caught and safe unknown UI shown.
+Other findings dispositions: P2-1 rider self-read explicitly intended/disclosed; P2-3 delayed refresh fails closed and may wait max polling+3s, not reenable old authority; P2-4 real browser watch callbacks asynchronous (test fake API mirrors it); P2-5 source tag is not authentication/capability, no vehicle transport exists and UI only constructs constants, synthetic/phone units separate; P2-7 bounded non-coordinate tombstones kept until room pruning to defend delayed grant/revoke races; P2-8 self exhaustion documented 100/room, no cross-role ability. Missing-test statements limited by original input: actual detector tests include no re-notify, terminal end; phone tests include cap/tombstone cases.
+Evidence: final 115/115 Node tests (original49 +proximity39 +phone20 +proximityUI4 +integration3), actual Chrome two-role create/join, phone consent shown/no collection/decline, near demo+expiry/manual waiting unchanged, accepted place change, manual arrive/board and phone disabled after board observed. Real location permission never granted; no actual phone/SDK claims. Final emulator preview still pending.
+
+FILE phone-domain.mjs
+import { Board, Fault, VIEW_TTL } from './domain.mjs';
+export const LOCATION_TTL = 30000, GRANT_TTL = 20000;
+const check = (ok, status, message) => { if (!ok) throw new Fault(status, message); };
+const uuid = x => typeof x === 'string' && /^[a-f0-9]{8}-[a-f0-9]{4}-4[a-f0-9]{3}-[89ab][a-f0-9]{3}-[a-f0-9]{12}$/i.test(x);
+// Coordinates are deliberately kept outside Board rooms, events and action history.
+export class PhoneBoard extends Board {
+  constructor(now = Date.now, mono = () => performance.now()) { super(now); this.mono = mono; this.locations = new Map(); this.lastMono = mono(); }
+  sweep() {
+    const at = this.mono();
+    if (!Number.isFinite(at) || at < this.lastMono) {
+      for (const entry of this.locations.values()) { entry.grant = null; entry.sample = null; }
+    }
+    this.lastMono = at;
+    for (const [id, entry] of this.locations) {
+      const room = this.rooms.get(id);
+      if (!room) { this.locations.delete(id); continue; }
+      if (room.status !== 'active' || room.stage === 'boarded') { entry.grant = null; entry.sample = null; }
+      if (entry.grant && at >= entry.grant.until) entry.grant = null;
+      if (entry.sample && at >= entry.sample.until) entry.sample = null;
+    }
+  }
+  act(...args) {
+    const result = super.act(...args);
+    if (args[2]?.type === 'accept') {
+      const entry = this.locations.get(args[0]);
+      if (entry) { entry.grant = null; entry.sample = null; }
+    }
+    this.sweep(); return result;
+  }
+  phone(id, credential, input = null) {
+    const room = this.room(id), role = this.auth(room, credential);
+    this.sweep();
+    let entry = this.locations.get(id);
+    if (!input) {
+      const sample = entry?.sample;
+      return { source: 'rider-phone', sample: sample ? { ...sample.fix, source: 'rider-phone', receivedAt: sample.receivedAt, ageMs: sample.ageAtReceipt + this.mono() - sample.receivedMono,
+        remainingMs: Math.max(0, sample.until - this.mono()) } : null };
+    }
+    check(role === 'rider', 403, '탑승자만 위치를 공유하거나 삭제할 수 있습니다.');
+    check(typeof input === 'object' && uuid(input.consentId), 400, '공유 요청 형식이 올바르지 않습니다.');
+    check(['grant','publish','revoke'].includes(input.type), 400, '알 수 없는 위치 요청입니다.');
+    if (!entry) { entry = { ids: new Set(), grant: null, sample: null }; this.locations.set(id, entry); }
+    const { consentId, type } = input;
+    // Retain used IDs for the entire room lifetime: late grant/publish cannot resurrect consent.
+    if (type === 'revoke') {
+      // Bounded tombstones; when full, all future grants fail closed.
+      if (entry.ids.size < 100) entry.ids.add(consentId);
+      if (entry.grant?.id === consentId) entry.grant = null;
+      if (entry.sample?.id === consentId) entry.sample = null;
+      return { deleted: true };
+    }
+    check(room.status === 'active' && room.stage !== 'boarded', 409, '종료되었거나 탑승한 회차입니다.');
+    const at = this.mono();
+    check(Number.isFinite(at), 409, '시각을 확인할 수 없습니다.');
+    if (type === 'grant') {
+      check(entry.ids.size < 100, 429, '이 회차의 위치 공유 횟수를 초과했습니다.');
+      check(!entry.ids.has(consentId), 409, '새 동의 요청이 필요합니다.');
+      check(input.consent === 'pickup-location-once-v1', 400, '위치 공유 안내에 동의해 주세요.');
+      check(room.version === input.version && (room.views.get(credential) || []).some(v => v.key === input.view && this.now()-v.at >= 0 && this.now()-v.at < VIEW_TTL), 409, '회차를 다시 확인하고 동의해 주세요.');
+      entry.ids.add(consentId); entry.sample = null;
+      entry.grant = { id: consentId, until: at + GRANT_TTL, wall: this.now() };
+      return { granted: true, expiresInMs: GRANT_TTL };
+    }
+    const grant = entry.grant;
+    check(grant && grant.id === consentId && at < grant.until, 409, '공유 동의가 만료되거나 철회되었습니다.');
+    const f = input.fix;
+    check(f && ['latitude','longitude','accuracy','observedAt','ageMs'].every(k => typeof f[k] === 'number' && Number.isFinite(f[k])), 400, '위치 값을 확인할 수 없습니다.');
+    check(Math.abs(f.latitude) <= 90 && Math.abs(f.longitude) <= 180 && f.accuracy > 0 && f.accuracy <= 100, 400, '위치 정확도가 부족합니다. 수동 상태 알림을 이용해 주세요.');
+    // Device observation epoch is metadata; compare age only within the same device clock.
+    // The authenticated client reports age; this is not proof of physical location.
+    check(f.ageMs >= 0 && f.ageMs < 15000, 409, '위치 시각을 확인할 수 없습니다. 다시 동의해 주세요.');
+    entry.grant = null;
+    entry.sample = { id: consentId, until: at + LOCATION_TTL, receivedAt: this.now(), receivedMono: at, ageAtReceipt: f.ageMs,
+      fix: { latitude:f.latitude, longitude:f.longitude, accuracy:f.accuracy, observedAt:f.observedAt } };
+    return { shared: true, expiresInMs: LOCATION_TTL };
+  }
+}
+
+FILE phone-page.mjs
+import { PhoneShare } from './phone-controller.mjs';
+const $=id=>document.getElementById(id);
+let session=null, state=null, freshUntil=0, sampleUntil=0, sampleSeenAt=0, sample=null, polling=false, suppressSample=false;
+try { session=JSON.parse(sessionStorage.getItem('pickupSession')); } catch {}
+const environment=()=>navigator.onLine && !document.hidden && globalThis.isSecureContext;
+const allowed=()=>environment() && session?.role==='rider' && state?.status==='active' && state.stage!=='boarded' && performance.now()<freshUntil;
+async function request(path,body,keepalive=false) {
+ const response=await fetch(`/api/rooms/${session.id}${path}`,{method:body?'POST':'GET',cache:'no-store',keepalive,signal:AbortSignal.timeout(body?4000:2000),headers:{Authorization:`Bearer ${session.token}`,...(body?{'Content-Type':'application/json'}:{})},...(body?{body:JSON.stringify(body)}:{})});
+ const data=await response.json(); if(!response.ok) {const error=new Error('서비스 확인 실패');error.status=response.status;throw error;} return data;
+}
+const share=new PhoneShare({geo:navigator.geolocation,send:(body,keep)=>request('/phone',body,keep),allowed,notify:text=>{if(!share.current){suppressSample=true;sample=null;}$('message').textContent=text; render();}});
+function render() {
+ $('consent').hidden=session?.role!=='rider';
+ $('share').disabled=!allowed() || !!share.current;
+ $('context').textContent=!session?'먼저 약속판에서 회차에 참여해 주세요.':performance.now()>=freshUntil?'현재 회차 미확인 · 위치 수집 중지':state?.status!=='active'?'회차가 종료되었습니다.':state.stage==='boarded'?'탑승이 확인되어 위치 공유를 종료합니다.':`${session.role==='rider'?'탑승자':'운전자'} · ${state.place}`;
+ if(suppressSample || !environment() || performance.now()>=sampleUntil || state?.status!=='active' || state?.stage==='boarded') sample=null;
+ $('sample').textContent=sample?`휴대폰 위치 1개 수신 · 정확도 약 ${Math.ceil(sample.accuracy)}m · 관측 ${Math.max(0,Math.floor((sample.ageMs+Math.max(0,performance.now()-sampleSeenAt))/1000))}초 전 · 자동 만료까지 ${Math.ceil((sampleUntil-performance.now())/1000)}초`:'공유된 최신 위치 없음';
+ if(share.current && !allowed()) void share.stop('회차 또는 연결을 확인할 수 없어 중지했습니다.');
+}
+async function refresh() {
+ if(!session || polling || document.hidden) return;
+ polling=true; const began=performance.now(), generation=share.generation;
+ try { const next=await request('');
+   if(generation!==share.generation || !environment()) return;
+   const placeChanged = state && state.placeRevision !== next.placeRevision;
+   state=next; freshUntil=began+6000;
+   if(placeChanged){sample=null;if(share.current) void share.stop('승차지점이 바뀌어 위치 공유를 중지했습니다. 다시 공유하려면 새로 동의해 주세요.');}
+   render();
+   if(generation!==share.generation) return;
+   const location=await request('/phone'); if(generation===share.generation && environment()){sample=location.sample; sampleSeenAt=began; sampleUntil=began+(sample?.remainingMs||0);}
+ } catch { freshUntil=0; sample=null; } finally {polling=false; render();}
+}
+$('share').onclick=()=>{if(allowed()){suppressSample=false;void share.start(state);}};
+$('stop').onclick=()=>{sample=null; void share.stop();};
+$('decline').onclick=()=>{sample=null; void share.stop('동의하지 않았습니다. 수동 상태 알림을 계속 이용할 수 있습니다.');};
+addEventListener('offline',()=>{freshUntil=0;sample=null;void share.stop('오프라인으로 수집을 중지했습니다.');render();});
+addEventListener('pagehide',()=>{void share.stop('페이지를 떠나 공유를 중지했습니다.');});
+document.addEventListener('visibilitychange',()=>{freshUntil=0;sample=null;if(document.hidden) void share.stop('페이지가 보이지 않아 공유를 중지했습니다.'); else void refresh();});
+addEventListener('online',()=>{void refresh();});
+// Permission changes are optional browser support; an error callback still stops the watch.
+navigator.permissions?.query({name:'geolocation'}).then(permission=>{permission.onchange=()=>{if(permission.state==='denied'){sample=null;void share.stop('위치 권한이 철회되었습니다.');}};}).catch(()=>{});
+if(!globalThis.isSecureContext || !navigator.geolocation) $('message').textContent='이 환경은 위치 수집을 지원하지 않습니다. 휴대폰 연결에는 HTTPS 검증이 필요합니다.';
+setInterval(refresh,2000);setInterval(render,250);render();void refresh();
+
+FILE proximity-page.mjs
+import { ProximityDetector } from './proximity/detector.mjs';
+const $ = id => document.getElementById(id);
+const detector = new ProximityDetector();
+let session, state, received = -Infinity, connected = false, generation, context, polling = false, demoTimer, notices = 0, lifecycle = 0;
+try { session = JSON.parse(sessionStorage.getItem('pickupSession')); } catch {}
+const fresh = () => connected && navigator.onLine && !document.hidden && performance.now() - received < 4000;
+const usable = () => fresh() && state?.status === 'active' && state?.stage === 'waiting' && state?.role === 'driver' && !state?.proposal;
+const cancel = reason => { clearTimeout(demoTimer); generation = null; detector.unavailable(reason); };
+function render() {
+  if (!fresh()) cancel(document.hidden ? 'background' : 'disconnected');
+  if (state?.status === 'ended') { clearTimeout(demoTimer); generation = null; detector.end(); }
+  else if (state && (state.stage !== 'waiting' || state.proposal)) cancel('manual-stage');
+  $('proximityConnection').textContent = fresh() ? '방금 서버에서 확인' : '현재 회차 미확인';
+  $('proximityPlace').textContent = fresh() ? state.place : '현재 승차지점 미확인';
+  $('manualStage').textContent = !fresh() ? '직접 확인 상태: 미확인' : `직접 확인 상태: ${state.status === 'ended' ? '약속 종료' : state.stage === 'boarded' ? '탑승 확인됨' : state.stage === 'arrived' ? '운전자 도착 알림' : '도착 알림 전'}`;
+  const value = detector.read();
+  $('proximityState').textContent = value.state === 'near' ? '근처입니다 · 합성 좌표' : value.state === 'far' ? '아직 멀어요 · 합성 좌표' : '현재 미확인';
+  $('proximityReason').textContent = !session ? '약속판에서 운전자 회차를 먼저 만들어 주세요.' : !fresh() ? '서버와 회차를 다시 확인해야 합니다.' : state.role !== 'driver' ? '차량 근접 시연은 운전자 화면에서 확인해 주세요.' : !usable() ? '장소 합의 전이나 수동 도착·탑승·종료 후에는 시연을 중지합니다.' : value.reason === 'stale' ? '관측이 만료됐습니다.' : value.reason === 'permission-denied' ? '위치 권한 거부를 시연했습니다.' : value.reason === 'confirming' ? '새 관측을 한 번 더 확인 중입니다.' : '두 번의 새 관측으로 판정하며 실제 차량 도착을 보장하지 않습니다.';
+  $('proximityNotice').textContent = notices ? `이 시연 화면에서 발생한 근접 알림: ${notices}회 · 과거 시연 기록` : '근접 알림 없음';
+  for (const id of ['demoNear','demoFar','demoDenied']) $(id).disabled = !usable();
+}
+async function refresh() {
+  if (!session || polling || document.hidden) { render(); return; }
+  polling = true; const started = performance.now(), capturedLifecycle = lifecycle;
+  try {
+    const response = await fetch(`/api/rooms/${session.id}`, { cache:'no-store', headers:{Authorization:`Bearer ${session.token}`}, signal:AbortSignal.timeout(3000) });
+    const next = await response.json(); if (!response.ok) throw new Error('회차를 확인할 수 없습니다.');
+    if (capturedLifecycle !== lifecycle || document.hidden || !navigator.onLine) return;
+    if (state && next.version < state.version) throw new Error('이전 회차 응답입니다.');
+    if (!Number.isSafeInteger(next.placeRevision) || next.placeRevision < 1) throw new Error('목적지 버전이 없습니다.');
+    if (context && (context.id !== next.id || context.revision !== next.placeRevision)) cancel('initializing');
+    if (!context || context.id !== next.id || context.revision !== next.placeRevision) context = {id:next.id, place:next.place, revision:next.placeRevision};
+    state = next; received = started; connected = true; $('proximityError').textContent = '';
+  } catch { connected = false; $('proximityError').textContent = '서버 연결 또는 참여 권한을 확인해 주세요.'; }
+  finally { polling = false; render(); }
+}
+function simulate(near) {
+  if (!usable()) return;
+  clearTimeout(demoTimer);
+  // Fixed synthetic origin; this is not a real pickup point or phone coordinate.
+  let captured;
+  try { captured = detector.bind(context.id, {id:context.place,revision:context.revision,latitude:0,longitude:0}); }
+  catch { cancel('initializing'); $('proximityError').textContent = '관측 기준을 확인할 수 없습니다. 페이지를 다시 열어 주세요.'; render(); return; }
+  generation = captured;
+  const emit = () => {
+    if (!usable() || generation !== captured) return;
+    const now = performance.now();
+    const result = detector.ingest(captured, {latitude:near ? 0.0001 : 0.003,longitude:0,accuracyMeters:5,observedAtMonoMs:now,receivedAtMonoMs:now,source:'synthetic'});
+    if (result.notify && detector.canNotify(captured)) notices++;
+    render();
+  };
+  emit(); demoTimer = setTimeout(emit, 150);
+}
+$('demoNear').onclick = () => simulate(true);
+$('demoFar').onclick = () => simulate(false);
+$('demoDenied').onclick = () => { cancel('permission-denied'); render(); };
+addEventListener('offline', () => { lifecycle++; connected = false; cancel('disconnected'); render(); });
+addEventListener('online', refresh);
+addEventListener('pagehide', () => { lifecycle++; connected = false; cancel('background'); });
+addEventListener('pageshow', refresh);
+document.addEventListener('visibilitychange', () => { lifecycle++; connected = false; cancel('background'); render(); if (!document.hidden) refresh(); });
+setInterval(refresh, 2000); setInterval(render, 250); refresh();
+
+FILE proximity-page.html
+<!doctype html>
+<html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>차량 근접 확인 · 픽업 약속판</title><link rel="stylesheet" href="/style.css"><link rel="stylesheet" href="/proximity-page.css"></head>
+<body><main class="location-page"><a class="button secondary" href="/">약속판으로 돌아가기</a><h1>차량 근접 확인</h1><p>실제 차량 위치는 연결되지 않았습니다. 아래 시연은 합성 좌표만 사용하며 도착·탑승 상태를 바꾸지 않습니다.</p>
+<section class="panel"><span id="proximityConnection">회차 확인 중</span><h2 id="proximityPlace">확인 전</h2><p id="manualStage">직접 확인 상태: 미확인</p><p>마지막으로 확인한 장소 기준입니다. 장소 변경은 최대 4초 늦게 반영될 수 있습니다.</p></section>
+<section class="panel"><p class="section-label">차량 위치 · 실제 SDK 미연결</p><h2>현재 미확인</h2></section>
+<section class="panel"><p class="section-label">합성 근접 시연 · 운전자 전용</p><h2 id="proximityState" role="status">현재 미확인</h2><p id="proximityReason"></p><p id="proximityNotice"></p><div class="demo-buttons"><button id="demoNear" disabled>근처 좌표 시연</button><button id="demoFar" disabled>먼 좌표 시연</button><button id="demoDenied" disabled>권한 거부 시연</button></div><p>새 관측이 없으면 5초 후 미확인으로 돌아갑니다. 수치는 합성 시연 정책입니다.</p></section><p id="proximityError" role="alert"></p></main><script type="module" src="/proximity-page.mjs"></script></body></html>
+
+FILE location-integration.test.mjs
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import { randomUUID } from 'node:crypto';
+import { once } from 'node:events';
+import { PhoneBoard } from './phone-domain.mjs';
+import { PLACES } from './domain.mjs';
+import { ProximityDetector } from './proximity/detector.mjs';
+import { createServer } from './server.mjs';
+
+test('accepted place revision changes even A-B-A; readiness and phone shares do not change it', () => {
+  const board = new PhoneBoard(); const driver = board.create(PLACES[0]); const rider = board.join(driver.id,driver.invite);
+  const read = who => board.read(driver.id,who.token);
+  const act = (who,type,extra={}) => { const s=read(who); return board.act(driver.id,who.token,{type,...extra,version:s.version,view:s.view,requestId:randomUUID()}); };
+  assert.equal(read(driver).placeRevision,1);
+  act(rider,'ready',{ready:true}); assert.equal(read(driver).placeRevision,1);
+  for (const place of [PLACES[1],PLACES[0]]) {
+    const before=read(driver).placeRevision;
+    const pending=act(driver,'propose',{place}); assert.equal(pending.placeRevision,before);
+    const accepted=act(rider,'accept',{proposalId:pending.proposal.id}); assert.equal(accepted.placeRevision,before+1);
+  }
+  assert.equal(read(driver).placeRevision,3);
+});
+
+test('combined real HTTP: phone sharing and synthetic proximity never mark arrival; boarding clears phone sample', async t => {
+  const server=createServer(); server.listen(0,'127.0.0.1'); await once(server,'listening');
+  t.after(()=>new Promise(resolve=>{ server.close(resolve); server.closeAllConnections(); }));
+  const origin=`http://127.0.0.1:${server.address().port}`;
+  const api=async(path,token,body)=>{
+    const r=await fetch(origin+path,{method:body?'POST':'GET',headers:{...(token?{Authorization:`Bearer ${token}`} : {}),...(body?{'Content-Type':'application/json'}:{})},...(body?{body:JSON.stringify(body)}:{})});
+    assert.ok(r.ok,`HTTP ${r.status}`); return r.json();
+  };
+  const driver=await api('/api/rooms',null,{place:PLACES[0]}), path=`/api/rooms/${driver.id}`;
+  const rider=await api(path+'/join',null,{invite:driver.invite});
+  const view=await api(path,rider.token); const consentId=randomUUID();
+  await api(path+'/phone',rider.token,{type:'grant',consentId,consent:'pickup-location-once-v1',version:view.version,view:view.view});
+  await api(path+'/phone',rider.token,{type:'publish',consentId,fix:{latitude:0,longitude:0,accuracy:5,observedAt:Date.now(),ageMs:0}});
+  const sample=(await api(path+'/phone',driver.token)).sample; assert.equal(sample.source,'rider-phone');
+  const state=await api(path,driver.token); let now=1000;
+  const detector=new ProximityDetector({now:()=>now}); const gen=detector.bind(driver.id,{id:state.place,revision:state.placeRevision,latitude:0,longitude:0});
+  assert.equal(detector.ingest(gen,{...sample,observedAtMonoMs:now,receivedAtMonoMs:now}).state,'unknown');
+  for(let i=0;i<2;i++){now++;detector.ingest(gen,{source:'synthetic',latitude:0,longitude:0,accuracyMeters:5,observedAtMonoMs:now,receivedAtMonoMs:now});}
+  assert.equal(detector.read().state,'near'); assert.equal((await api(path,driver.token)).stage,'waiting');
+  const act=async(who,type)=>{const s=await api(path,who.token);return api(path+'/actions',who.token,{type,version:s.version,view:s.view,requestId:randomUUID()});};
+  await act(driver,'arrive'); assert.ok((await api(path+'/phone',driver.token)).sample);
+  await act(rider,'board'); assert.equal((await api(path+'/phone',driver.token)).sample,null);
+  assert.equal((await act(driver,'end')).outcome,'completed');
+  for(const route of ['/phone','/proximity','/proximity-page.mjs','/proximity/detector.mjs']) assert.equal((await fetch(origin+route)).status,200,route);
+  for(const route of ['/phone-domain.mjs','/domain.mjs','/server.mjs']) assert.equal((await fetch(origin+route)).status,404,route);
+});
+
+test('accepted place change invalidates both published phone fix and outstanding consent', () => {
+  const board=new PhoneBoard();const driver=board.create(PLACES[0]);const rider=board.join(driver.id,driver.invite);
+  const act=(who,type,extra={})=>{const s=board.read(driver.id,who.token);return board.act(driver.id,who.token,{type,...extra,version:s.version,view:s.view,requestId:randomUUID()});};
+  const grant=()=>{const s=board.read(driver.id,rider.token),consentId=randomUUID();board.phone(driver.id,rider.token,{type:'grant',consentId,consent:'pickup-location-once-v1',version:s.version,view:s.view});return consentId;};
+  const publish=consentId=>board.phone(driver.id,rider.token,{type:'publish',consentId,fix:{latitude:0,longitude:0,accuracy:5,observedAt:Date.now(),ageMs:0}});
+  let consentId=grant();publish(consentId);
+  let pending=act(driver,'propose',{place:PLACES[1]});act(rider,'accept',{proposalId:pending.proposal.id});
+  assert.equal(board.phone(driver.id,driver.token).sample,null);
+  consentId=grant();pending=act(driver,'propose',{place:PLACES[2]});act(rider,'accept',{proposalId:pending.proposal.id});
+  assert.throws(()=>publish(consentId),/만료되거나 철회/);assert.equal(board.phone(driver.id,driver.token).sample,null);
+});
+
+FILE phone-page.test.mjs
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import vm from 'node:vm';
+import { readFile } from 'node:fs/promises';
+import { PhoneShare } from './phone-controller.mjs';
+const source=(await readFile(new URL('./phone-page.mjs',import.meta.url),'utf8')).replace("import { PhoneShare } from './phone-controller.mjs';",'');
+async function harness(role='rider') {
+ const nodes=Object.fromEntries(['context','consent','share','stop','decline','message','sample'].map(id=>[id,{textContent:'',hidden:false,disabled:false}]));
+ const events={},timers=new Set();let hold=null,watches=0;
+ const state={status:'active',stage:'waiting',place:'synthetic',placeRevision:1,version:2,view:'view'};
+ const fix={source:'rider-phone',accuracy:20,ageMs:0,observedAt:Date.now(),remainingMs:30000};
+ const box={PhoneShare:class extends PhoneShare {constructor(args){super({...args,schedule:fn=>{timers.add(fn);return fn;},cancel:fn=>timers.delete(fn),id:()=> '11111111-1111-4111-8111-111111111111'});}},performance:{now:()=>1000},Date,JSON,Math,AbortSignal,isSecureContext:true,
+ navigator:{onLine:true,geolocation:{watchPosition(){watches++;return 4;},clearWatch(){}}},sessionStorage:{getItem:()=>JSON.stringify({id:'fake',token:'fake',role})},
+ document:{hidden:false,getElementById:id=>nodes[id],addEventListener:(name,fn)=>events[name]=fn},addEventListener:(name,fn)=>events[name]=fn,setInterval(){},
+ fetch:async(path,options)=>{if(hold && !options.body)await hold;return {ok:true,json:async()=>options.body?{}:path.endsWith('/phone')?{sample:fix}:{...state}};}};
+ vm.createContext(box);vm.runInContext(source,box);await new Promise(setImmediate);
+ return {nodes,events,box,state,get watches(){return watches;},hold:p=>{hold=p;},refresh:()=>vm.runInContext('refresh()',box),value:code=>vm.runInContext(code,box)};
+}
+test('page shows explicit consent without collection, driver has no consent controls',async()=>{
+ const h=await harness();assert.equal(h.watches,0);assert.equal(h.nodes.consent.hidden,false);assert.equal(h.nodes.share.disabled,false);
+ await h.nodes.decline.onclick();assert.equal(h.watches,0);assert.match(h.nodes.message.textContent,/동의하지/);
+ const driver=await harness('driver');assert.equal(driver.nodes.consent.hidden,true);assert.equal(driver.nodes.share.disabled,true);assert.match(driver.nodes.sample.textContent,/휴대폰 위치 1개 수신/);assert.match(driver.nodes.sample.textContent,/20m/);
+});
+test('pagehide while GET pending cannot restore fresh authority or old sample',async()=>{
+ const h=await harness();let done;h.hold(new Promise(r=>done=r));const pending=h.refresh();h.box.document.hidden=true;h.events.pagehide();done();await pending;
+ assert.equal(h.value('allowed()'),false);assert.match(h.nodes.sample.textContent,/없음/);assert.equal(h.value('share.current'),null);
+});
+test('late sample after decline cannot reappear and ended/boarded render clears immediately',async()=>{
+ const h=await harness();let done;h.hold(new Promise(r=>done=r));const pending=h.refresh();h.nodes.decline.onclick();done();await pending;assert.match(h.nodes.sample.textContent,/없음/);
+ h.hold(null);h.state.stage='boarded';await h.refresh();assert.match(h.nodes.sample.textContent,/없음/);assert.equal(h.nodes.share.disabled,true);
+ h.state.status='ended';await h.refresh();assert.match(h.nodes.context.textContent,/종료/);assert.match(h.nodes.sample.textContent,/없음/);
+});
+
+test('poll started after stop cannot re-show old remote sample while delete is pending',async()=>{
+ const h=await harness();h.nodes.stop.onclick();await h.refresh();assert.match(h.nodes.sample.textContent,/없음/);assert.equal(h.value('suppressSample'),true);
+});
+
+test('fresh explicit consent clears local suppression without auto-resuming from a poll',async()=>{
+ const h=await harness();h.nodes.decline.onclick();await h.refresh();assert.equal(h.watches,0);assert.match(h.nodes.sample.textContent,/없음/);
+ h.nodes.share.onclick();await new Promise(setImmediate);assert.equal(h.value('suppressSample'),false);assert.equal(h.watches,1);
+ await h.refresh();assert.match(h.nodes.sample.textContent,/휴대폰 위치 1개 수신/);await h.value('share.stop()');
+});
+
+test('accepted place revision stops collection and requires a new explicit consent',async()=>{
+ const h=await harness();h.nodes.share.onclick();await new Promise(setImmediate);assert.equal(h.watches,1);
+ h.state.placeRevision=2;h.state.place='new synthetic';h.state.version++;
+ await h.refresh();assert.equal(h.value('share.current'),null);assert.equal(h.value('suppressSample'),true);
+ assert.match(h.nodes.message.textContent,/승차지점이 바뀌어/);assert.match(h.nodes.sample.textContent,/없음/);
+ await h.refresh();assert.equal(h.watches,1);
+});

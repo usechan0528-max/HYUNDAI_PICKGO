@@ -1,0 +1,91 @@
+I've kept this to a text-only review with no tools run, as you asked. Nothing below comes from running code; it's reasoning about the design as you described it.
+
+## Verdict
+
+**Accept with minor fixes.** I found no critical state or race inconsistency. Three medium-severity gaps are each closed by one rule, and four low-severity items are clarifications.
+
+## 1) State and race findings
+
+| # | Severity | Finding | Evidence | Minimal fix |
+|---|---|---|---|---|
+| M1 | Medium | The End confirmation is bound to `version`, but the property that matters is the outcome. | Outcome is derived at End time (boarded → completed). A rider undo-boarding between view and submit flips the outcome. A version bind catches this, but so does every unrelated `ready` toggle, which causes needless reconfirmation churn. The server error also can't tell "outcome changed" apart from "something changed". | End request carries `expectedVersion` **and** `expectedOutcome`. The server rejects with a distinct `outcome_changed` code if its computed outcome differs, and with the normal stale code if only the version is stale. The UI rereads and shows the new completion/cancellation wording before allowing reconfirmation. |
+| M2 | Medium | Join revocation is unspecified. | Arrive requires `joined`. If a rider can leave or un-join while arrived or boarded, you get boarded with no joined rider. | Either forbid un-join while stage ≠ waiting, or make un-join reset the stage to waiting. Forbidding is simpler, and a boarded rider leaves via End. |
+| M3 | Medium | A pending proposal at End is unspecified. | End is always available, including with a proposal pending, in waiting or arrived. | End atomically closes any pending proposal (`closed_by_end`). No proposal mutation succeeds after End (active check already covers this; add a test). |
+| L1 | Low | `ready` while boarded | "Forbidden while boarded" doesn't say what happens to an existing `ready=true`. | Preserve the value and make it immutable while boarded. Never clear it or derive it from stage. |
+| L2 | Low | "Accept *different* place" resets to waiting | Equality is undefined. | Compare by place identity (id/canonical key), not display text. Accepting an identical place preserves the stage. |
+| L3 | Low | `requestId` replay | With no auto-retry, a user's manual retry after a lost response may reuse the id. | Same `requestId` + same payload returns the original result. Same id + different payload is rejected. Never apply twice. |
+| L4 | Low | Undo semantics in history | Undo could be implemented as an overwrite. | Undo appends an event (actor, from→to, version, requestId). It never deletes the prior arrival or boarding event. |
+
+**Races I checked that hold under your rules:**
+- Driver undo-arrival vs. rider board: version serializes them. The loser gets a conflict, and the stage precondition rejects it after reread.
+- Accept-different-place vs. rider board: blocked, because board requires no pending proposal.
+- Undo-boarding vs. End: covered by M1.
+- Ready vs. arrive: they are independent, so no coupling.
+- Stale client: the 6s client lock is under the 8s server lease, which gives a safe margin.
+
+## 2) Undo and End policy
+
+This is appropriate and minimal within the approved feature:
+- Undo is single-step and role-owned. The driver can only go arrived→waiting, and the rider can only go boarded→arrived.
+- Undo is an explicit named secondary button with an immediate server event, no auto-retry, and is only available while active.
+- End is terminal. Its outcome is purely derived: `completed ⇔ stage==boarded at End`, otherwise `cancelled`. It is never automatic.
+- Arrival is a self-report against the agreed place, not location proof. Nothing is inferred from location or `ready`. There is no SDK, ETA, or persistence.
+
+Do not add a rider-undoes-arrival or driver-undoes-boarding path. Cross-role correction happens through the owner's own undo, or through End.
+
+## 3) Invariants (server-enforced)
+
+1. `status=active ⇔ outcome=null`. `status=ended ⇒ outcome∈{completed,cancelled}`, and stage is frozen.
+2. `stage∈{arrived,boarded} ⇒ joined`.
+3. `stage=boarded ⇒ no pending proposal`.
+4. `stage=arrived ∧ pending proposal ⇒ board rejected`.
+5. Every stage mutation checks: correct role, active, `expectedVersion`, a valid lease (8s), an unseen `requestId`, and the stage precondition. Proposal mutations also check `proposalId`.
+6. Arrive and board never read `ready` or location.
+
+## Required tests
+
+**Transitions (happy path and rejections)**
+- Arrive is allowed only when joined, waiting, and no proposal is pending. It is rejected when not joined, already arrived, boarded, a proposal is pending, ended, the version is stale, the lease has expired, or the requestId is a duplicate.
+- Board is allowed only when arrived and no proposal is pending. It is rejected from waiting, from boarded, when a proposal is pending, and when ended.
+- Undo-arrival is allowed only when arrived, and returns to waiting. Undo-boarding is allowed only when boarded, and returns to arrived. Both are rejected after End.
+- Role checks: the rider cannot arrive or undo-arrival, and the driver cannot board or undo-boarding.
+
+**Proposals**
+- Accepting a different place from arrived resets to waiting. Accepting the same place id preserves the stage. Reject or withdraw from arrived preserves arrived.
+- Creating a proposal while boarded is rejected.
+- End with a pending proposal closes it (M3).
+
+**Ready**
+- Toggling ready while boarded is rejected, and its value is preserved (L1).
+- Ready true or false has no effect on arrive or board eligibility.
+
+**End**
+- From waiting, arrived, before join, or after undo-boarding, the outcome is `cancelled`. From boarded, it is `completed`.
+- A mismatched `expectedOutcome` gets `outcome_changed`. A stale version with the same outcome gets the stale code. A second End is rejected.
+
+**Concurrency (deterministic interleavings)**
+- Undo-arrival ∥ board, accept-proposal ∥ board, undo-boarding ∥ End, arrive ∥ proposal-create: exactly one succeeds, and the other gets a typed conflict.
+
+**Idempotency**
+- Replaying the same requestId returns the original result with no second event. The same requestId with a different payload is rejected.
+
+**UI**
+- Labels show stage and outcome explicitly.
+- The End dialog wording matches the computed outcome, and is invalidated or re-prompted when the outcome changes.
+- The undo button is hidden or disabled when the client is stale (6s) or the board has ended.
+- No UI path infers arrival from location or ready.
+
+**Audit**
+- Each transition and undo appends one event with actor, from→to, version, and requestId.
+
+## Accepted design (with fixes folded in)
+
+- Stage `waiting|arrived|boarded`, kept orthogonal to `active|ended`. Outcome `null|completed|cancelled`.
+- Manual, role-owned arrive, board, and single-step undo. All are version-, lease-, and requestId-protected.
+- Proposals are allowed in waiting and arrived and forbidden in boarded. A pending proposal blocks board and arrive. Accepting a different place id resets to waiting.
+- `ready` is independent, preserved, and immutable while boarded.
+- Un-join is forbidden unless stage = waiting (M2).
+- End is available to either role at any time and is terminal. The request carries `expectedVersion` and `expectedOutcome`. End closes any pending proposal. The outcome is derived from stage.
+- Events are append-only. There is no inference from location or ready, and no SDK, ETA, or persistence.
+
+The one open decision for C02 is M2: forbid un-join after waiting, or let un-join reset the stage. I recommend forbidding it.

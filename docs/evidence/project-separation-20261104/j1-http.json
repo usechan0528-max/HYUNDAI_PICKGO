@@ -1,0 +1,17 @@
+[
+  {
+    "Path": "/",
+    "Status": 200,
+    "Bytes": 2338
+  },
+  {
+    "Path": "/fonts/AstaSans.ttf",
+    "Status": 200,
+    "Bytes": 5771772
+  },
+  {
+    "Path": "/audio/story.wav",
+    "Status": 200,
+    "Bytes": 1991604
+  }
+]

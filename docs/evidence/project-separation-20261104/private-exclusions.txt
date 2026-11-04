@@ -1,0 +1,2 @@
+.gitignore:2:output/*	"output/J1_\352\263\265\353\252\250\354\240\204_\354\247\200\354\233\220\354\204\234_\354\264\210\354\225\210.docx"
+.gitignore:1:work/	work/application-draft/contest-application-consent.docx

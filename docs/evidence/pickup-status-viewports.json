@@ -1,0 +1,104 @@
+[
+  {
+    "boardBottom": 788,
+    "boardScroll": true,
+    "buttons": [
+      {
+        "h": 93.1875,
+        "text": "준비됐어요"
+      },
+      {
+        "h": 93.1875,
+        "text": "아직 준비 중"
+      },
+      {
+        "h": 76,
+        "text": "탑승했어요"
+      },
+      {
+        "h": 76,
+        "text": "다른 장소 제안"
+      },
+      {
+        "h": 76,
+        "text": "약속 취소"
+      },
+      {
+        "h": 76,
+        "text": "다시 확인"
+      }
+    ],
+    "footerTop": 796,
+    "h": 844,
+    "overflow": false,
+    "w": 391
+  },
+  {
+    "boardBottom": 744,
+    "boardScroll": true,
+    "buttons": [
+      {
+        "h": 76,
+        "text": "준비됐어요"
+      },
+      {
+        "h": 76,
+        "text": "아직 준비 중"
+      },
+      {
+        "h": 76,
+        "text": "탑승했어요"
+      },
+      {
+        "h": 76,
+        "text": "다른 장소 제안"
+      },
+      {
+        "h": 76,
+        "text": "약속 취소"
+      },
+      {
+        "h": 76,
+        "text": "다시 확인"
+      }
+    ],
+    "footerTop": 752,
+    "h": 800,
+    "overflow": false,
+    "w": 480
+  },
+  {
+    "boardBottom": 660,
+    "boardScroll": true,
+    "buttons": [
+      {
+        "h": 76,
+        "text": "준비됐어요"
+      },
+      {
+        "h": 76,
+        "text": "아직 준비 중"
+      },
+      {
+        "h": 88,
+        "text": "탑승했어요"
+      },
+      {
+        "h": 88,
+        "text": "다른 장소 제안"
+      },
+      {
+        "h": 88,
+        "text": "약속 취소"
+      },
+      {
+        "h": 88,
+        "text": "다시 확인"
+      }
+    ],
+    "footerTop": 668,
+    "h": 720,
+    "overflow": false,
+    "w": 1280
+  }
+]

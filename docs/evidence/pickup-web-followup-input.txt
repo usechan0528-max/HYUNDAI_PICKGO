@@ -1,0 +1,507 @@
+Read-only follow-up Haiku5.5, no tools/edits. Previous review 5e70db74-5072-4c40-9a64-de119bf85824 fixes: join now writes and reads pending nonce BEFORE POST; storage denied does not join. Separate #notice role=alert never wiped by refresh. Same-room driver join blocked. Different room hint explicitly says previous access lost. Lost join response retries same invite+persisted UUID for5min; different recipient/key/expired/ended denied. Receipt never in public read and removed at end/expiry. If saving final credential fails, pending key remains for retry. Same original invite reopen retains key. Server defaults RecommendationBoard extends PhoneBoard, confirmed actual HTTP grant/publish/read/revoke regression. Full node suite160 pass; browser before these fixes confirmed invite reload->join->decline location->ready->manual place acceptance->arrival->boarding. New code recheck pending. Public mode ONLY configuration preparation: no deployment, loopback bind unchanged, proxy rate-limit prerequisite will be explicitly documented and a template supplied. Prior P2 stale invite hiding kept intentionally per original stale safety contract; clipboard copy already outside page remains available. P3 first-opens wording NOT adopted because opening does not join: explicit button required. Review only remaining concrete P0/P1/P2 introduced by these fixes. Known production limitation persistence24h RAM/closed-tab credentials no restore; no physical phone/TLS/SDK validation. Follow-up exact source below.
+
+FILE app.mjs
+const $ = id => document.getElementById(id);
+let session = null, state = null, received = 0, online = false, busy = false, polling = false, unavailable = false;
+const requestTimes = new WeakMap();
+let editing = false, ending = null, actionError = '';
+const invitation = new URLSearchParams(location.hash.slice(1));
+const hasInvite = invitation.has('invite') || invitation.has('room');
+const validInvite = value => value && /^[a-f0-9-]{36}$/i.test(value.id) && /^[A-Za-z0-9_-]{32}$/.test(value.invite);
+let incoming = null, previousSession = null;
+try { previousSession = JSON.parse(sessionStorage.getItem('pickupSession')); } catch {}
+try {
+  const pending = JSON.parse(sessionStorage.getItem('pickupInvitation'));
+  incoming = hasInvite ? { id: invitation.get('room'), invite: invitation.get('invite') } : pending;
+  if (hasInvite && pending?.id === incoming.id && pending?.invite === incoming.invite) incoming.joinId = pending.joinId;
+} catch { if (hasInvite) incoming = { id: invitation.get('room'), invite: invitation.get('invite') }; }
+if (incoming || hasInvite) {
+  $('create').hidden = true; $('joinBox').hidden = false;
+  if (!validInvite(incoming)) {
+    incoming = null; $('join').disabled = true;
+    $('error').textContent = '초대 주소가 올바르지 않습니다. 운전자에게 받은 링크를 다시 열어 주세요.';
+    try { sessionStorage.removeItem('pickupInvitation'); } catch {}
+    history.replaceState(null, '', '/');
+  } else if (previousSession?.id === incoming.id && previousSession?.role === 'rider') {
+    session = previousSession; incoming = null;
+    try { sessionStorage.removeItem('pickupInvitation'); } catch {}
+    history.replaceState(null, '', '/');
+  } else {
+    try { sessionStorage.setItem('pickupInvitation', JSON.stringify(incoming)); history.replaceState(null, '', '/'); }
+    catch { $('notice').textContent = '브라우저 저장이 제한되어 있습니다. 참여 전에는 원래 초대 링크를 보관해 주세요.'; }
+    $('joinHint').textContent = previousSession ? '참여하면 이 탭의 기존 약속 접근 정보를 새 약속으로 바꿉니다. 기존 약속은 취소되지 않지만 이 탭에서 다시 열 수 없게 됩니다. 기존 약속을 유지하려면 초대를 닫아 주세요.' : '앱 설치·회원가입 없이 참여합니다. 위치 공유는 참여 후 따로 선택할 수 있어요.';
+    if (previousSession?.id === incoming.id && previousSession?.role === 'driver') {
+      $('join').disabled = true; $('notice').textContent = '이 탭은 이 약속의 운전자입니다. 초대를 닫거나 탑승자의 기기에서 링크를 열어 주세요.';
+    }
+  }
+} else session = previousSession;
+const save = value => {
+  session = value;
+  try { sessionStorage.setItem('pickupSession', JSON.stringify(value)); return true; }
+  catch { $('notice').textContent = '브라우저 저장이 제한되어 새로고침 후 참여 정보를 복원할 수 없습니다. 이 탭을 유지해 주세요.'; return false; }
+};
+async function api(path, body, authenticated = true) {
+  const started = performance.now();
+  let response;
+  try { response = await fetch(path, { method: body ? 'POST' : 'GET', cache: 'no-store', signal: AbortSignal.timeout(4000),
+    headers: { ...(body ? { 'Content-Type': 'application/json' } : {}), ...(authenticated && session ? { Authorization: `Bearer ${session.token}` } : {}) }, ...(body ? { body: JSON.stringify(body) } : {}) }); }
+  catch { throw new Error('서버에 연결할 수 없습니다.'); }
+  const data = await response.json(); if (!response.ok) { const e = new Error(data.error); e.status = response.status; throw e; } requestTimes.set(data, started); return data;
+}
+function adopt(data) { if (!state || data.version >= state.version) { state = data; received = requestTimes.get(data); online = true; unavailable = false; } render(); }
+function fresh() { return online && navigator.onLine && !document.hidden && state && performance.now() - received < 6000; }
+function render() {
+  if (!session) return;
+  $('welcome').hidden = true;
+  const valid = fresh(), active = state?.status === 'active', can = valid && active && !busy;
+  const boarded = state?.stage === 'boarded', arrived = state?.stage === 'arrived';
+  if (!active || boarded || state?.proposal || !state?.joined) editing = false;
+  if (!active || (ending !== null && ending !== state?.version)) ending = null;
+  $('board').hidden = editing || ending !== null;
+  $('editPlace').hidden = !editing;
+  $('endConfirm').hidden = !ending;
+  $('role').textContent = session.role === 'driver' ? '운전자 화면' : '탑승자 화면';
+  $('connection').textContent = valid ? '방금 서버에서 확인' : '연결 확인 필요 · 이전 기록';
+  $('connection').classList.toggle('stale', !valid); $('facts').classList.toggle('stale', !valid);
+  $('pickupText').textContent = !valid ? '현재 미확인' : !active ? (state.outcome === 'completed' ? '픽업 완료' : '약속 취소 · 탑승 미완료') : boarded ? '탑승 확인됨' : arrived ? '운전자 도착 알림' : '도착 알림 전';
+  $('headline').textContent = $('pickupText').textContent;
+  $('placeLabel').textContent = valid ? '확정 승차지점' : '이전 승차지점 · 현재 미확인';
+  $('place').textContent = state?.place || '확인 전';
+  $('readyText').textContent = !valid ? '현재 미확인' : !active ? '약속 종료' : boarded ? '탑승자가 직접 확인 · 종료 대기' : !state.joined ? '참여 대기' : state.ready ? '준비 완료' : '아직 준비 중';
+  const canInvite = valid && active && !state?.joined && session.role === 'driver' && !!session.invite;
+  $('inviteBox').hidden = !canInvite; $('copyInvite').disabled = !canInvite;
+  if (valid && (state?.joined || !active) && session.invite) { delete session.invite; save(session); }
+  const url = canInvite ? `${location.origin}/#room=${session.id}&invite=${session.invite}` : '';
+  $('inviteLink').href = url; $('inviteText').value = url;
+  if (!canInvite) { $('inviteText').hidden = true; $('inviteStatus').textContent = ''; }
+  $('inviteHelp').textContent = location.origin.startsWith('https://') ? '링크를 복사해 탑승자에게 보내세요. 링크를 가진 한 사람만 참여할 수 있습니다.' : '현재는 같은 컴퓨터에서만 열리는 시연 링크입니다. 휴대폰 연결은 HTTPS 서버 구성이 필요합니다.';
+  $('phoneLink').textContent = session.role === 'rider' ? '내 위치 한 번 공유 · 선택' : '탑승자 위치 공유 상태';
+  $('proximityLink').hidden = session.role === 'rider';
+  $('readyButtons').hidden = session.role !== 'rider' || !active || boarded;
+  document.querySelectorAll('[data-ready]').forEach(b => { b.disabled = !can || boarded; b.setAttribute('aria-pressed', String(state?.ready === (b.dataset.ready === 'true'))); });
+  $('proposal').hidden = !state?.proposal || unavailable;
+  if (state?.proposal) {
+    $('proposedPlace').textContent = state.proposal.place;
+    const own = state.proposal.by === session.role;
+    $('proposalLabel').textContent = !valid ? '이전 제안 · 현재 미확인' : own ? '내 제안 · 응답 대기' : '상대 제안 · 아직 미확정';
+    $('proposalText').textContent = !valid ? '마지막 확인 당시 제안입니다. 현재 상태는 미확인입니다.' : own ? '상대의 응답을 기다리고 있어요. 기존 승차지점은 그대로입니다.' : '상대가 이 장소를 제안했어요. 수락할까요?';
+    $('withdraw').hidden = !own; $('withdraw').disabled = !can;
+    $('decisions').hidden = own; $('accept').disabled = $('reject').disabled = !can;
+  }
+  $('normalActions').hidden = !active || !state?.joined || !!state?.proposal || unavailable;
+  $('openPlace').hidden = boarded; $('openPlace').disabled = !can || boarded;
+  $('progressHelp').textContent = boarded ? '탑승이 확인됐어요. 약속을 종료해 주세요.' : arrived ? (session.role === 'driver' ? '탑승자의 탑승 확인을 기다려요.' : '차량에 탄 뒤 직접 확인해 주세요.') : (session.role === 'driver' ? '확정 장소에 도착한 뒤 알려주세요.' : '운전자의 도착 알림을 기다려요.');
+  for (const [id, show] of [['arrive', session.role === 'driver' && !arrived && !boarded], ['boarded', session.role === 'rider' && arrived], ['undoArrival', session.role === 'driver' && arrived], ['undoBoarding', session.role === 'rider' && boarded]]) {
+    $(id).hidden = !active || !state?.joined || !show; $(id).disabled = !can || !!state?.proposal;
+  }
+  $('editingCurrent').textContent = `${valid ? '현재 장소' : '이전 장소 · 현재 미확인'}: ${state?.place || '확인 전'}`;
+  document.querySelectorAll('[data-place]').forEach(b => { b.disabled = !can || boarded || b.dataset.place === state?.place; b.textContent = b.dataset.place + (b.dataset.place === state?.place ? ' · 현재' : ''); });
+  $('nextPlace').disabled = !can;
+  $('end').hidden = !active || unavailable; $('end').disabled = !can;
+  $('end').textContent = boarded ? '픽업 완료로 종료' : '약속 취소';
+  $('endTitle').textContent = boarded ? '픽업을 완료할까요?' : '탑승 없이 약속을 취소할까요?';
+  $('endDescription').textContent = boarded ? '탑승 확인 후 완료로 기록됩니다. 종료하면 변경하거나 확인을 취소할 수 없어요.' : '탑승 완료로 기록하지 않습니다. 취소하면 이 회차를 변경할 수 없어요.';
+  $('confirmEnd').textContent = boarded ? '완료 확정' : '약속 취소 확정';
+  $('confirmEnd').disabled = !can || ending !== state?.version;
+  $('new').hidden = !unavailable && state?.status !== 'ended';
+  const eventText = state ? `${valid ? '' : '마지막 확인 기록 · 현재 미확인: '}${state.lastEvent}` : '';
+  if ($('lastEvent').textContent !== eventText) $('lastEvent').textContent = eventText;
+}
+async function refresh() {
+  if (!session || polling || busy) return;
+  polling = true;
+  try { const data = await api(`/api/rooms/${session.id}`); $('error').textContent = actionError; adopt(data); }
+  catch (e) { online = false; unavailable = [401,403,404].includes(e.status); $('error').textContent = `${e.message} 최신 상태를 확인할 수 없습니다.`; render(); }
+  finally { polling = false; }
+}
+async function act(type, extra = {}) {
+  if (!fresh() || busy || !state) return;
+  busy = true; actionError = ''; $('error').textContent = ''; render();
+  try { adopt(await api(`/api/rooms/${session.id}/actions`, { type, ...extra, version: state.version, view: state.view, requestId: crypto.randomUUID() })); }
+  catch (e) { online = false; actionError = `${e.message} 최신 상태를 확인하고 다시 선택해 주세요.`; $('error').textContent = actionError; }
+  finally { busy = false; render(); await refresh(); }
+}
+$('create').onsubmit = async e => { e.preventDefault(); const button = e.submitter; button.disabled = true;
+  try { save(await api('/api/rooms', { place: $('initialPlace').value }, false)); await refresh(); }
+  catch (e) { $('error').textContent = e.message; } finally { button.disabled = false; } };
+$('join').onclick = async () => { $('join').disabled = true;
+  if (!validInvite(incoming) || (previousSession?.id === incoming.id && previousSession?.role === 'driver')) return;
+  try {
+    // Persist the retry key before consuming a one-use invitation. Refuse if
+    // browser storage is unavailable; otherwise a lost response is recoverable.
+    try {
+      incoming.joinId ||= crypto.randomUUID();
+      sessionStorage.setItem('pickupInvitation', JSON.stringify(incoming));
+      if (JSON.parse(sessionStorage.getItem('pickupInvitation'))?.joinId !== incoming.joinId) throw new Error('storage');
+    } catch { $('notice').textContent = '브라우저 저장이 제한되어 참여하지 않았습니다. 원래 초대 링크를 기본 브라우저에서 열어 주세요.'; return; }
+    const joined = await api(`/api/rooms/${incoming.id}/join`, { invite: incoming.invite, joinId: incoming.joinId }, false);
+    const stored = save(joined);
+    if (stored) { incoming = null; try { sessionStorage.removeItem('pickupInvitation'); } catch {} }
+    history.replaceState(null, '', '/');
+    await refresh();
+    if (!stored) $('notice').textContent = '브라우저 저장이 제한되어 있습니다. 새로고침하거나 탭을 닫으면 참여 정보를 잃습니다.';
+  }
+  catch (e) { $('error').textContent = e.status === 403 ? '이미 사용되었거나 종료된 초대입니다. 참여했던 탭으로 돌아가거나 운전자에게 새 약속을 요청해 주세요.' : e.status === 404 ? '약속이 만료되었거나 서버에서 사라졌습니다. 운전자에게 새 약속을 요청해 주세요.' : `${e.message} 같은 탭에서 참여를 다시 눌러 주세요.`; } finally { $('join').disabled = false; } };
+$('cancelJoin').onclick = () => { try { sessionStorage.removeItem('pickupInvitation'); } catch {} history.replaceState(null, '', '/'); location.assign('/'); };
+$('copyInvite').onclick = async () => {
+  if (!fresh() || !session?.invite || state?.joined || state?.status !== 'active') return;
+  const url = $('inviteText').value;
+  try { await navigator.clipboard.writeText(url); $('inviteStatus').textContent = '초대 링크를 복사했습니다. 탑승자에게 보내세요.'; }
+  catch { $('inviteText').hidden = false; $('inviteText').focus(); $('inviteText').select(); $('inviteStatus').textContent = '자동 복사가 지원되지 않습니다. 아래 주소를 길게 눌러 직접 복사해 주세요.'; }
+};
+document.querySelectorAll('[data-ready]').forEach(b => b.onclick = () => act('ready', { ready: b.dataset.ready === 'true' }));
+for (const [id, type] of [['arrive','arrive'], ['boarded','board'], ['undoArrival','undoArrival'], ['undoBoarding','undoBoarding']]) $(id).onclick = () => act(type);
+$('openPlace').onclick = () => { if (fresh() && !busy) { editing = true; render(); } };
+$('cancelPlace').onclick = () => { editing = false; render(); };
+document.querySelectorAll('[data-initial]').forEach(b => b.onclick = () => {
+  $('initialPlace').value = b.dataset.initial;
+  document.querySelectorAll('[data-initial]').forEach(other => other.setAttribute('aria-pressed', String(other === b)));
+});
+$('propose').onsubmit = async e => { e.preventDefault(); if (!e.submitter?.dataset.place) return; $('nextPlace').value = e.submitter.dataset.place; await act('propose', { place: $('nextPlace').value }); };
+$('accept').onclick = () => act('accept', { proposalId: state.proposal.id });
+$('reject').onclick = () => act('reject', { proposalId: state.proposal.id });
+$('withdraw').onclick = () => act('withdraw', { proposalId: state.proposal.id });
+$('end').onclick = () => { if (fresh() && !busy) { ending = state.version; render(); } };
+$('cancelEnd').onclick = () => { ending = null; render(); };
+$('confirmEnd').onclick = () => { if (ending === state?.version) return act('end'); };
+$('refresh').onclick = () => { actionError = ''; $('error').textContent = ''; refresh(); };
+$('new').onclick = () => { sessionStorage.removeItem('pickupSession'); location.assign('/'); };
+addEventListener('offline', () => { online = false; render(); });
+addEventListener('online', refresh);
+document.addEventListener('visibilitychange', () => { online = false; render(); if (!document.hidden) refresh(); });
+setInterval(() => { if (!document.hidden) refresh(); }, 2000);
+setInterval(render, 500);
+render(); refresh();
+
+
+FILE domain.mjs
+import { randomBytes, randomUUID } from 'node:crypto';
+export const PLACES = ['가상 문화센터 정문', '가상 문화센터 동쪽 입구', '가상 공원 안내소'];
+export const VIEW_TTL = 8000;
+const token = () => randomBytes(24).toString('base64url');
+export class Fault extends Error {
+  constructor(status, message) { super(message); this.status = status; }
+}
+const requireThat = (ok, status, message) => { if (!ok) throw new Fault(status, message); };
+export class Board {
+  constructor(now = Date.now) { this.now = now; this.rooms = new Map(); }
+  prune() { for (const [id, room] of this.rooms) {
+    if (this.now() - room.createdAt > 86400000) this.rooms.delete(id);
+    if (room.joinReceipt && (this.now() - room.joinReceipt.at < 0 || this.now() - room.joinReceipt.at >= 300000)) room.joinReceipt = null;
+  } }
+  create(place) {
+    this.prune();
+    requireThat(PLACES.includes(place), 400, '목록에서 승차지점을 선택해 주세요.');
+    requireThat(this.rooms.size < 100, 429, '회차가 너무 많습니다. 로컬 서버를 재시작해 주세요.');
+    const room = { id: randomUUID(), createdAt: this.now(), version: 1, placeRevision: 1, status: 'active', place,
+      ready: false, joined: false, stage: 'waiting', outcome: null, proposal: null, lastEvent: '운전자가 약속을 만들었습니다.',
+      driver: token(), rider: null, invite: token(), views: new Map(), requests: new Set() };
+    this.rooms.set(room.id, room);
+    return { id: room.id, token: room.driver, invite: room.invite, role: 'driver' };
+  }
+  room(id) { this.prune(); const r = this.rooms.get(id); requireThat(r, 404, '회차가 없거나 만료되었습니다. 서버 재시작 시 회차가 사라집니다.'); return r; }
+  join(id, invite, joinId) {
+    const r = this.room(id);
+    if (joinId !== undefined) requireThat(typeof joinId === 'string' && /^[a-f0-9]{8}-[a-f0-9]{4}-4[a-f0-9]{3}-[89ab][a-f0-9]{3}-[a-f0-9]{12}$/i.test(joinId), 400, '참여 요청 식별자가 올바르지 않습니다.');
+    // Retry only the same persisted attempt; a second recipient cannot redeem
+    // the consumed link. This receipt is never exposed in room reads or logs.
+    if (r.status === 'active' && r.joinReceipt && r.joinReceipt.joinId === joinId && r.joinReceipt.invite === invite) return { id, token: r.rider, role: 'rider' };
+    requireThat(r.status === 'active' && !r.joined && typeof invite === 'string' && invite === r.invite, 403, '초대가 유효하지 않거나 이미 사용되었습니다.');
+    if (joinId) r.joinReceipt = { joinId, invite, at: this.now() };
+    r.rider = token(); r.invite = null; r.joined = true; r.version++; r.lastEvent = '탑승자가 참여했습니다.';
+    return { id, token: r.rider, role: 'rider' };
+  }
+  auth(r, credential) {
+    requireThat(typeof credential === 'string' && credential.length > 0, 401, '참여 권한이 없습니다.');
+    const role = credential === r.driver ? 'driver' : credential === r.rider ? 'rider' : null;
+    requireThat(role, 403, '이 회차의 참여자가 아닙니다.'); return role;
+  }
+  read(id, credential) {
+    const r = this.room(id), role = this.auth(r, credential), view = token();
+    // A short bounded list tolerates polling and command requests crossing in flight.
+    const views = (r.views.get(credential) || []).filter(v => this.now() - v.at < VIEW_TTL).slice(-9);
+    views.push({ key: view, at: this.now() }); r.views.set(credential, views);
+    return { id, role, version: r.version, placeRevision: r.placeRevision, status: r.status, place: r.place, ready: r.ready,
+      joined: r.joined, stage: r.stage, outcome: r.outcome, proposal: r.proposal ? { ...r.proposal } : null, lastEvent: r.lastEvent, view, ttl: VIEW_TTL };
+  }
+  act(id, credential, command) {
+    const r = this.room(id), role = this.auth(r, credential);
+    requireThat(command && typeof command === 'object', 400, '요청 형식이 올바르지 않습니다.');
+    const { requestId, version, view, type } = command;
+    requireThat(typeof requestId === 'string' && /^[a-zA-Z0-9-]{8,80}$/.test(requestId), 400, '요청 식별자가 필요합니다.');
+    requireThat(!r.requests.has(requestId), 409, '이미 처리된 요청입니다. 최신 상태를 확인해 주세요.');
+    requireThat(r.status === 'active', 409, '종료된 회차는 바꿀 수 없습니다.');
+    requireThat(r.version === version, 409, '다른 변경이 있습니다. 최신 상태를 확인하고 다시 선택해 주세요.');
+    requireThat((r.views.get(credential) || []).some(v => v.key === view && this.now() - v.at < VIEW_TTL), 409, '조회한 상태가 오래되었습니다. 새로 확인해 주세요.');
+    requireThat(r.requests.size < 1000, 429, '회차의 변경 한도를 초과했습니다.');
+    if (['ready', 'propose', 'accept'].includes(type)) requireThat(r.stage !== 'boarded', 409, '탑승 확인 후에는 준비나 장소를 바꿀 수 없습니다. 잘못 눌렀다면 탑승 확인을 취소해 주세요.');
+    if (type === 'arrive') {
+      requireThat(role === 'driver', 403, '운전자만 도착을 알릴 수 있습니다.');
+      requireThat(r.joined && r.stage === 'waiting' && !r.proposal, 409, '상대 참여와 장소 합의를 확인해 주세요. 도착은 한 번만 알릴 수 있습니다.');
+      r.stage = 'arrived'; r.lastEvent = '운전자가 확정 승차지점에 도착했다고 알렸습니다.';
+    } else if (type === 'board') {
+      requireThat(role === 'rider', 403, '탑승자만 탑승을 확인할 수 있습니다.');
+      requireThat(r.stage === 'arrived' && !r.proposal, 409, '운전자 도착과 장소 합의를 먼저 확인해 주세요.');
+      r.stage = 'boarded'; r.lastEvent = '탑승자가 탑승했다고 확인했습니다. 약속 종료를 기다립니다.';
+    } else if (type === 'undoArrival') {
+      requireThat(role === 'driver', 403, '운전자만 도착 표시를 취소할 수 있습니다.');
+      requireThat(r.stage === 'arrived', 409, '탑승 확인 전 도착 표시만 취소할 수 있습니다.');
+      r.stage = 'waiting'; r.lastEvent = '운전자가 도착 표시를 취소했습니다.';
+    } else if (type === 'undoBoarding') {
+      requireThat(role === 'rider', 403, '탑승자만 탑승 확인을 취소할 수 있습니다.');
+      requireThat(r.stage === 'boarded', 409, '탑승 확인 상태가 아닙니다.');
+      r.stage = 'arrived'; r.lastEvent = '탑승자가 탑승 확인을 취소했습니다. 운전자 도착 표시는 유지됩니다.';
+    } else if (type === 'ready') {
+      requireThat(role === 'rider', 403, '탑승자만 준비 상태를 바꿀 수 있습니다.');
+      requireThat(typeof command.ready === 'boolean', 400, '준비 상태는 참 또는 거짓이어야 합니다.');
+      r.ready = command.ready; r.lastEvent = r.ready ? '탑승자가 준비되었습니다.' : '탑승자가 아직 준비 중입니다.';
+    } else if (type === 'propose') {
+      requireThat(r.joined && !r.proposal, 409, '상대 참여 또는 기존 제안 처리를 기다려 주세요.');
+      requireThat(PLACES.includes(command.place) && command.place !== r.place, 400, '현재 지점과 다른 지점을 선택해 주세요.');
+      r.proposal = { id: randomUUID(), by: role, place: command.place };
+      r.lastEvent = '장소 변경을 제안했습니다. 아직 확정되지 않았습니다.';
+    } else if (type === 'accept' || type === 'reject') {
+      requireThat(r.proposal && r.proposal.id === command.proposalId, 409, '현재 제안과 일치하지 않습니다.');
+      requireThat(r.proposal.by !== role, 403, '자신의 제안을 직접 수락하거나 거절할 수 없습니다.');
+      const resetArrival = type === 'accept' && r.stage === 'arrived';
+      if (type === 'accept') { r.place = r.proposal.place; r.placeRevision++; r.stage = 'waiting'; }
+      r.proposal = null; r.lastEvent = type === 'accept' ? '변경이 수락되어 승차지점을 변경했습니다.' : '변경이 거절되어 기존 승차지점을 유지합니다.';
+      if (resetArrival) r.lastEvent += ' 이전 도착 표시는 취소되었습니다. 새 장소에서 다시 알려주세요.';
+    } else if (type === 'withdraw') {
+      requireThat(r.proposal && r.proposal.id === command.proposalId, 409, '현재 제안과 일치하지 않습니다.');
+      requireThat(r.proposal.by === role, 403, '제안한 사람만 철회할 수 있습니다.');
+      r.proposal = null; r.lastEvent = '제안을 철회해 기존 승차지점을 유지합니다.';
+    } else if (type === 'end') {
+      r.outcome = r.stage === 'boarded' ? 'completed' : 'cancelled';
+      r.status = 'ended'; r.proposal = null; r.invite = null; r.joinReceipt = null;
+      r.lastEvent = `${role === 'driver' ? '운전자' : '탑승자'}가 ` + (r.outcome === 'completed' ? '탑승 확인 후 이번 픽업을 완료했습니다.' : '탑승 완료 없이 이번 약속을 취소했습니다.');
+    } else throw new Fault(400, '알 수 없는 요청입니다.');
+    r.requests.add(requestId); r.version++;
+    return this.read(id, credential);
+  }
+}
+
+
+FILE server.mjs
+import http from 'node:http';
+import { readFile } from 'node:fs/promises';
+import { fileURLToPath } from 'node:url';
+import { Fault } from './domain.mjs';
+import { RecommendationBoard } from './recommendation/board.mjs';
+import { parsePublicOrigin, requestOrigin } from './web-origin.mjs';
+const files = { '/phone': ['phone.html','text/html'], '/phone.css': ['phone.css','text/css'], '/phone-page.mjs': ['phone-page.mjs','text/javascript'], '/phone-controller.mjs': ['phone-controller.mjs','text/javascript'], '/': ['index.html', 'text/html'], '/app.mjs': ['app.mjs', 'text/javascript'], '/style.css': ['style.css', 'text/css'], '/fonts/AstaSans.ttf': ['fonts/AstaSans.ttf', 'font/ttf'], '/fonts/OFL.txt': ['fonts/OFL.txt', 'text/plain'] };
+Object.assign(files, {
+  '/proximity': ['proximity-page.html', 'text/html'],
+  '/proximity-page.mjs': ['proximity-page.mjs', 'text/javascript'],
+  '/proximity-page.css': ['proximity-page.css', 'text/css'],
+  '/proximity/detector.mjs': ['proximity/detector.mjs', 'text/javascript'],
+  '/location-links.css': ['location-links.css', 'text/css']
+});
+for (const [name,mime] of [['page.html','text/html'],['page.css','text/css'],['page.mjs','text/javascript'],['controller.mjs','text/javascript']]) files[name==='page.html'?'/recommendation':`/recommendation/${name}`]=[`recommendation/${name}`,mime];
+export function createServer(board = new RecommendationBoard(), options = {}) {
+  const publicOrigin = parsePublicOrigin(options.publicOrigin);
+  const server = http.createServer(async (req, res) => {
+    const reply = (status, value) => { res.writeHead(status, { 'Content-Type': 'application/json; charset=utf-8' }); res.end(JSON.stringify(value)); };
+    res.setHeader('Cache-Control', 'no-store'); res.setHeader('X-Content-Type-Options', 'nosniff');
+    res.setHeader('Referrer-Policy', 'no-referrer');
+    res.setHeader('Permissions-Policy', 'geolocation=(self)');
+    res.setHeader('Content-Security-Policy', "default-src 'self'; script-src 'self'; style-src 'self'; object-src 'none'; frame-ancestors 'none'; base-uri 'none'; form-action 'self'");
+    try {
+      const origin = requestOrigin(req.headers, res.socket.localPort, publicOrigin);
+      if (!origin) throw new Fault(403, '설정된 서비스 주소에서만 사용할 수 있습니다.');
+      const path = new URL(req.url, origin).pathname;
+      if (req.method === 'GET' && files[path]) {
+        const [name, mime] = files[path]; const body = await readFile(new URL(name, import.meta.url));
+        res.writeHead(200, { 'Content-Type': `${mime}; charset=utf-8` }); res.end(body); return;
+      }
+      let body = {};
+      if (req.method === 'POST') {
+        if (req.headers['content-type'] !== 'application/json') throw new Fault(415, 'JSON 요청만 지원합니다.');
+        const chunks = []; let length = 0; for await (const chunk of req) { length += chunk.length; if (length > 4096) throw new Fault(413, '요청이 너무 큽니다.'); chunks.push(chunk); }
+        const raw = Buffer.concat(chunks).toString('utf8');
+        try { body = JSON.parse(raw); } catch { throw new Fault(400, '잘못된 JSON입니다.'); }
+        if (!body || Array.isArray(body) || typeof body !== 'object') throw new Fault(400, '요청 객체가 필요합니다.');
+      }
+      if (path === '/api/rooms' && req.method === 'POST') return reply(201, board.create(body.place));
+      const match = path.match(/^\/api\/rooms\/([a-f0-9-]{36})(?:\/(join|actions|phone|recommendation))?$/);
+      if (!match) throw new Fault(404, '찾을 수 없습니다.');
+      const [, id, action] = match, credential = req.headers.authorization?.replace(/^Bearer /, '');
+      if (action === 'recommendation' && typeof board.recommend === 'function' && ['GET','POST'].includes(req.method)) return reply(200, await board.recommend(id, credential, req.method === 'POST' ? body : null));
+      if (action === 'phone' && typeof board.phone === 'function' && ['GET','POST'].includes(req.method)) return reply(200, board.phone(id, credential, req.method === 'POST' ? body : null));
+      if (req.method === 'GET' && !action) return reply(200, board.read(id, credential));
+      if (req.method === 'POST' && action === 'join') return reply(200, board.join(id, body.invite, body.joinId));
+      if (req.method === 'POST' && action === 'actions') return reply(200, board.act(id, credential, body));
+      throw new Fault(405, '지원하지 않는 요청입니다.');
+    } catch (error) { if (error instanceof Fault && error.status === 413) res.setHeader('Connection', 'close'); reply(error instanceof Fault ? error.status : 500, { error: error instanceof Fault ? error.message : '서버 오류입니다. 다시 확인해 주세요.' }); }
+  });
+  const cleanup = setInterval(() => { board.prune(); board.sweep?.(); }, 1000); cleanup.unref();
+  server.on('close', () => clearInterval(cleanup));
+  return server;
+}
+if (process.argv[1] === fileURLToPath(import.meta.url)) {
+  const port = Number(process.env.PICKUP_PORT || 4180);
+  const publicOrigin = parsePublicOrigin(process.env.PICKUP_PUBLIC_ORIGIN);
+  createServer(undefined, { publicOrigin: publicOrigin || undefined }).listen(port, '127.0.0.1', () => console.log(`픽업 약속판 ${publicOrigin || `http://127.0.0.1:${port}`} · ${publicOrigin ? 'HTTPS 프록시 구성 필요' : '로컬 시연'} / 메모리 저장`));
+}
+
+
+FILE web-origin.mjs
+// The HTTP service stays on loopback. TLS terminates at an explicitly configured
+// reverse proxy which must preserve Host; forwarded headers are never authority.
+export function parsePublicOrigin(value) {
+  if (value === undefined || value === '') return null;
+  let url;
+  try { url = new URL(value); } catch { throw new Error('PICKUP_PUBLIC_ORIGIN must be an HTTPS origin.'); }
+  if (url.protocol !== 'https:' || url.username || url.password || url.pathname !== '/' || url.search || url.hash) {
+    throw new Error('PICKUP_PUBLIC_ORIGIN must be an HTTPS origin without credentials, path, query or fragment.');
+  }
+  return url.origin;
+}
+
+export function requestOrigin(headers, port, publicOrigin) {
+  const origin = publicOrigin || `http://127.0.0.1:${port}`;
+  if (headers.host !== new URL(origin).host || (headers.origin !== undefined && headers.origin !== origin)) return null;
+  if (headers['sec-fetch-site'] === 'cross-site' && headers.origin !== undefined) return null;
+  return origin;
+}
+
+
+FILE web-invite.test.mjs
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import vm from 'node:vm';
+import { readFile } from 'node:fs/promises';
+const source=await readFile(new URL('./app.mjs',import.meta.url),'utf8');
+const html=await readFile(new URL('./index.html',import.meta.url),'utf8');
+const id='00000000-0000-4000-8000-000000000001', invite='a'.repeat(32);
+const hash=`#room=${id}&invite=${invite}`;
+async function page({fragment='',store=new Map(),denied=false,clipboard=false}={}) {
+  const nodes=new Map([...html.matchAll(/id="([^"]+)"/g)].map(m=>[m[1],{hidden:false,disabled:false,value:'',textContent:'',classList:{toggle(){}},setAttribute(){},focus(){},select(){}}]));
+  const calls=[];
+  const state={id,version:1,status:'active',stage:'waiting',place:'가상 문화센터 정문',joined:false,view:'view',lastEvent:'시연'};
+  const location={hash:fragment,origin:'http://127.0.0.1:4180',assign(){}};
+  const context={URLSearchParams,URL,AbortSignal,crypto:{randomUUID:()=> 'test-request-123'},performance:{now:()=>100},
+    navigator:{onLine:true,clipboard:{writeText:async()=>{if(!clipboard)throw Error('denied');}}},location,
+    history:{replaceState(){location.hash='';}},
+    sessionStorage:{getItem:k=>store.get(k)||null,setItem(k,v){if(denied)throw Error('denied');store.set(k,v);},removeItem(k){store.delete(k);}},
+    document:{hidden:false,getElementById:k=>nodes.get(k),querySelectorAll:()=>[],addEventListener(){}},addEventListener(){},setInterval(){},
+    fetch:async(path,options)=>{calls.push({path,options});return {ok:true,json:async()=>path.endsWith('/join')?{id,role:'rider',token:'rider-token'}:{...state}};}};
+  vm.createContext(context);vm.runInContext(source,context);await new Promise(setImmediate);
+  return {nodes,calls,store,location,state,context};
+}
+test('invite survives pre-join reload without account or location collection',async()=>{
+  const first=await page({fragment:hash});assert.equal(first.location.hash,'');assert.equal(first.calls.length,0);
+  const second=await page({store:first.store});assert.equal(second.nodes.get('create').hidden,true);
+  await second.nodes.get('join').onclick();assert.equal(JSON.parse(second.store.get('pickupSession')).role,'rider');
+  assert.equal(second.store.has('pickupInvitation'),false);
+  assert.equal(second.calls.filter(c=>c.path.endsWith('/join')).length,1);
+});
+test('already joined rider reopens original link without consuming invitation twice',async()=>{
+  const store=new Map([['pickupSession',JSON.stringify({id,role:'rider',token:'rider-token'})]]);
+  const p=await page({fragment:hash,store});assert.equal(p.nodes.get('welcome').hidden,true);
+  assert.equal(p.calls.some(c=>c.path.endsWith('/join')),false);assert.equal(store.has('pickupInvitation'),false);
+});
+test('malformed invite cannot accidentally create a driver room or call join',async()=>{
+  const p=await page({fragment:'#room=bad&invite=bad'});assert.equal(p.nodes.get('create').hidden,true);
+  assert.equal(p.nodes.get('join').disabled,true);assert.match(p.nodes.get('error').textContent,/초대/);assert.equal(p.calls.length,0);
+});
+test('storage denial keeps invitation in fragment for reload and explains limitation',async()=>{
+  const p=await page({fragment:hash,denied:true});assert.equal(p.location.hash,hash);
+  assert.match(p.nodes.get('notice').textContent,/저장/);
+  await p.nodes.get('join').onclick();assert.equal(p.calls.length,0);assert.match(p.nodes.get('notice').textContent,/참여하지 않았/);
+});
+test('same-room driver cannot replace their own credential with rider role',async()=>{
+  const p=await page({fragment:hash,store:new Map([['pickupSession',JSON.stringify({id,role:'driver',token:'driver',invite})]])});
+  assert.equal(p.nodes.get('join').disabled,true);await p.nodes.get('join').onclick();assert.equal(p.calls.length,0);
+  assert.equal(JSON.parse(p.store.get('pickupSession')).role,'driver');
+});
+test('persistent notice survives refresh; reopening same invite preserves retry key',async()=>{
+  const pending={id,invite,joinId:'retry-key'};
+  const p=await page({fragment:hash,store:new Map([['pickupInvitation',JSON.stringify(pending)]])});
+  assert.equal(JSON.parse(p.store.get('pickupInvitation')).joinId,'retry-key');
+  p.nodes.get('notice').textContent='저장 안내';await p.nodes.get('join').onclick();
+  await vm.runInContext('refresh()',p.context);assert.equal(p.nodes.get('notice').textContent,'저장 안내');
+});
+test('existing other session is preserved until explicit join; invitation can be dismissed',async()=>{
+  const prior=JSON.stringify({id:'other-room',role:'driver',token:'original'});
+  const p=await page({fragment:hash,store:new Map([['pickupSession',prior]])});
+  assert.equal(p.store.get('pickupSession'),prior);assert.match(p.nodes.get('joinHint').textContent,/기존/);
+  p.nodes.get('cancelJoin').onclick();assert.equal(p.store.has('pickupInvitation'),false);assert.equal(p.store.get('pickupSession'),prior);
+});
+test('copy failure exposes selectable link and local-only notice; used invitation gets scrubbed',async()=>{
+  const p=await page({store:new Map([['pickupSession',JSON.stringify({id,role:'driver',token:'driver',invite})]])});
+  await p.nodes.get('copyInvite').onclick();assert.equal(p.nodes.get('inviteText').hidden,false);
+  assert.match(p.nodes.get('inviteStatus').textContent,/직접 복사/);assert.match(p.nodes.get('inviteHelp').textContent,/같은 컴퓨터/);
+  p.state.joined=true;p.state.version++;await vm.runInContext('refresh()',p.context);
+  assert.equal(p.nodes.get('inviteText').value,'');assert.equal(p.nodes.get('inviteLink').href,'');assert.equal(JSON.parse(p.store.get('pickupSession')).invite,undefined);
+});
+
+
+FILE web-http.test.mjs
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import http from 'node:http';
+import { once } from 'node:events';
+import { randomUUID } from 'node:crypto';
+import { createServer } from './server.mjs';
+import { PhoneBoard } from './phone-domain.mjs';
+import { PLACES } from './domain.mjs';
+import { Board } from './domain.mjs';
+
+test('lost join response retries same capability only for five minutes, never after end',()=>{
+  let now=1000;const b=new Board(()=>now);const d=b.create(PLACES[0]);const joinId=randomUUID();
+  const r=b.join(d.id,d.invite,joinId);assert.deepEqual(b.join(d.id,d.invite,joinId),r);
+  assert.throws(()=>b.join(d.id,d.invite,randomUUID()),/초대/);
+  assert.throws(()=>b.join(d.id,d.invite),/초대/);
+  assert.throws(()=>b.join(d.id,'wrong',joinId),/초대/);
+  assert.equal(JSON.stringify(b.read(d.id,d.token)).includes(joinId),false);
+  now+=300000;assert.throws(()=>b.join(d.id,d.invite,joinId),/초대/);assert.equal(b.rooms.get(d.id).joinReceipt,null);
+  const d2=b.create(PLACES[0]);const key2=randomUUID();b.join(d2.id,d2.invite,key2);
+  b.act(d2.id,d2.token,{...b.read(d2.id,d2.token),type:'end',requestId:randomUUID()});
+  assert.throws(()=>b.join(d2.id,d2.invite,key2),/초대/);assert.equal(b.rooms.get(d2.id).joinReceipt,null);
+});
+
+test('default RecommendationBoard preserves real HTTP phone grant/publish/read API',async t=>{
+  const server=createServer();server.listen(0,'127.0.0.1');await once(server,'listening');
+  t.after(()=>new Promise(resolve=>{server.close(resolve);server.closeAllConnections();}));
+  const root=`http://127.0.0.1:${server.address().port}`;
+  const api=async(path,body,token)=>{const res=await fetch(root+path,{method:body?'POST':'GET',headers:{...(body?{'Content-Type':'application/json'}:{}),...(token?{Authorization:`Bearer ${token}`} :{})},...(body?{body:JSON.stringify(body)}:{})});assert.ok(res.ok,`HTTP ${res.status}`);return res.json();};
+  const d=await api('/api/rooms',{place:PLACES[0]});const path=`/api/rooms/${d.id}`;
+  const joinId=randomUUID();const r=await api(path+'/join',{invite:d.invite,joinId});assert.deepEqual(await api(path+'/join',{invite:d.invite,joinId}),r);
+  const view=await api(path,null,r.token),consentId=randomUUID();
+  await api(path+'/phone',{type:'grant',consentId,consent:'pickup-location-once-v1',version:view.version,view:view.view},r.token);
+  await api(path+'/phone',{type:'publish',consentId,fix:{latitude:0,longitude:0,accuracy:10,observedAt:Date.now(),ageMs:0}},r.token);
+  assert.equal((await api(path+'/phone',null,d.token)).sample.latitude,0);
+  await api(path+'/phone',{type:'revoke',consentId},r.token);assert.equal((await api(path+'/phone',null,d.token)).sample,null);
+});
+
+test('explicit HTTPS proxy origin: independent rider joins and completes without location',async t=>{
+  const origin='https://pickup.example';
+  const server=createServer(new PhoneBoard(),{publicOrigin:origin});
+  server.listen(0,'127.0.0.1');await once(server,'listening');
+  t.after(()=>new Promise(resolve=>{server.close(resolve);server.closeAllConnections();}));
+  const request=(path,body,token,headers={})=>new Promise((resolve,reject)=>{
+    const req=http.request({host:'127.0.0.1',port:server.address().port,path,method:body?'POST':'GET',headers:{Host:'pickup.example',...(body?{Origin:origin,'Content-Type':'application/json'}:{}),...(token?{Authorization:`Bearer ${token}`} :{}),...headers}},res=>{
+      let raw='';res.setEncoding('utf8');res.on('data',c=>raw+=c);res.on('end',()=>resolve({status:res.statusCode,headers:res.headers,raw,data:res.headers['content-type'].includes('application/json')?JSON.parse(raw):null}));
+    });req.on('error',reject);req.end(body?JSON.stringify(body):undefined);
+  });
+  const page=await request('/');assert.equal(page.status,200);assert.match(page.raw,/앱 설치와 회원가입 없이/);
+  assert.equal(page.headers['referrer-policy'],'no-referrer');assert.equal(page.headers['cache-control'],'no-store');
+  assert.equal((await request('/api/rooms',{place:PLACES[0]},null,{Origin:'https://attacker.example'})).status,403);
+  assert.equal((await request('/',null,null,{Host:'attacker.example','X-Forwarded-Host':'pickup.example'})).status,403);
+  const d=(await request('/api/rooms',{place:PLACES[0]})).data;
+  const path=`/api/rooms/${d.id}`;
+  const r=(await request(path+'/join',{invite:d.invite})).data;assert.equal(r.role,'rider');assert.notEqual(d.token,r.token);
+  assert.equal((await request(path+'/join',{invite:d.invite})).status,403);
+  assert.equal((await request(path)).status,401);
+  const read=async u=>(await request(path,null,u.token)).data;
+  const act=async(u,type,extra={})=>{const s=await read(u);const result=await request(path+'/actions',{type,version:s.version,view:s.view,requestId:randomUUID(),...extra},u.token);assert.equal(result.status,200);return result.data;};
+  await act(r,'ready',{ready:true});assert.equal((await read(d)).ready,true);
+  const proposed=await act(r,'propose',{place:PLACES[1]});await act(d,'accept',{proposalId:proposed.proposal.id});
+  assert.equal((await read(r)).place,PLACES[1]);
+  await act(d,'arrive');await act(r,'board');await act(r,'end');assert.equal((await read(d)).outcome,'completed');
+  assert.equal((await request(path+'/phone',null,d.token)).data.sample,null);
+});
+
+
+HTML includes <p id="notice" role="alert"></p> outside changing screens. phone.html adds in-app browser fallback guidance; existing location code unchanged.

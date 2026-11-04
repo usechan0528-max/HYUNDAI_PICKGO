@@ -1,0 +1,23 @@
+Read-only Haiku5.5 bounded followup to98c089f5-c1fd-4560-99fe-70e936a9518f, no tools/edits. Review fixes: min-height0 intentional to fit viewport and scroll inside. Removed old600/720 minheight declarations, base now0. Welcome/edit/end align-items:safe center (overflow-safe); <=760height start, mobile stretch/start. Focus outline-offset -5px keeps ring inside. Disabled selected ready muted border929292 distinguishes past selection without bright active fill; current readiness separately says unknown when stale. Pull-to-refresh deliberately disabled with explicit refresh button, no gesture confirms actions. Native scroll QA480x600 welcome scroll100.67 and bottom543.93<footer552, editor scroll103.33 bottom544.26<footer552. No real finger/vehicle claim. Any concrete blocking regression remaining? Here is final interaction CSS:
+/* Touch-first interaction: native vertical panning, no drag-to-confirm gestures. */
+html,body{height:100%;overscroll-behavior-y:none}
+button,.button{user-select:none;-webkit-user-select:none;-webkit-tap-highlight-color:transparent;transition:background-color 120ms ease,border-color 120ms ease,color 120ms ease,transform 100ms ease}
+button:active:not(:disabled),.button:active{transform:scale(.985)}
+button:disabled{transform:none}
+#readyButtons button:disabled{background:#272727;color:#a5a5a5}
+#board,.welcome,.edit-place,.end-confirm{overflow-y:auto;overflow-x:hidden;overscroll-behavior-y:contain;touch-action:pan-y pinch-zoom;-webkit-overflow-scrolling:touch;scrollbar-width:thin;scrollbar-color:#737373 #202020;scroll-padding-block:20px 120px}
+#board::-webkit-scrollbar,.welcome::-webkit-scrollbar,.edit-place::-webkit-scrollbar,.end-confirm::-webkit-scrollbar{width:8px}
+#board::-webkit-scrollbar-thumb,.welcome::-webkit-scrollbar-thumb,.edit-place::-webkit-scrollbar-thumb,.end-confirm::-webkit-scrollbar-thumb{background:#737373}
+.welcome,.edit-place,.end-confirm{min-height:0;flex:1;align-items:safe center}
+.end-confirm{position:relative;inset:auto}
+.bottom{position:sticky;bottom:0;background:#121212;padding:12px 0 4px;z-index:1}
+main>section:not([hidden]){animation:pickup-screen-in 180ms cubic-bezier(.2,.7,.3,1)}
+@keyframes pickup-screen-in{from{opacity:.65;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+/* Short split windows retain every action through finger scrolling. */
+@media(max-height:760px){.welcome,.edit-place,.end-confirm{align-items:start}.welcome-copy,.edit-place>div,.end-confirm>div{padding-top:16px}}
+@media(max-width:899px){.welcome,.edit-place,.end-confirm{justify-content:flex-start;align-items:stretch}.welcome>*,.edit-place>*,.end-confirm>*{flex-shrink:0}.bottom{gap:12px}.bottom button{padding-inline:12px}}
+@media(prefers-reduced-motion:reduce){main>section:not([hidden]){animation:none}button,.button{transition:none}button:active:not(:disabled),.button:active{transform:none}}
+
+/* Keep focus inside clipped scroll edges, and retain a muted previous selection. */
+button:focus-visible,a:focus-visible{outline-offset:-5px}
+#readyButtons button[aria-pressed=true]:disabled{border-color:#929292}

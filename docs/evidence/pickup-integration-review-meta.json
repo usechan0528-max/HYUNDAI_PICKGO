@@ -1,0 +1,24 @@
+{
+  "started": "2026-11-02T16:21:59.346602+00:00",
+  "requestedModel": "claude-haiku-5-5",
+  "exit": 0,
+  "session_id": "a41d60ee-9822-4a82-80c2-0eafdf82fe73",
+  "is_error": false,
+  "modelUsage": {
+    "claude-haiku-5-5": {
+      "inputTokens": 2,
+      "outputTokens": 32717,
+      "cacheReadInputTokens": 2348,
+      "cacheCreationInputTokens": 30667,
+      "webSearchRequests": 0,
+      "costUSD": 0.02251558,
+      "contextWindow": 1000000,
+      "maxOutputTokens": 128000,
+      "thinkingTokens": 30476,
+      "canonicalModel": "claude-haiku-5-5",
+      "provider": "firstParty",
+      "costBasis": "list"
+    }
+  },
+  "finished": "2026-11-02T16:24:40.330253+00:00"
+}

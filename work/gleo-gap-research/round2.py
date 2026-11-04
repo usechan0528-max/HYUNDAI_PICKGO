@@ -1,0 +1,15 @@
+import pathlib, subprocess
+w = pathlib.Path(__file__).parent
+p = '''독립 조사 비평. 한국어 500단어 이내, 도구/파일 수정 없음. 사용자 요청은 아이디어 확정이나 개발이 아니라 조사 먼저. 이전 결론 A(이번 길에서 끝낼 일)도 공백 확정 아님. 새 공식 근거를 아래에 제공한다. 원문 직접 확인은 Codex 수행, 당신은 제공 근거만 비평한다.
+1. 현대 Connect-S 소비자 Gleo 매뉴얼 https://ownersmanual.hyundai.com/ivi/Connect-S/AVNT/KOR/Korean/003_Corefeatures_1.html : 경유지 추가/삭제, 경로 재탐색, 문자 보내기/읽기, 차량 상태, 일반정보. 리마인더 상세는 해당 페이지에서 발견 못함. 에뮬레이터에는 리마인더 메뉴/빈화면만 관찰, 음성 실행 없음. 문서 누락을 미지원으로 단정 금지.
+2. Apple 공식 미리알림 https://support.apple.com/ko-kr/102484 및 공식 App Store id1108187841: 시간/위치 알림, Siri 생성, 반복, 공유/할당, 완료 처리. Samsung 공식 GalaxyStore com.samsung.android.app.reminder: 시간/장소/상황, 빅스비, 차에 타거나 내릴 때 알림, 주차위치 메모. 따라서 지속 상태/완료/장소알림 자체는 고유 기능이 아님.
+3. Make My Day 공식 https://www.makemydayapp.com/our-technology/ : EV fleet routing/charging, multiple stops, priority in stops, driver preference, agenda/calendar. Pleos 배포판이 전부 제공한다는 증거 아님. 이제 단순 충전앱이라고만 축소 비교 불가.
+4. Route4Me 공식 https://support.route4me.com/route-settings/ : 목적지별 Time Windows와 Service Time, 시간창 내 방문 순서, 유연한 출발 시각. B2B 배송경로 제품; 국내 일반 차주/Pleos 제공이나 좋은 UX 입증 아님. MyRouteOnline도 공식 time windows guide 존재.
+5. Pleos 공식 App Market 소개에는 플랫폼/API/개발도구 설명, 현재 전체 설치 가능 카탈로그 미확보. developers redirect 웹 수집 불가. Dot R006은 Gleo 리마인더 실제 문서와 전체카탈로그 두 항목에 한정해 진행중.
+검수 목표: 근거 대비 과잉 주장 방지. A를 '새 알고리즘/할 일 저장' 차별성에서 '일반 차주가 적은 입력으로 여러 운행 동안 누락/수동재계획을 줄이는지 검증해야 할 통합 UX 가설'로 좁히는 것이 타당한지. 아직 부족한 사용성/수요 근거를 분리. 지금 후보 추천하지 않고 증거표 갱신하는 것이 맞는지. 남은 반증 질문 3개, 발견 못함/미지원/품질부족 구분을 답하라. 사용자 승인되지 않은 피벗 권고를 결정으로 쓰지 말 것.'''
+(w/'round2-input.txt').write_text(p,encoding='utf-8')
+exe=r'C:\Users\dldyd\AppData\Local\Claude-Data\claude_pzs8sxrjxfjjc\claude-code\2.1.308\c17a819afb40\claude.exe'
+r=subprocess.run([exe,'--safe-mode','--print','--tools','','--strict-mcp-config','--mcp-config','{"mcpServers":{}}','--permission-mode','plan','--output-format','json','--model','claude-opus-5-5','--effort','low'],input=p,text=True,encoding='utf-8',capture_output=True,timeout=240)
+(w/'round2.json').write_text(r.stdout,encoding='utf-8')
+(w/'round2.stderr.txt').write_text(r.stderr,encoding='utf-8')
+print('exit',r.returncode)

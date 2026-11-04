@@ -1,0 +1,25 @@
+{
+  "packageName": "org.example.pickupboard",
+  "appDescription": "Shares the current pickup agreement and manually reported pickup progress between a driver and a rider.",
+  "version": "0.0.0",
+  "actionCalls": [
+    {
+      "type": "function",
+      "function": {
+        "component": "activity",
+        "name": "GET_PICKUP_STATUS",
+        "description": "Reads the current pickup progress and rider readiness for the driver of the active pickup agreement.",
+        "parameters": { "type": "object", "properties": {}, "required": [] }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "component": "activity",
+        "name": "REPORT_PICKUP_ARRIVAL",
+        "description": "Records the driver's explicit report of arrival at the agreed pickup point when a rider has joined and no location change is pending.",
+        "parameters": { "type": "object", "properties": {}, "required": [] }
+      }
+    }
+  ]
+}

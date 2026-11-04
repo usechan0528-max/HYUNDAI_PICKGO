@@ -1,0 +1,15 @@
+**Verdict:** I found no new P0/P1 defects and no new P2 findings in the pasted adapter or tests. By reading only (plan mode, no tools), the five prior P2s appear addressed. I did not run the tests, so the 49/49 result comes from your output. The count is consistent with the file: 27 existing tests plus 22 in `gleo.test.mjs`.
+
+**P2 closure check**
+- **Undefined ticket:** `dispatch` compares `pending.ticket === ticket` before using pending state. Undefined, null, and fabricated tickets return a failure and consume any pending work. The empty-ticket test covers this.
+- **New prepare clears pending first:** `this.#pending = null` runs before `#authorize`. The busy/closed early return skips that clear, but the adapter is already busy or disposed in those cases, and `dispose()` clears pending. The denied-new-command test covers this.
+- **Data-only parser:** `actionName` and `parseCommand` use property descriptors, so an accessor `action` is never invoked. The accessor test asserts `reads === 0`.
+- **Phase grant:** `#authorize` checks `grant.phase` against the requested phase. The phase-mismatch test covers this.
+- **Constructor check:** `board.read` and `board.act` are compared by identity with the prototype methods, so an async own-property override is rejected. The async-Board test covers this.
+
+**Residual notes (P3, none blocking)**
+1. **Extras are read more than once.** `parseCommand` reads `input.extras` and `extras.ACTION_PARAM` several times. For plain objects this is fine. For a Proxy, each read can return a different value, so the value that passed validation may not be the one checked. There is no execution impact today because `extras` is never forwarded. If extras ever flow onward, capture `input.extras` and `ACTION_PARAM` once and validate those snapshots. No test covers Proxy input.
+2. **Grant-age boundary is partly untested.** The suite covers 1000 ms (rejected), future timestamps, and NaN, but not 999 ms (accepted). One boundary test would pin the `>= 1000` rule.
+3. **Grant recording order.** `#authorize` calls `attest` before `#time()`. If the clock check throws, the returned grant is never added to `#grants`. I see no replay path, because grants are bound to a single invocation and each dispatch is consumed once. Recording the grant before the clock check would make the one-use rule independent of clock state, which is cheap hardening.
+
+**Not claimed here:** Android execution, the APK schema, and caller or UX verification remain out of scope, as you noted.

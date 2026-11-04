@@ -1,0 +1,8 @@
+{
+  "experiments\\pickup-board\\app.mjs": "65c1adbb45ae843125cce7ced6bf3d5b67d53490923ed6a501721fe3aa826730",
+  "experiments\\pickup-board\\board.test.mjs": "4d7d0fa7e07ad5d84ef198f848d756fdab0121a2853a78af26aca7ff37ed7d5c",
+  "experiments\\pickup-board\\domain.mjs": "f2b930b383641b0aec66b47e6adba6b4567f294455c000a70ef659654e841fd3",
+  "experiments\\pickup-board\\index.html": "f899367eb0b703a5142143199a25abfd68d906a2522ca366543ab660a9690d96",
+  "experiments\\pickup-board\\server.mjs": "4d9273fc369907ffe6e6ac3d5f60ca01d633d6df786eeb7ac977621690ae44d7",
+  "experiments\\pickup-board\\style.css": "1da9b8b8ebd48d005bcc5a386fe7f2beeec6b1416e2da1c6c88a8c0472fc4072"
+}

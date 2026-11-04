@@ -1,9 +1,0 @@
-
-org.example.j1listening.JourneyListeningTest:......
-org.example.j1listening.ListeningTest:........
-Test results for InstrumentationTestRunner=..............
-Time: 159.487
-
-OK (14 tests)
-
-

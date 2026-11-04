@@ -1,56 +1,35 @@
-# J1 개발 보존본
+# 픽업 약속판
 
-이 브랜치는 기존 주차·J1 개발 이력을 보존합니다. 새 픽업 약속판 기획은 `codex/pickup-board` 브랜치에서 관리합니다.
-
-J1 웹 실행: `node experiments/journey-context/demo/server.mjs` → http://127.0.0.1:4177
-
-[웹 실행·검증 안내](experiments/journey-context/README.md) · [업로드 범위와 검증](docs/GITHUB_SNAPSHOT_2026-11-02.md)
-
-# 도착 전에 — 주차 정보 MVP
-
-공식 여석·참여 차량 관측·정보 부족을 구분하고 진입 정보를 확인하는 로컬 웹 시연입니다. **기존 `/` 화면은 모두 합성입니다. `/live`는 서울시 세종로 공영주차장의 실제 공공 API 데이터를 읽는 별도 개발 실험입니다.** 차량 SDK·미래 예측·위치 수집은 구현하지 않았습니다. Android 앱이나 APK가 아닙니다.
-
-## 실행
-
-Node.js 22 이상. 외부 패키지 설치 없이 프로젝트 루트에서:
+운전자와 탑승자가 준비 상태·승차 지점·변경 수락·도착·탑승을 한 회차로 관리하는 로컬 웹 시연입니다. 현재 위치·경로 추천은 합성 데이터이며 실제 차량 SDK·Gleo·물리 휴대폰 HTTPS 연동은 미완료입니다.
 
 ```sh
-node mvp/server.mjs
+node experiments/pickup-board/server.mjs
+node --test "experiments/pickup-board/*.test.mjs"
 ```
 
-브라우저에서 http://127.0.0.1:4173 접속. 포트 변경은 `PARKING_MVP_PORT=4174 node mvp/server.mjs`.
+http://127.0.0.1:4180 에서 실행합니다. [상세 실행 안내](experiments/pickup-board/README.md).
 
-## 시연 순서
+2026-11-04 J-1 전용 코드·음원·APK·문서·증거는 [별도 비공개 J1_ARCHIVE](https://github.com/usechan0528-max/J1_ARCHIVE)로 이관했습니다. J-1은 잠정 중단 상태입니다. 기존 Git 이력과 혼합 결정 기록은 보존하며, 이관 전 경로는 과거 기록입니다. [분리 기록](docs/PROJECT_SEPARATION_2026-11-04.md).
 
-1. 초기 상태는 미확인으로 상세 선택이 잠깁니다. 시연 제어에서 `정차 허용 시연`을 선택합니다.
-2. 공영 형식의 보고된 여석, 민영 형식의 참여 관측, 현황 미연계 후보를 차례로 선택합니다.
-3. `참여 표본 부족`, `공식 데이터 지연`, `공식 여석 0면`을 바꿔 표시 차이를 확인합니다.
-4. `6분 경과`로 관측을 만료시킵니다. 연결 복구만으로 오래된 값이 새 값이 되지 않습니다.
-5. `주행 제한` 또는 `상태 미확인`으로 전환하면 선택과 상세가 즉시 제거됩니다.
+이전 주차 MVP(mvp/)는 별도 과거 실험이며 현재 주력 개발 대상이 아닙니다.
 
-실제 차량 앱에서는 플랫폼 UX 제약을 검증해 적용해야 합니다. 이 시연의 상태 선택 버튼을 실제 주차 판정으로 사용해서는 안 됩니다. 주차장 목록 순서는 추천 순위가 아닙니다. 미래 출차 대수나 주차면 확보를 보장하지 않습니다.
+## 픽업 약속판 · 초기 MVP
+[C02 실행 안내](experiments/pickup-board/README.md) · [검수·증거·한계](docs/PICKUP_BOARD_MVP_2026-11-02.md). node experiments/pickup-board/server.mjs 실행 후 http://127.0.0.1:4180 . 운전자·탑승자 두 화면의 준비/장소 제안/상대 수락·거절/철회/종료를 공유합니다. 로컬 웹·합성 장소·메모리 저장이며 실제 Gleo/차량 SDK/Android APK가 아닙니다. 도메인·HTTP11개 및 fake DOM 회귀3개 총14개 통과, 별도 실제 브라우저 검증 완료.
 
-## 테스트
+차량 화면 디자인 0.2.0: 이전 Pleos 시안의 Asta·중립톤·큰 터치 버튼을 반영하고 가로/세로8크기를 확인했습니다. 실제 Claude 설계/검수 및17시험 결과: [디자인 보고서](docs/PICKUP_BOARD_DESIGN_2026-11-02.md). 실제 차량 규격 인증이나 SDK 연동 완료를 뜻하지 않습니다.
 
-```sh
-cd mvp
-node --test
-```
+수동 도착·탑승 0.3.0: 운전자 도착→탑승자 확인→명시 완료, 탑승 전 종료는 취소로 구분합니다. 27시험 및 실제 Chrome 두역할 검증·Claude설계/독립검수 완료. 잠금 해제 후 Pleos에서 새 약속 복구·도착 전 표시·미탑승 취소 결과를 확인했습니다. [상태 기능 보고서](docs/PICKUP_BOARD_STATUS_2026-11-03.md).
 
-5분 만료·5명 표본 기준은 시연 정책이며 정확도나 개인정보 보호가 검증된 운영 기준이 아닙니다. 서버는 loopback 주소에만 바인딩하고 지정된 화면 파일만 제공합니다. 선택/피드백은 메모리에만 존재하며 새로고침 시 사라집니다.
 
-## 평가 및 증거
+Gleo 연동 준비: 현재 약속 조회·수동 도착 두 명령의 내부 어댑터/후보 schema와 경계 시험을 추가했습니다. 실제 Gleo·Android 수신 경로는 비활성이며 승인·호출자 계약·native 세션 연결이 남아 있습니다. [재현/연결 절차](experiments/pickup-board/gleo/README.md) · [준비 결과와 차단](docs/PICKUP_GLEO_READINESS_2026-11-03.md).
 
-[초기 MVP 공동 평가](docs/MVP_EVALUATION_2026-11-02.md) · [검증 기록](docs/TEST_EVIDENCE.md) · [기능 검토](docs/PARKING_EXTENSION_2026-11-02.md)
+픽업 위치 통합 마감(2026-11-03): 합성 차량 근접 시연과 동의 기반 일회 휴대폰 위치 공유 흐름을 연결했습니다. 115개 시험 및 Chrome 두 역할 완료 흐름 통과. 실제차량SDK·물리폰HTTPS·외부지도 본연동은 미완료입니다. [통합 검수·실행·남은 범위](docs/PICKUP_LOCATION_INTEGRATION_2026-11-03.md).
 
-APK 위치: 없음. SDK·에뮬레이터·실차 검증: 미실행. 실제 데이터 화면: 같은 서버의 `/live`에서 정차 허용 시연을 선택하고 공급자 데이터 확인을 누릅니다. 인터넷 연결이 필요합니다. 공개 sample의 첫 5개 중 코드 171721만 사용하며 개인 API 키는 필요하지 않습니다. 공공 API HTTP 연결은 개발용이며 운영 배포용이 아닙니다. 총면−차량수는 일반 여석 수가 아닙니다.
 
-## 실제 연결 후 판정
-세종로 공영주차장 실제 연결 및 오류·시간 경계 개선, 최종22개 테스트 통과. 공동 재평가 결과 현재 주차 아이디어의 공모전 주력 개발은 종료하고 코드는 보존합니다. [재평가 및 새 후보](docs/LIVE_PARKING_REEVALUATION_2026-11-02.md).
 
-## Android 기본 듣기 시연
+## 탑승자 웹 초대 흐름 · 2026-11-03
+설치·가입 없는 링크참여/복사/새로고침복원/참여재시도 및 기존 준비·장소합의·선택적위치·탑승 흐름을 연결했습니다. 로컬구현·검증이며 공개HTTPS/물리휴대폰/실차 연결 완료가 아닙니다. [구현과검증](docs/PICKUP_RIDER_WEB_2026-11-03.md).
 
-[J1 Android 실행 안내](experiments/j1-listening/README.md) · [검증 보고서](docs/J1_ANDROID_LISTENING_2026-11-02.md) · APK: `output/J1_Android_Listening_0.1.0_debug.apk`. 한국어 로컬4편 시작/일시정지/이어듣기/종료/자연 다음 재생, Pleos 에뮬레이터 최종8개 시험 통과. 전면 재생 시연이며 내비 전면 지속재생·STT·실제좌표추천·release 제출본은 아니다. 화면 이탈 시 저장·정지한다.
 
-## Android 모의 운행 추천 시연 · 0.2.0
-[실행 안내](experiments/j1-listening/README.md) · [검증·한계](docs/J1_ANDROID_JOURNEY_2026-11-02.md) · APK: output/J1_Android_Journey_0.2.0_debug.apk. 명시debug모드에서 합성공통구간/분기·이탈·만료·철회를 다음콘텐츠선택에 연결합니다. 현재재생유지, 선택직전신선도검사, 제한시새듣기복구. Android14회귀+별도프로세스2시험통과. 실제SDK위치/ETA·실차·백그라운드재생·추천효과검증은 아닙니다. 기본실행은 기존순차듣기입니다.
+## 픽업 지점 추천 준비 · 2026-11-03
+명시 합성 위치/경로/정차 근거로 후보 비교→제안→상대 최신근거 수락을 구현했습니다. 실제 첫 검증 지역은 강남역이며 검증된 실제 후보/차량위치/경로 공급자는 미연동입니다. 기본 서버 추천 수집 차단, 합성 실행: `node experiments/pickup-board/recommendation/demo-server.mjs` (4187). 최종 통합176시험 통과. [구현·검수·차단](docs/PICKUP_RECOMMENDATION_2026-11-03.md) · [강남역 데이터 조사](docs/PICKUP_GANGNAM_DATA_2026-11-03.md).

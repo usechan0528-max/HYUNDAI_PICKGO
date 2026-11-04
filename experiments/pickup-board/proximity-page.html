@@ -1,0 +1,6 @@
+<!doctype html>
+<html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>차량 근접 확인 · 픽업 약속판</title><link rel="stylesheet" href="/style.css"><link rel="stylesheet" href="/proximity-page.css"></head>
+<body><main class="location-page"><a class="button secondary" href="/">약속판으로 돌아가기</a><h1>차량 근접 확인</h1><p>실제 차량 위치는 연결되지 않았습니다. 아래 시연은 합성 좌표만 사용하며 도착·탑승 상태를 바꾸지 않습니다.</p>
+<section class="panel"><span id="proximityConnection">회차 확인 중</span><h2 id="proximityPlace">확인 전</h2><p id="manualStage">직접 확인 상태: 미확인</p><p>마지막으로 확인한 장소 기준입니다. 장소 변경은 최대 4초 늦게 반영될 수 있습니다.</p></section>
+<section class="panel"><p class="section-label">차량 위치 · 실제 SDK 미연결</p><h2>현재 미확인</h2></section>
+<section class="panel"><p class="section-label">합성 근접 시연 · 운전자 전용</p><h2 id="proximityState" role="status">현재 미확인</h2><p>마지막으로 확인한 장소 기준입니다. 변경·제안은 다음 조회에서 확인하며 최대 4초 늦게 반영될 수 있습니다.</p><p id="proximityReason"></p><p id="proximityNotice"></p><div class="demo-buttons"><button id="demoNear" disabled>근처 좌표 시연</button><button id="demoFar" disabled>먼 좌표 시연</button><button id="demoDenied" disabled>권한 거부 시연</button></div><p>새 관측이 없으면 5초 후 미확인으로 돌아갑니다. 수치는 합성 시연 정책입니다.</p></section><p id="proximityError" role="alert"></p></main><script type="module" src="/proximity-page.mjs"></script></body></html>

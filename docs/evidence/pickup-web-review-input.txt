@@ -1,0 +1,782 @@
+Read-only Haiku 5.5 review. No tools or edits. User approved vehicle app + installation/account-free rider web. Scope: invitation copy + pending sessionStorage restoration before join, explicit join, same rider reopens old link, preserving prior session until explicit switch; optional HTTPS public origin behind loopback reverse proxy. No public deployment done. No new map provider or native changes. Existing recommendation module is another agent work and excluded; only its routes preserved. Requirements: no silent join/location collection; no tokens in request URL/log; correct stale/ended handling; default loopback restriction retained; exact configured Host/Origin not spoofed forwarded headers. Tests: node --test experiments/pickup-board/*.test.mjs 150 pass. New test fakes DOM; HTTP and real browser checks upcoming. Known limits: room in-memory24h, consumed invite cannot recover token after closed tab/lost response; mobile physical/TLS not run. Review concrete P0-P3 bugs and minimum fix. Full fixed sources below, changed diff first.
+
+DIFF app.mjs
+--- 
++++ 
+@@ -3,10 +3,33 @@
+ const requestTimes = new WeakMap();
+ let editing = false, ending = null, actionError = '';
+ const invitation = new URLSearchParams(location.hash.slice(1));
+-const incoming = invitation.has('invite') ? { id: invitation.get('room'), invite: invitation.get('invite') } : null;
+-if (incoming) { history.replaceState(null, '', '/'); $('create').hidden = true; $('joinBox').hidden = false; }
+-else { try { session = JSON.parse(sessionStorage.getItem('pickupSession')); } catch {} }
+-const save = value => { session = value; sessionStorage.setItem('pickupSession', JSON.stringify(value)); };
++const hasInvite = invitation.has('invite') || invitation.has('room');
++const validInvite = value => value && /^[a-f0-9-]{36}$/i.test(value.id) && /^[A-Za-z0-9_-]{32}$/.test(value.invite);
++let incoming = null, previousSession = null;
++try { previousSession = JSON.parse(sessionStorage.getItem('pickupSession')); } catch {}
++try { incoming = hasInvite ? { id: invitation.get('room'), invite: invitation.get('invite') } : JSON.parse(sessionStorage.getItem('pickupInvitation')); } catch {}
++if (incoming || hasInvite) {
++  $('create').hidden = true; $('joinBox').hidden = false;
++  if (!validInvite(incoming)) {
++    incoming = null; $('join').disabled = true;
++    $('error').textContent = '초대 주소가 올바르지 않습니다. 운전자에게 받은 링크를 다시 열어 주세요.';
++    try { sessionStorage.removeItem('pickupInvitation'); } catch {}
++    history.replaceState(null, '', '/');
++  } else if (previousSession?.id === incoming.id && previousSession?.role === 'rider') {
++    session = previousSession; incoming = null;
++    try { sessionStorage.removeItem('pickupInvitation'); } catch {}
++    history.replaceState(null, '', '/');
++  } else {
++    try { sessionStorage.setItem('pickupInvitation', JSON.stringify(incoming)); history.replaceState(null, '', '/'); }
++    catch { $('error').textContent = '브라우저 저장이 제한되어 있습니다. 참여 전에는 원래 초대 링크를 보관해 주세요.'; }
++    $('joinHint').textContent = previousSession ? '참여하면 이 탭의 기존 약속 대신 새 약속을 엽니다. 기존 약속은 취소되지 않습니다.' : '앱 설치·회원가입 없이 참여합니다. 위치 공유는 참여 후 따로 선택할 수 있어요.';
++  }
++} else session = previousSession;
++const save = value => {
++  session = value;
++  try { sessionStorage.setItem('pickupSession', JSON.stringify(value)); return true; }
++  catch { $('error').textContent = '브라우저 저장이 제한되어 새로고침 후 참여 정보를 복원할 수 없습니다. 이 탭을 유지해 주세요.'; return false; }
++};
+ async function api(path, body, authenticated = true) {
+   const started = performance.now();
+   let response;
+@@ -35,8 +58,15 @@
+   $('placeLabel').textContent = valid ? '확정 승차지점' : '이전 승차지점 · 현재 미확인';
+   $('place').textContent = state?.place || '확인 전';
+   $('readyText').textContent = !valid ? '현재 미확인' : !active ? '약속 종료' : boarded ? '탑승자가 직접 확인 · 종료 대기' : !state.joined ? '참여 대기' : state.ready ? '준비 완료' : '아직 준비 중';
+-  $('inviteBox').hidden = !valid || !active || state?.joined || !session.invite;
+-  if (session.invite) { const url = `${location.origin}/#room=${session.id}&invite=${session.invite}`; $('inviteLink').href = url; $('inviteText').value = url; }
++  const canInvite = valid && active && !state?.joined && session.role === 'driver' && !!session.invite;
++  $('inviteBox').hidden = !canInvite; $('copyInvite').disabled = !canInvite;
++  if (valid && (state?.joined || !active) && session.invite) { delete session.invite; save(session); }
++  const url = canInvite ? `${location.origin}/#room=${session.id}&invite=${session.invite}` : '';
++  $('inviteLink').href = url; $('inviteText').value = url;
++  if (!canInvite) { $('inviteText').hidden = true; $('inviteStatus').textContent = ''; }
++  $('inviteHelp').textContent = location.origin.startsWith('https://') ? '링크를 복사해 탑승자에게 보내세요. 링크를 가진 한 사람만 참여할 수 있습니다.' : '현재는 같은 컴퓨터에서만 열리는 시연 링크입니다. 휴대폰 연결은 HTTPS 서버 구성이 필요합니다.';
++  $('phoneLink').textContent = session.role === 'rider' ? '내 위치 한 번 공유 · 선택' : '탑승자 위치 공유 상태';
++  $('proximityLink').hidden = session.role === 'rider';
+   $('readyButtons').hidden = session.role !== 'rider' || !active || boarded;
+   document.querySelectorAll('[data-ready]').forEach(b => { b.disabled = !can || boarded; b.setAttribute('aria-pressed', String(state?.ready === (b.dataset.ready === 'true'))); });
+   $('proposal').hidden = !state?.proposal || unavailable;
+@@ -85,8 +115,23 @@
+   try { save(await api('/api/rooms', { place: $('initialPlace').value }, false)); await refresh(); }
+   catch (e) { $('error').textContent = e.message; } finally { button.disabled = false; } };
+ $('join').onclick = async () => { $('join').disabled = true;
+-  try { save(await api(`/api/rooms/${incoming.id}/join`, { invite: incoming.invite }, false)); await refresh(); }
++  if (!validInvite(incoming)) return;
++  try {
++    const joined = await api(`/api/rooms/${incoming.id}/join`, { invite: incoming.invite }, false);
++    const stored = save(joined); incoming = null;
++    try { sessionStorage.removeItem('pickupInvitation'); } catch {}
++    history.replaceState(null, '', '/');
++    await refresh();
++    if (!stored) $('error').textContent = '브라우저 저장이 제한되어 있습니다. 새로고침하거나 탭을 닫으면 참여 정보를 잃습니다.';
++  }
+   catch (e) { $('error').textContent = e.message; } finally { $('join').disabled = false; } };
++$('cancelJoin').onclick = () => { try { sessionStorage.removeItem('pickupInvitation'); } catch {} history.replaceState(null, '', '/'); location.assign('/'); };
++$('copyInvite').onclick = async () => {
++  if (!fresh() || !session?.invite || state?.joined || state?.status !== 'active') return;
++  const url = $('inviteText').value;
++  try { await navigator.clipboard.writeText(url); $('inviteStatus').textContent = '초대 링크를 복사했습니다. 탑승자에게 보내세요.'; }
++  catch { $('inviteText').hidden = false; $('inviteText').focus(); $('inviteText').select(); $('inviteStatus').textContent = '자동 복사가 지원되지 않습니다. 아래 주소를 길게 눌러 직접 복사해 주세요.'; }
++};
+ document.querySelectorAll('[data-ready]').forEach(b => b.onclick = () => act('ready', { ready: b.dataset.ready === 'true' }));
+ for (const [id, type] of [['arrive','arrive'], ['boarded','board'], ['undoArrival','undoArrival'], ['undoBoarding','undoBoarding']]) $(id).onclick = () => act(type);
+ $('openPlace').onclick = () => { if (fresh() && !busy) { editing = true; render(); } };
+
+
+FILE app.mjs
+const $ = id => document.getElementById(id);
+let session = null, state = null, received = 0, online = false, busy = false, polling = false, unavailable = false;
+const requestTimes = new WeakMap();
+let editing = false, ending = null, actionError = '';
+const invitation = new URLSearchParams(location.hash.slice(1));
+const hasInvite = invitation.has('invite') || invitation.has('room');
+const validInvite = value => value && /^[a-f0-9-]{36}$/i.test(value.id) && /^[A-Za-z0-9_-]{32}$/.test(value.invite);
+let incoming = null, previousSession = null;
+try { previousSession = JSON.parse(sessionStorage.getItem('pickupSession')); } catch {}
+try { incoming = hasInvite ? { id: invitation.get('room'), invite: invitation.get('invite') } : JSON.parse(sessionStorage.getItem('pickupInvitation')); } catch {}
+if (incoming || hasInvite) {
+  $('create').hidden = true; $('joinBox').hidden = false;
+  if (!validInvite(incoming)) {
+    incoming = null; $('join').disabled = true;
+    $('error').textContent = '초대 주소가 올바르지 않습니다. 운전자에게 받은 링크를 다시 열어 주세요.';
+    try { sessionStorage.removeItem('pickupInvitation'); } catch {}
+    history.replaceState(null, '', '/');
+  } else if (previousSession?.id === incoming.id && previousSession?.role === 'rider') {
+    session = previousSession; incoming = null;
+    try { sessionStorage.removeItem('pickupInvitation'); } catch {}
+    history.replaceState(null, '', '/');
+  } else {
+    try { sessionStorage.setItem('pickupInvitation', JSON.stringify(incoming)); history.replaceState(null, '', '/'); }
+    catch { $('error').textContent = '브라우저 저장이 제한되어 있습니다. 참여 전에는 원래 초대 링크를 보관해 주세요.'; }
+    $('joinHint').textContent = previousSession ? '참여하면 이 탭의 기존 약속 대신 새 약속을 엽니다. 기존 약속은 취소되지 않습니다.' : '앱 설치·회원가입 없이 참여합니다. 위치 공유는 참여 후 따로 선택할 수 있어요.';
+  }
+} else session = previousSession;
+const save = value => {
+  session = value;
+  try { sessionStorage.setItem('pickupSession', JSON.stringify(value)); return true; }
+  catch { $('error').textContent = '브라우저 저장이 제한되어 새로고침 후 참여 정보를 복원할 수 없습니다. 이 탭을 유지해 주세요.'; return false; }
+};
+async function api(path, body, authenticated = true) {
+  const started = performance.now();
+  let response;
+  try { response = await fetch(path, { method: body ? 'POST' : 'GET', cache: 'no-store', signal: AbortSignal.timeout(4000),
+    headers: { ...(body ? { 'Content-Type': 'application/json' } : {}), ...(authenticated && session ? { Authorization: `Bearer ${session.token}` } : {}) }, ...(body ? { body: JSON.stringify(body) } : {}) }); }
+  catch { throw new Error('서버에 연결할 수 없습니다.'); }
+  const data = await response.json(); if (!response.ok) { const e = new Error(data.error); e.status = response.status; throw e; } requestTimes.set(data, started); return data;
+}
+function adopt(data) { if (!state || data.version >= state.version) { state = data; received = requestTimes.get(data); online = true; unavailable = false; } render(); }
+function fresh() { return online && navigator.onLine && !document.hidden && state && performance.now() - received < 6000; }
+function render() {
+  if (!session) return;
+  $('welcome').hidden = true;
+  const valid = fresh(), active = state?.status === 'active', can = valid && active && !busy;
+  const boarded = state?.stage === 'boarded', arrived = state?.stage === 'arrived';
+  if (!active || boarded || state?.proposal || !state?.joined) editing = false;
+  if (!active || (ending !== null && ending !== state?.version)) ending = null;
+  $('board').hidden = editing || ending !== null;
+  $('editPlace').hidden = !editing;
+  $('endConfirm').hidden = !ending;
+  $('role').textContent = session.role === 'driver' ? '운전자 화면' : '탑승자 화면';
+  $('connection').textContent = valid ? '방금 서버에서 확인' : '연결 확인 필요 · 이전 기록';
+  $('connection').classList.toggle('stale', !valid); $('facts').classList.toggle('stale', !valid);
+  $('pickupText').textContent = !valid ? '현재 미확인' : !active ? (state.outcome === 'completed' ? '픽업 완료' : '약속 취소 · 탑승 미완료') : boarded ? '탑승 확인됨' : arrived ? '운전자 도착 알림' : '도착 알림 전';
+  $('headline').textContent = $('pickupText').textContent;
+  $('placeLabel').textContent = valid ? '확정 승차지점' : '이전 승차지점 · 현재 미확인';
+  $('place').textContent = state?.place || '확인 전';
+  $('readyText').textContent = !valid ? '현재 미확인' : !active ? '약속 종료' : boarded ? '탑승자가 직접 확인 · 종료 대기' : !state.joined ? '참여 대기' : state.ready ? '준비 완료' : '아직 준비 중';
+  const canInvite = valid && active && !state?.joined && session.role === 'driver' && !!session.invite;
+  $('inviteBox').hidden = !canInvite; $('copyInvite').disabled = !canInvite;
+  if (valid && (state?.joined || !active) && session.invite) { delete session.invite; save(session); }
+  const url = canInvite ? `${location.origin}/#room=${session.id}&invite=${session.invite}` : '';
+  $('inviteLink').href = url; $('inviteText').value = url;
+  if (!canInvite) { $('inviteText').hidden = true; $('inviteStatus').textContent = ''; }
+  $('inviteHelp').textContent = location.origin.startsWith('https://') ? '링크를 복사해 탑승자에게 보내세요. 링크를 가진 한 사람만 참여할 수 있습니다.' : '현재는 같은 컴퓨터에서만 열리는 시연 링크입니다. 휴대폰 연결은 HTTPS 서버 구성이 필요합니다.';
+  $('phoneLink').textContent = session.role === 'rider' ? '내 위치 한 번 공유 · 선택' : '탑승자 위치 공유 상태';
+  $('proximityLink').hidden = session.role === 'rider';
+  $('readyButtons').hidden = session.role !== 'rider' || !active || boarded;
+  document.querySelectorAll('[data-ready]').forEach(b => { b.disabled = !can || boarded; b.setAttribute('aria-pressed', String(state?.ready === (b.dataset.ready === 'true'))); });
+  $('proposal').hidden = !state?.proposal || unavailable;
+  if (state?.proposal) {
+    $('proposedPlace').textContent = state.proposal.place;
+    const own = state.proposal.by === session.role;
+    $('proposalLabel').textContent = !valid ? '이전 제안 · 현재 미확인' : own ? '내 제안 · 응답 대기' : '상대 제안 · 아직 미확정';
+    $('proposalText').textContent = !valid ? '마지막 확인 당시 제안입니다. 현재 상태는 미확인입니다.' : own ? '상대의 응답을 기다리고 있어요. 기존 승차지점은 그대로입니다.' : '상대가 이 장소를 제안했어요. 수락할까요?';
+    $('withdraw').hidden = !own; $('withdraw').disabled = !can;
+    $('decisions').hidden = own; $('accept').disabled = $('reject').disabled = !can;
+  }
+  $('normalActions').hidden = !active || !state?.joined || !!state?.proposal || unavailable;
+  $('openPlace').hidden = boarded; $('openPlace').disabled = !can || boarded;
+  $('progressHelp').textContent = boarded ? '탑승이 확인됐어요. 약속을 종료해 주세요.' : arrived ? (session.role === 'driver' ? '탑승자의 탑승 확인을 기다려요.' : '차량에 탄 뒤 직접 확인해 주세요.') : (session.role === 'driver' ? '확정 장소에 도착한 뒤 알려주세요.' : '운전자의 도착 알림을 기다려요.');
+  for (const [id, show] of [['arrive', session.role === 'driver' && !arrived && !boarded], ['boarded', session.role === 'rider' && arrived], ['undoArrival', session.role === 'driver' && arrived], ['undoBoarding', session.role === 'rider' && boarded]]) {
+    $(id).hidden = !active || !state?.joined || !show; $(id).disabled = !can || !!state?.proposal;
+  }
+  $('editingCurrent').textContent = `${valid ? '현재 장소' : '이전 장소 · 현재 미확인'}: ${state?.place || '확인 전'}`;
+  document.querySelectorAll('[data-place]').forEach(b => { b.disabled = !can || boarded || b.dataset.place === state?.place; b.textContent = b.dataset.place + (b.dataset.place === state?.place ? ' · 현재' : ''); });
+  $('nextPlace').disabled = !can;
+  $('end').hidden = !active || unavailable; $('end').disabled = !can;
+  $('end').textContent = boarded ? '픽업 완료로 종료' : '약속 취소';
+  $('endTitle').textContent = boarded ? '픽업을 완료할까요?' : '탑승 없이 약속을 취소할까요?';
+  $('endDescription').textContent = boarded ? '탑승 확인 후 완료로 기록됩니다. 종료하면 변경하거나 확인을 취소할 수 없어요.' : '탑승 완료로 기록하지 않습니다. 취소하면 이 회차를 변경할 수 없어요.';
+  $('confirmEnd').textContent = boarded ? '완료 확정' : '약속 취소 확정';
+  $('confirmEnd').disabled = !can || ending !== state?.version;
+  $('new').hidden = !unavailable && state?.status !== 'ended';
+  const eventText = state ? `${valid ? '' : '마지막 확인 기록 · 현재 미확인: '}${state.lastEvent}` : '';
+  if ($('lastEvent').textContent !== eventText) $('lastEvent').textContent = eventText;
+}
+async function refresh() {
+  if (!session || polling || busy) return;
+  polling = true;
+  try { const data = await api(`/api/rooms/${session.id}`); $('error').textContent = actionError; adopt(data); }
+  catch (e) { online = false; unavailable = [401,403,404].includes(e.status); $('error').textContent = `${e.message} 최신 상태를 확인할 수 없습니다.`; render(); }
+  finally { polling = false; }
+}
+async function act(type, extra = {}) {
+  if (!fresh() || busy || !state) return;
+  busy = true; actionError = ''; $('error').textContent = ''; render();
+  try { adopt(await api(`/api/rooms/${session.id}/actions`, { type, ...extra, version: state.version, view: state.view, requestId: crypto.randomUUID() })); }
+  catch (e) { online = false; actionError = `${e.message} 최신 상태를 확인하고 다시 선택해 주세요.`; $('error').textContent = actionError; }
+  finally { busy = false; render(); await refresh(); }
+}
+$('create').onsubmit = async e => { e.preventDefault(); const button = e.submitter; button.disabled = true;
+  try { save(await api('/api/rooms', { place: $('initialPlace').value }, false)); await refresh(); }
+  catch (e) { $('error').textContent = e.message; } finally { button.disabled = false; } };
+$('join').onclick = async () => { $('join').disabled = true;
+  if (!validInvite(incoming)) return;
+  try {
+    const joined = await api(`/api/rooms/${incoming.id}/join`, { invite: incoming.invite }, false);
+    const stored = save(joined); incoming = null;
+    try { sessionStorage.removeItem('pickupInvitation'); } catch {}
+    history.replaceState(null, '', '/');
+    await refresh();
+    if (!stored) $('error').textContent = '브라우저 저장이 제한되어 있습니다. 새로고침하거나 탭을 닫으면 참여 정보를 잃습니다.';
+  }
+  catch (e) { $('error').textContent = e.message; } finally { $('join').disabled = false; } };
+$('cancelJoin').onclick = () => { try { sessionStorage.removeItem('pickupInvitation'); } catch {} history.replaceState(null, '', '/'); location.assign('/'); };
+$('copyInvite').onclick = async () => {
+  if (!fresh() || !session?.invite || state?.joined || state?.status !== 'active') return;
+  const url = $('inviteText').value;
+  try { await navigator.clipboard.writeText(url); $('inviteStatus').textContent = '초대 링크를 복사했습니다. 탑승자에게 보내세요.'; }
+  catch { $('inviteText').hidden = false; $('inviteText').focus(); $('inviteText').select(); $('inviteStatus').textContent = '자동 복사가 지원되지 않습니다. 아래 주소를 길게 눌러 직접 복사해 주세요.'; }
+};
+document.querySelectorAll('[data-ready]').forEach(b => b.onclick = () => act('ready', { ready: b.dataset.ready === 'true' }));
+for (const [id, type] of [['arrive','arrive'], ['boarded','board'], ['undoArrival','undoArrival'], ['undoBoarding','undoBoarding']]) $(id).onclick = () => act(type);
+$('openPlace').onclick = () => { if (fresh() && !busy) { editing = true; render(); } };
+$('cancelPlace').onclick = () => { editing = false; render(); };
+document.querySelectorAll('[data-initial]').forEach(b => b.onclick = () => {
+  $('initialPlace').value = b.dataset.initial;
+  document.querySelectorAll('[data-initial]').forEach(other => other.setAttribute('aria-pressed', String(other === b)));
+});
+$('propose').onsubmit = async e => { e.preventDefault(); if (!e.submitter?.dataset.place) return; $('nextPlace').value = e.submitter.dataset.place; await act('propose', { place: $('nextPlace').value }); };
+$('accept').onclick = () => act('accept', { proposalId: state.proposal.id });
+$('reject').onclick = () => act('reject', { proposalId: state.proposal.id });
+$('withdraw').onclick = () => act('withdraw', { proposalId: state.proposal.id });
+$('end').onclick = () => { if (fresh() && !busy) { ending = state.version; render(); } };
+$('cancelEnd').onclick = () => { ending = null; render(); };
+$('confirmEnd').onclick = () => { if (ending === state?.version) return act('end'); };
+$('refresh').onclick = () => { actionError = ''; $('error').textContent = ''; refresh(); };
+$('new').onclick = () => { sessionStorage.removeItem('pickupSession'); location.assign('/'); };
+addEventListener('offline', () => { online = false; render(); });
+addEventListener('online', refresh);
+document.addEventListener('visibilitychange', () => { online = false; render(); if (!document.hidden) refresh(); });
+setInterval(() => { if (!document.hidden) refresh(); }, 2000);
+setInterval(render, 500);
+render(); refresh();
+
+
+DIFF index.html
+--- 
++++ 
+@@ -3,13 +3,13 @@
+ <body><div class="cockpit"><header><h1>픽업 약속판</h1><span class="demo">로컬 시연 · 합성 장소</span></header><main>
+ <section id="welcome" class="welcome"><div class="welcome-copy"><p class="section-label">준비 상태와 만날 장소를 함께 확인</p><h2>오늘의 픽업 약속</h2><p>만날 장소를 고르고<br>탑승자를 초대하세요.</p></div>
+ <form id="create" class="create-panel"><h3>처음 만날 장소</h3><select id="initialPlace" hidden aria-label="처음 만날 장소"><option>가상 문화센터 정문</option><option>가상 문화센터 동쪽 입구</option><option>가상 공원 안내소</option></select><div class="place-options" role="group" aria-label="처음 만날 장소 선택"><button type="button" data-initial="가상 문화센터 정문" aria-pressed="true">가상 문화센터 정문</button><button type="button" data-initial="가상 문화센터 동쪽 입구" aria-pressed="false">가상 문화센터 동쪽 입구</button><button type="button" data-initial="가상 공원 안내소" aria-pressed="false">가상 공원 안내소</button></div><button class="primary create-action">약속 만들기</button></form>
+-<div id="joinBox" class="join-panel" hidden><h2>픽업 약속에 초대됐어요</h2><p>탑승자로 참여해<br>준비 상태를 알려주세요.</p><button id="join" class="primary">탑승자로 참여</button></div></section>
++<div id="joinBox" class="join-panel" hidden><h2>픽업 약속에 초대됐어요</h2><p>앱 설치와 회원가입 없이<br>이번 픽업에 참여하세요.</p><p id="joinHint">위치 공유는 참여 후 따로 선택할 수 있어요.</p><button id="join" class="primary">탑승자로 참여</button><button id="cancelJoin" class="secondary">초대 닫기</button></div></section>
+ <section id="board" hidden><div class="topline"><span id="role"></span><span id="connection" role="status"></span></div><h2 id="headline" class="sr-only"></h2>
+ <div class="workgrid"><div id="facts" class="facts"><div class="readiness panel"><span class="section-label">픽업 진행 · 직접 확인</span><strong id="pickupText"></strong><p id="readyText"></p><div id="readyButtons"><button data-ready="true">준비됐어요</button><button data-ready="false">아직 준비 중</button></div></div><div class="place panel"><div id="placeLabel" class="section-label">확정 승차지점</div><h2 id="place"></h2><p class="place-help">수락 전에는 이 장소를 유지합니다.</p></div></div>
+-<div class="action-area"><div id="inviteBox" class="panel invite" hidden><h2>탑승자 참여 대기</h2><p>같은 컴퓨터의 새 탭에서<br>탑승자로 참여하세요.</p><a id="inviteLink" class="button primary" target="_blank" rel="noopener">탑승자 화면 열기</a><input id="inviteText" readonly hidden aria-label="탑승자 초대 주소"></div>
++<div class="action-area"><div id="inviteBox" class="panel invite" hidden><h2>탑승자 참여 대기</h2><p id="inviteHelp">초대 주소 확인 중</p><button id="copyInvite" class="primary">초대 링크 복사</button><p id="inviteStatus" role="status"></p><a id="inviteLink" class="button secondary" target="_blank" rel="noopener noreferrer">탑승자 화면 미리보기</a><input id="inviteText" readonly hidden aria-label="탑승자 초대 주소"></div>
+ <div id="proposal" class="panel proposal" hidden><div id="proposalLabel" class="section-label">변경 제안 · 아직 미확정</div><h2 id="proposedPlace"></h2><p id="proposalText"></p><button id="withdraw" hidden>제안 철회</button><div id="decisions"><button id="accept" class="primary">이 장소로 변경</button><button id="reject" class="secondary">현재 장소 유지</button></div></div>
+ <div id="normalActions" class="panel normal-actions"><h2>다음 확인</h2><p id="progressHelp"></p><div class="progress-actions"><button id="arrive" class="primary">도착했어요</button><button id="boarded" class="primary">탑승했어요</button><button id="undoArrival" class="secondary">도착 표시 취소</button><button id="undoBoarding" class="secondary">탑승 확인 취소</button><button id="openPlace" class="secondary">다른 장소 제안</button></div></div></div></div>
+-<nav class="location-links" aria-label="위치 선택 기능"><a class="button secondary" href="/phone">휴대폰 위치 공유</a><a class="button secondary" href="/proximity">차량 근접 확인</a><p>위치 공유는 선택 사항이며, 차량 근접은 합성 시연입니다.</p></nav>
++<nav class="location-links" aria-label="위치 선택 기능"><a id="phoneLink" class="button secondary" href="/phone">휴대폰 위치 공유</a><a id="proximityLink" class="button secondary" href="/proximity">차량 근접 확인</a><a class="button secondary" href="/recommendation">동선 기반 지점 추천</a><p>위치 공유는 선택 사항이며, 차량 근접은 합성 시연입니다.</p></nav>
+ <p id="lastEvent" class="event" aria-live="polite"></p><div class="bottom"><button id="end" class="secondary">약속 종료</button><button id="new" class="primary" hidden>새 약속 시작</button><button id="refresh" class="secondary">다시 확인</button></div></section>
+ <section id="editPlace" class="edit-place" hidden><div><p class="section-label">승차지점 변경 제안</p><h2>어디로 바꿀까요?</h2><p id="editingCurrent"></p><p>장소를 누르면 제안을 보냅니다.<br>상대가 수락하기 전까지 기존 장소를 유지해요.</p></div><form id="propose"><select id="nextPlace" hidden aria-label="변경할 승차지점"><option>가상 문화센터 정문</option><option>가상 문화센터 동쪽 입구</option><option>가상 공원 안내소</option></select><div class="place-options"><button type="submit" data-place="가상 문화센터 정문">가상 문화센터 정문</button><button type="submit" data-place="가상 문화센터 동쪽 입구">가상 문화센터 동쪽 입구</button><button type="submit" data-place="가상 공원 안내소">가상 공원 안내소</button></div><button type="button" id="cancelPlace" class="secondary">돌아가기</button></form></section>
+ <section id="endConfirm" class="end-confirm" hidden><div><p class="section-label">약속 종료</p><h2 id="endTitle">이번 약속을 종료할까요?</h2><p id="endDescription"></p></div><div class="confirm-actions"><button id="cancelEnd" class="primary">계속 진행</button><button id="confirmEnd" class="secondary">종료 확정</button></div></section><p id="error" role="alert"></p>
+
+
+FILE index.html
+<!doctype html>
+<html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>픽업 약속판</title><link rel="stylesheet" href="/style.css"><link rel="stylesheet" href="/location-links.css"></head>
+<body><div class="cockpit"><header><h1>픽업 약속판</h1><span class="demo">로컬 시연 · 합성 장소</span></header><main>
+<section id="welcome" class="welcome"><div class="welcome-copy"><p class="section-label">준비 상태와 만날 장소를 함께 확인</p><h2>오늘의 픽업 약속</h2><p>만날 장소를 고르고<br>탑승자를 초대하세요.</p></div>
+<form id="create" class="create-panel"><h3>처음 만날 장소</h3><select id="initialPlace" hidden aria-label="처음 만날 장소"><option>가상 문화센터 정문</option><option>가상 문화센터 동쪽 입구</option><option>가상 공원 안내소</option></select><div class="place-options" role="group" aria-label="처음 만날 장소 선택"><button type="button" data-initial="가상 문화센터 정문" aria-pressed="true">가상 문화센터 정문</button><button type="button" data-initial="가상 문화센터 동쪽 입구" aria-pressed="false">가상 문화센터 동쪽 입구</button><button type="button" data-initial="가상 공원 안내소" aria-pressed="false">가상 공원 안내소</button></div><button class="primary create-action">약속 만들기</button></form>
+<div id="joinBox" class="join-panel" hidden><h2>픽업 약속에 초대됐어요</h2><p>앱 설치와 회원가입 없이<br>이번 픽업에 참여하세요.</p><p id="joinHint">위치 공유는 참여 후 따로 선택할 수 있어요.</p><button id="join" class="primary">탑승자로 참여</button><button id="cancelJoin" class="secondary">초대 닫기</button></div></section>
+<section id="board" hidden><div class="topline"><span id="role"></span><span id="connection" role="status"></span></div><h2 id="headline" class="sr-only"></h2>
+<div class="workgrid"><div id="facts" class="facts"><div class="readiness panel"><span class="section-label">픽업 진행 · 직접 확인</span><strong id="pickupText"></strong><p id="readyText"></p><div id="readyButtons"><button data-ready="true">준비됐어요</button><button data-ready="false">아직 준비 중</button></div></div><div class="place panel"><div id="placeLabel" class="section-label">확정 승차지점</div><h2 id="place"></h2><p class="place-help">수락 전에는 이 장소를 유지합니다.</p></div></div>
+<div class="action-area"><div id="inviteBox" class="panel invite" hidden><h2>탑승자 참여 대기</h2><p id="inviteHelp">초대 주소 확인 중</p><button id="copyInvite" class="primary">초대 링크 복사</button><p id="inviteStatus" role="status"></p><a id="inviteLink" class="button secondary" target="_blank" rel="noopener noreferrer">탑승자 화면 미리보기</a><input id="inviteText" readonly hidden aria-label="탑승자 초대 주소"></div>
+<div id="proposal" class="panel proposal" hidden><div id="proposalLabel" class="section-label">변경 제안 · 아직 미확정</div><h2 id="proposedPlace"></h2><p id="proposalText"></p><button id="withdraw" hidden>제안 철회</button><div id="decisions"><button id="accept" class="primary">이 장소로 변경</button><button id="reject" class="secondary">현재 장소 유지</button></div></div>
+<div id="normalActions" class="panel normal-actions"><h2>다음 확인</h2><p id="progressHelp"></p><div class="progress-actions"><button id="arrive" class="primary">도착했어요</button><button id="boarded" class="primary">탑승했어요</button><button id="undoArrival" class="secondary">도착 표시 취소</button><button id="undoBoarding" class="secondary">탑승 확인 취소</button><button id="openPlace" class="secondary">다른 장소 제안</button></div></div></div></div>
+<nav class="location-links" aria-label="위치 선택 기능"><a id="phoneLink" class="button secondary" href="/phone">휴대폰 위치 공유</a><a id="proximityLink" class="button secondary" href="/proximity">차량 근접 확인</a><a class="button secondary" href="/recommendation">동선 기반 지점 추천</a><p>위치 공유는 선택 사항이며, 차량 근접은 합성 시연입니다.</p></nav>
+<p id="lastEvent" class="event" aria-live="polite"></p><div class="bottom"><button id="end" class="secondary">약속 종료</button><button id="new" class="primary" hidden>새 약속 시작</button><button id="refresh" class="secondary">다시 확인</button></div></section>
+<section id="editPlace" class="edit-place" hidden><div><p class="section-label">승차지점 변경 제안</p><h2>어디로 바꿀까요?</h2><p id="editingCurrent"></p><p>장소를 누르면 제안을 보냅니다.<br>상대가 수락하기 전까지 기존 장소를 유지해요.</p></div><form id="propose"><select id="nextPlace" hidden aria-label="변경할 승차지점"><option>가상 문화센터 정문</option><option>가상 문화센터 동쪽 입구</option><option>가상 공원 안내소</option></select><div class="place-options"><button type="submit" data-place="가상 문화센터 정문">가상 문화센터 정문</button><button type="submit" data-place="가상 문화센터 동쪽 입구">가상 문화센터 동쪽 입구</button><button type="submit" data-place="가상 공원 안내소">가상 공원 안내소</button></div><button type="button" id="cancelPlace" class="secondary">돌아가기</button></form></section>
+<section id="endConfirm" class="end-confirm" hidden><div><p class="section-label">약속 종료</p><h2 id="endTitle">이번 약속을 종료할까요?</h2><p id="endDescription"></p></div><div class="confirm-actions"><button id="cancelEnd" class="primary">계속 진행</button><button id="confirmEnd" class="secondary">종료 확정</button></div></section><p id="error" role="alert"></p>
+</main><footer><span>Gleo·차량 미연결 · 주행 중 사용 금지</span><span class="storage-note">서버 재시작 시 약속이 사라집니다.</span></footer></div><script type="module" src="/app.mjs"></script>
+</body></html>
+
+
+DIFF server.mjs
+--- 
++++ 
+@@ -2,7 +2,8 @@
+ import { readFile } from 'node:fs/promises';
+ import { fileURLToPath } from 'node:url';
+ import { Fault } from './domain.mjs';
+-import { PhoneBoard } from './phone-domain.mjs';
++import { RecommendationBoard } from './recommendation/board.mjs';
++import { parsePublicOrigin, requestOrigin } from './web-origin.mjs';
+ const files = { '/phone': ['phone.html','text/html'], '/phone.css': ['phone.css','text/css'], '/phone-page.mjs': ['phone-page.mjs','text/javascript'], '/phone-controller.mjs': ['phone-controller.mjs','text/javascript'], '/': ['index.html', 'text/html'], '/app.mjs': ['app.mjs', 'text/javascript'], '/style.css': ['style.css', 'text/css'], '/fonts/AstaSans.ttf': ['fonts/AstaSans.ttf', 'font/ttf'], '/fonts/OFL.txt': ['fonts/OFL.txt', 'text/plain'] };
+ Object.assign(files, {
+   '/proximity': ['proximity-page.html', 'text/html'],
+@@ -11,7 +12,9 @@
+   '/proximity/detector.mjs': ['proximity/detector.mjs', 'text/javascript'],
+   '/location-links.css': ['location-links.css', 'text/css']
+ });
+-export function createServer(board = new PhoneBoard()) {
++for (const [name,mime] of [['page.html','text/html'],['page.css','text/css'],['page.mjs','text/javascript'],['controller.mjs','text/javascript']]) files[name==='page.html'?'/recommendation':`/recommendation/${name}`]=[`recommendation/${name}`,mime];
++export function createServer(board = new RecommendationBoard(), options = {}) {
++  const publicOrigin = parsePublicOrigin(options.publicOrigin);
+   const server = http.createServer(async (req, res) => {
+     const reply = (status, value) => { res.writeHead(status, { 'Content-Type': 'application/json; charset=utf-8' }); res.end(JSON.stringify(value)); };
+     res.setHeader('Cache-Control', 'no-store'); res.setHeader('X-Content-Type-Options', 'nosniff');
+@@ -19,8 +22,8 @@
+     res.setHeader('Permissions-Policy', 'geolocation=(self)');
+     res.setHeader('Content-Security-Policy', "default-src 'self'; script-src 'self'; style-src 'self'; object-src 'none'; frame-ancestors 'none'; base-uri 'none'; form-action 'self'");
+     try {
+-      const origin = `http://127.0.0.1:${res.socket.localPort}`;
+-      if (req.headers.host !== new URL(origin).host || (req.headers.origin && req.headers.origin !== origin)) throw new Fault(403, '로컬 주소에서만 사용할 수 있습니다.');
++      const origin = requestOrigin(req.headers, res.socket.localPort, publicOrigin);
++      if (!origin) throw new Fault(403, '설정된 서비스 주소에서만 사용할 수 있습니다.');
+       const path = new URL(req.url, origin).pathname;
+       if (req.method === 'GET' && files[path]) {
+         const [name, mime] = files[path]; const body = await readFile(new URL(name, import.meta.url));
+@@ -35,9 +38,10 @@
+         if (!body || Array.isArray(body) || typeof body !== 'object') throw new Fault(400, '요청 객체가 필요합니다.');
+       }
+       if (path === '/api/rooms' && req.method === 'POST') return reply(201, board.create(body.place));
+-      const match = path.match(/^\/api\/rooms\/([a-f0-9-]{36})(?:\/(join|actions|phone))?$/);
++      const match = path.match(/^\/api\/rooms\/([a-f0-9-]{36})(?:\/(join|actions|phone|recommendation))?$/);
+       if (!match) throw new Fault(404, '찾을 수 없습니다.');
+       const [, id, action] = match, credential = req.headers.authorization?.replace(/^Bearer /, '');
++      if (action === 'recommendation' && typeof board.recommend === 'function' && ['GET','POST'].includes(req.method)) return reply(200, await board.recommend(id, credential, req.method === 'POST' ? body : null));
+       if (action === 'phone' && typeof board.phone === 'function' && ['GET','POST'].includes(req.method)) return reply(200, board.phone(id, credential, req.method === 'POST' ? body : null));
+       if (req.method === 'GET' && !action) return reply(200, board.read(id, credential));
+       if (req.method === 'POST' && action === 'join') return reply(200, board.join(id, body.invite));
+@@ -51,5 +55,6 @@
+ }
+ if (process.argv[1] === fileURLToPath(import.meta.url)) {
+   const port = Number(process.env.PICKUP_PORT || 4180);
+-  createServer().listen(port, '127.0.0.1', () => console.log(`픽업 약속판 http://127.0.0.1:${port} · 로컬 시연 / 메모리 저장`));
++  const publicOrigin = parsePublicOrigin(process.env.PICKUP_PUBLIC_ORIGIN);
++  createServer(undefined, { publicOrigin: publicOrigin || undefined }).listen(port, '127.0.0.1', () => console.log(`픽업 약속판 ${publicOrigin || `http://127.0.0.1:${port}`} · ${publicOrigin ? 'HTTPS 프록시 구성 필요' : '로컬 시연'} / 메모리 저장`));
+ }
+
+
+FILE server.mjs
+import http from 'node:http';
+import { readFile } from 'node:fs/promises';
+import { fileURLToPath } from 'node:url';
+import { Fault } from './domain.mjs';
+import { RecommendationBoard } from './recommendation/board.mjs';
+import { parsePublicOrigin, requestOrigin } from './web-origin.mjs';
+const files = { '/phone': ['phone.html','text/html'], '/phone.css': ['phone.css','text/css'], '/phone-page.mjs': ['phone-page.mjs','text/javascript'], '/phone-controller.mjs': ['phone-controller.mjs','text/javascript'], '/': ['index.html', 'text/html'], '/app.mjs': ['app.mjs', 'text/javascript'], '/style.css': ['style.css', 'text/css'], '/fonts/AstaSans.ttf': ['fonts/AstaSans.ttf', 'font/ttf'], '/fonts/OFL.txt': ['fonts/OFL.txt', 'text/plain'] };
+Object.assign(files, {
+  '/proximity': ['proximity-page.html', 'text/html'],
+  '/proximity-page.mjs': ['proximity-page.mjs', 'text/javascript'],
+  '/proximity-page.css': ['proximity-page.css', 'text/css'],
+  '/proximity/detector.mjs': ['proximity/detector.mjs', 'text/javascript'],
+  '/location-links.css': ['location-links.css', 'text/css']
+});
+for (const [name,mime] of [['page.html','text/html'],['page.css','text/css'],['page.mjs','text/javascript'],['controller.mjs','text/javascript']]) files[name==='page.html'?'/recommendation':`/recommendation/${name}`]=[`recommendation/${name}`,mime];
+export function createServer(board = new RecommendationBoard(), options = {}) {
+  const publicOrigin = parsePublicOrigin(options.publicOrigin);
+  const server = http.createServer(async (req, res) => {
+    const reply = (status, value) => { res.writeHead(status, { 'Content-Type': 'application/json; charset=utf-8' }); res.end(JSON.stringify(value)); };
+    res.setHeader('Cache-Control', 'no-store'); res.setHeader('X-Content-Type-Options', 'nosniff');
+    res.setHeader('Referrer-Policy', 'no-referrer');
+    res.setHeader('Permissions-Policy', 'geolocation=(self)');
+    res.setHeader('Content-Security-Policy', "default-src 'self'; script-src 'self'; style-src 'self'; object-src 'none'; frame-ancestors 'none'; base-uri 'none'; form-action 'self'");
+    try {
+      const origin = requestOrigin(req.headers, res.socket.localPort, publicOrigin);
+      if (!origin) throw new Fault(403, '설정된 서비스 주소에서만 사용할 수 있습니다.');
+      const path = new URL(req.url, origin).pathname;
+      if (req.method === 'GET' && files[path]) {
+        const [name, mime] = files[path]; const body = await readFile(new URL(name, import.meta.url));
+        res.writeHead(200, { 'Content-Type': `${mime}; charset=utf-8` }); res.end(body); return;
+      }
+      let body = {};
+      if (req.method === 'POST') {
+        if (req.headers['content-type'] !== 'application/json') throw new Fault(415, 'JSON 요청만 지원합니다.');
+        const chunks = []; let length = 0; for await (const chunk of req) { length += chunk.length; if (length > 4096) throw new Fault(413, '요청이 너무 큽니다.'); chunks.push(chunk); }
+        const raw = Buffer.concat(chunks).toString('utf8');
+        try { body = JSON.parse(raw); } catch { throw new Fault(400, '잘못된 JSON입니다.'); }
+        if (!body || Array.isArray(body) || typeof body !== 'object') throw new Fault(400, '요청 객체가 필요합니다.');
+      }
+      if (path === '/api/rooms' && req.method === 'POST') return reply(201, board.create(body.place));
+      const match = path.match(/^\/api\/rooms\/([a-f0-9-]{36})(?:\/(join|actions|phone|recommendation))?$/);
+      if (!match) throw new Fault(404, '찾을 수 없습니다.');
+      const [, id, action] = match, credential = req.headers.authorization?.replace(/^Bearer /, '');
+      if (action === 'recommendation' && typeof board.recommend === 'function' && ['GET','POST'].includes(req.method)) return reply(200, await board.recommend(id, credential, req.method === 'POST' ? body : null));
+      if (action === 'phone' && typeof board.phone === 'function' && ['GET','POST'].includes(req.method)) return reply(200, board.phone(id, credential, req.method === 'POST' ? body : null));
+      if (req.method === 'GET' && !action) return reply(200, board.read(id, credential));
+      if (req.method === 'POST' && action === 'join') return reply(200, board.join(id, body.invite));
+      if (req.method === 'POST' && action === 'actions') return reply(200, board.act(id, credential, body));
+      throw new Fault(405, '지원하지 않는 요청입니다.');
+    } catch (error) { if (error instanceof Fault && error.status === 413) res.setHeader('Connection', 'close'); reply(error instanceof Fault ? error.status : 500, { error: error instanceof Fault ? error.message : '서버 오류입니다. 다시 확인해 주세요.' }); }
+  });
+  const cleanup = setInterval(() => { board.prune(); board.sweep?.(); }, 1000); cleanup.unref();
+  server.on('close', () => clearInterval(cleanup));
+  return server;
+}
+if (process.argv[1] === fileURLToPath(import.meta.url)) {
+  const port = Number(process.env.PICKUP_PORT || 4180);
+  const publicOrigin = parsePublicOrigin(process.env.PICKUP_PUBLIC_ORIGIN);
+  createServer(undefined, { publicOrigin: publicOrigin || undefined }).listen(port, '127.0.0.1', () => console.log(`픽업 약속판 ${publicOrigin || `http://127.0.0.1:${port}`} · ${publicOrigin ? 'HTTPS 프록시 구성 필요' : '로컬 시연'} / 메모리 저장`));
+}
+
+
+FILE web-origin.mjs
+// The HTTP service stays on loopback. TLS terminates at an explicitly configured
+// reverse proxy which must preserve Host; forwarded headers are never authority.
+export function parsePublicOrigin(value) {
+  if (value === undefined || value === '') return null;
+  let url;
+  try { url = new URL(value); } catch { throw new Error('PICKUP_PUBLIC_ORIGIN must be an HTTPS origin.'); }
+  if (url.protocol !== 'https:' || url.username || url.password || url.pathname !== '/' || url.search || url.hash) {
+    throw new Error('PICKUP_PUBLIC_ORIGIN must be an HTTPS origin without credentials, path, query or fragment.');
+  }
+  return url.origin;
+}
+
+export function requestOrigin(headers, port, publicOrigin) {
+  const origin = publicOrigin || `http://127.0.0.1:${port}`;
+  if (headers.host !== new URL(origin).host || (headers.origin !== undefined && headers.origin !== origin)) return null;
+  if (headers['sec-fetch-site'] === 'cross-site' && headers.origin !== undefined) return null;
+  return origin;
+}
+
+
+FILE web-origin.test.mjs
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import { parsePublicOrigin, requestOrigin } from './web-origin.mjs';
+
+test('public origin is opt-in HTTPS with no path, credentials or token', () => {
+  assert.equal(parsePublicOrigin(), null);
+  assert.equal(parsePublicOrigin('https://pickup.example/'), 'https://pickup.example');
+  for (const value of ['http://pickup.example', 'https://u:p@pickup.example', 'https://pickup.example/app', 'https://pickup.example/?x=1', 'https://pickup.example/#x', 'bad']) assert.throws(() => parsePublicOrigin(value));
+});
+test('loopback default rejects external hosts and spoofed forwarding headers', () => {
+  assert.equal(requestOrigin({host:'127.0.0.1:4180'},4180,null),'http://127.0.0.1:4180');
+  for (const headers of [{host:'evil.example'}, {host:'127.0.0.1:4180',origin:'https://evil.example'}, {host:'evil.example','x-forwarded-host':'127.0.0.1:4180'}]) assert.equal(requestOrigin(headers,4180,null),null);
+});
+test('proxy origin requires exact Host/Origin; navigation without Origin can open invite', () => {
+  const origin=parsePublicOrigin('https://pickup.example');
+  assert.equal(requestOrigin({host:'pickup.example'},4180,origin),origin);
+  assert.equal(requestOrigin({host:'pickup.example',origin},4180,origin),origin);
+  for (const headers of [{host:'127.0.0.1:4180'}, {host:'pickup.example',origin:'http://pickup.example'}, {host:'pickup.example',origin:'null'}, {host:'pickup.example',origin:'https://evil.example'}, {host:'evil.example','x-forwarded-host':'pickup.example'}]) assert.equal(requestOrigin(headers,4180,origin),null);
+});
+
+
+FILE web-invite.test.mjs
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import vm from 'node:vm';
+import { readFile } from 'node:fs/promises';
+const source=await readFile(new URL('./app.mjs',import.meta.url),'utf8');
+const html=await readFile(new URL('./index.html',import.meta.url),'utf8');
+const id='00000000-0000-4000-8000-000000000001', invite='a'.repeat(32);
+const hash=`#room=${id}&invite=${invite}`;
+async function page({fragment='',store=new Map(),denied=false,clipboard=false}={}) {
+  const nodes=new Map([...html.matchAll(/id="([^"]+)"/g)].map(m=>[m[1],{hidden:false,disabled:false,value:'',textContent:'',classList:{toggle(){}},setAttribute(){},focus(){},select(){}}]));
+  const calls=[];
+  const state={id,version:1,status:'active',stage:'waiting',place:'가상 문화센터 정문',joined:false,view:'view',lastEvent:'시연'};
+  const location={hash:fragment,origin:'http://127.0.0.1:4180',assign(){}};
+  const context={URLSearchParams,URL,AbortSignal,crypto:{randomUUID:()=> 'test-request-123'},performance:{now:()=>100},
+    navigator:{onLine:true,clipboard:{writeText:async()=>{if(!clipboard)throw Error('denied');}}},location,
+    history:{replaceState(){location.hash='';}},
+    sessionStorage:{getItem:k=>store.get(k)||null,setItem(k,v){if(denied)throw Error('denied');store.set(k,v);},removeItem(k){store.delete(k);}},
+    document:{hidden:false,getElementById:k=>nodes.get(k),querySelectorAll:()=>[],addEventListener(){}},addEventListener(){},setInterval(){},
+    fetch:async(path,options)=>{calls.push({path,options});return {ok:true,json:async()=>path.endsWith('/join')?{id,role:'rider',token:'rider-token'}:{...state}};}};
+  vm.createContext(context);vm.runInContext(source,context);await new Promise(setImmediate);
+  return {nodes,calls,store,location,state,context};
+}
+test('invite survives pre-join reload without account or location collection',async()=>{
+  const first=await page({fragment:hash});assert.equal(first.location.hash,'');assert.equal(first.calls.length,0);
+  const second=await page({store:first.store});assert.equal(second.nodes.get('create').hidden,true);
+  await second.nodes.get('join').onclick();assert.equal(JSON.parse(second.store.get('pickupSession')).role,'rider');
+  assert.equal(second.store.has('pickupInvitation'),false);
+  assert.equal(second.calls.filter(c=>c.path.endsWith('/join')).length,1);
+});
+test('already joined rider reopens original link without consuming invitation twice',async()=>{
+  const store=new Map([['pickupSession',JSON.stringify({id,role:'rider',token:'rider-token'})]]);
+  const p=await page({fragment:hash,store});assert.equal(p.nodes.get('welcome').hidden,true);
+  assert.equal(p.calls.some(c=>c.path.endsWith('/join')),false);assert.equal(store.has('pickupInvitation'),false);
+});
+test('malformed invite cannot accidentally create a driver room or call join',async()=>{
+  const p=await page({fragment:'#room=bad&invite=bad'});assert.equal(p.nodes.get('create').hidden,true);
+  assert.equal(p.nodes.get('join').disabled,true);assert.match(p.nodes.get('error').textContent,/초대/);assert.equal(p.calls.length,0);
+});
+test('storage denial keeps invitation in fragment for reload and explains limitation',async()=>{
+  const p=await page({fragment:hash,denied:true});assert.equal(p.location.hash,hash);
+  assert.match(p.nodes.get('error').textContent,/저장/);
+});
+test('existing other session is preserved until explicit join; invitation can be dismissed',async()=>{
+  const prior=JSON.stringify({id:'other-room',role:'driver',token:'original'});
+  const p=await page({fragment:hash,store:new Map([['pickupSession',prior]])});
+  assert.equal(p.store.get('pickupSession'),prior);assert.match(p.nodes.get('joinHint').textContent,/기존/);
+  p.nodes.get('cancelJoin').onclick();assert.equal(p.store.has('pickupInvitation'),false);assert.equal(p.store.get('pickupSession'),prior);
+});
+test('copy failure exposes selectable link and local-only notice; used invitation gets scrubbed',async()=>{
+  const p=await page({store:new Map([['pickupSession',JSON.stringify({id,role:'driver',token:'driver',invite})]])});
+  await p.nodes.get('copyInvite').onclick();assert.equal(p.nodes.get('inviteText').hidden,false);
+  assert.match(p.nodes.get('inviteStatus').textContent,/직접 복사/);assert.match(p.nodes.get('inviteHelp').textContent,/같은 컴퓨터/);
+  p.state.joined=true;p.state.version++;await vm.runInContext('refresh()',p.context);
+  assert.equal(p.nodes.get('inviteText').value,'');assert.equal(p.nodes.get('inviteLink').href,'');assert.equal(JSON.parse(p.store.get('pickupSession')).invite,undefined);
+});
+
+
+FILE domain.mjs
+import { randomBytes, randomUUID } from 'node:crypto';
+export const PLACES = ['가상 문화센터 정문', '가상 문화센터 동쪽 입구', '가상 공원 안내소'];
+export const VIEW_TTL = 8000;
+const token = () => randomBytes(24).toString('base64url');
+export class Fault extends Error {
+  constructor(status, message) { super(message); this.status = status; }
+}
+const requireThat = (ok, status, message) => { if (!ok) throw new Fault(status, message); };
+export class Board {
+  constructor(now = Date.now) { this.now = now; this.rooms = new Map(); }
+  prune() { for (const [id, room] of this.rooms) if (this.now() - room.createdAt > 86400000) this.rooms.delete(id); }
+  create(place) {
+    this.prune();
+    requireThat(PLACES.includes(place), 400, '목록에서 승차지점을 선택해 주세요.');
+    requireThat(this.rooms.size < 100, 429, '회차가 너무 많습니다. 로컬 서버를 재시작해 주세요.');
+    const room = { id: randomUUID(), createdAt: this.now(), version: 1, placeRevision: 1, status: 'active', place,
+      ready: false, joined: false, stage: 'waiting', outcome: null, proposal: null, lastEvent: '운전자가 약속을 만들었습니다.',
+      driver: token(), rider: null, invite: token(), views: new Map(), requests: new Set() };
+    this.rooms.set(room.id, room);
+    return { id: room.id, token: room.driver, invite: room.invite, role: 'driver' };
+  }
+  room(id) { this.prune(); const r = this.rooms.get(id); requireThat(r, 404, '회차가 없거나 만료되었습니다. 서버 재시작 시 회차가 사라집니다.'); return r; }
+  join(id, invite) {
+    const r = this.room(id);
+    requireThat(r.status === 'active' && !r.joined && typeof invite === 'string' && invite === r.invite, 403, '초대가 유효하지 않거나 이미 사용되었습니다.');
+    r.rider = token(); r.invite = null; r.joined = true; r.version++; r.lastEvent = '탑승자가 참여했습니다.';
+    return { id, token: r.rider, role: 'rider' };
+  }
+  auth(r, credential) {
+    requireThat(typeof credential === 'string' && credential.length > 0, 401, '참여 권한이 없습니다.');
+    const role = credential === r.driver ? 'driver' : credential === r.rider ? 'rider' : null;
+    requireThat(role, 403, '이 회차의 참여자가 아닙니다.'); return role;
+  }
+  read(id, credential) {
+    const r = this.room(id), role = this.auth(r, credential), view = token();
+    // A short bounded list tolerates polling and command requests crossing in flight.
+    const views = (r.views.get(credential) || []).filter(v => this.now() - v.at < VIEW_TTL).slice(-9);
+    views.push({ key: view, at: this.now() }); r.views.set(credential, views);
+    return { id, role, version: r.version, placeRevision: r.placeRevision, status: r.status, place: r.place, ready: r.ready,
+      joined: r.joined, stage: r.stage, outcome: r.outcome, proposal: r.proposal ? { ...r.proposal } : null, lastEvent: r.lastEvent, view, ttl: VIEW_TTL };
+  }
+  act(id, credential, command) {
+    const r = this.room(id), role = this.auth(r, credential);
+    requireThat(command && typeof command === 'object', 400, '요청 형식이 올바르지 않습니다.');
+    const { requestId, version, view, type } = command;
+    requireThat(typeof requestId === 'string' && /^[a-zA-Z0-9-]{8,80}$/.test(requestId), 400, '요청 식별자가 필요합니다.');
+    requireThat(!r.requests.has(requestId), 409, '이미 처리된 요청입니다. 최신 상태를 확인해 주세요.');
+    requireThat(r.status === 'active', 409, '종료된 회차는 바꿀 수 없습니다.');
+    requireThat(r.version === version, 409, '다른 변경이 있습니다. 최신 상태를 확인하고 다시 선택해 주세요.');
+    requireThat((r.views.get(credential) || []).some(v => v.key === view && this.now() - v.at < VIEW_TTL), 409, '조회한 상태가 오래되었습니다. 새로 확인해 주세요.');
+    requireThat(r.requests.size < 1000, 429, '회차의 변경 한도를 초과했습니다.');
+    if (['ready', 'propose', 'accept'].includes(type)) requireThat(r.stage !== 'boarded', 409, '탑승 확인 후에는 준비나 장소를 바꿀 수 없습니다. 잘못 눌렀다면 탑승 확인을 취소해 주세요.');
+    if (type === 'arrive') {
+      requireThat(role === 'driver', 403, '운전자만 도착을 알릴 수 있습니다.');
+      requireThat(r.joined && r.stage === 'waiting' && !r.proposal, 409, '상대 참여와 장소 합의를 확인해 주세요. 도착은 한 번만 알릴 수 있습니다.');
+      r.stage = 'arrived'; r.lastEvent = '운전자가 확정 승차지점에 도착했다고 알렸습니다.';
+    } else if (type === 'board') {
+      requireThat(role === 'rider', 403, '탑승자만 탑승을 확인할 수 있습니다.');
+      requireThat(r.stage === 'arrived' && !r.proposal, 409, '운전자 도착과 장소 합의를 먼저 확인해 주세요.');
+      r.stage = 'boarded'; r.lastEvent = '탑승자가 탑승했다고 확인했습니다. 약속 종료를 기다립니다.';
+    } else if (type === 'undoArrival') {
+      requireThat(role === 'driver', 403, '운전자만 도착 표시를 취소할 수 있습니다.');
+      requireThat(r.stage === 'arrived', 409, '탑승 확인 전 도착 표시만 취소할 수 있습니다.');
+      r.stage = 'waiting'; r.lastEvent = '운전자가 도착 표시를 취소했습니다.';
+    } else if (type === 'undoBoarding') {
+      requireThat(role === 'rider', 403, '탑승자만 탑승 확인을 취소할 수 있습니다.');
+      requireThat(r.stage === 'boarded', 409, '탑승 확인 상태가 아닙니다.');
+      r.stage = 'arrived'; r.lastEvent = '탑승자가 탑승 확인을 취소했습니다. 운전자 도착 표시는 유지됩니다.';
+    } else if (type === 'ready') {
+      requireThat(role === 'rider', 403, '탑승자만 준비 상태를 바꿀 수 있습니다.');
+      requireThat(typeof command.ready === 'boolean', 400, '준비 상태는 참 또는 거짓이어야 합니다.');
+      r.ready = command.ready; r.lastEvent = r.ready ? '탑승자가 준비되었습니다.' : '탑승자가 아직 준비 중입니다.';
+    } else if (type === 'propose') {
+      requireThat(r.joined && !r.proposal, 409, '상대 참여 또는 기존 제안 처리를 기다려 주세요.');
+      requireThat(PLACES.includes(command.place) && command.place !== r.place, 400, '현재 지점과 다른 지점을 선택해 주세요.');
+      r.proposal = { id: randomUUID(), by: role, place: command.place };
+      r.lastEvent = '장소 변경을 제안했습니다. 아직 확정되지 않았습니다.';
+    } else if (type === 'accept' || type === 'reject') {
+      requireThat(r.proposal && r.proposal.id === command.proposalId, 409, '현재 제안과 일치하지 않습니다.');
+      requireThat(r.proposal.by !== role, 403, '자신의 제안을 직접 수락하거나 거절할 수 없습니다.');
+      const resetArrival = type === 'accept' && r.stage === 'arrived';
+      if (type === 'accept') { r.place = r.proposal.place; r.placeRevision++; r.stage = 'waiting'; }
+      r.proposal = null; r.lastEvent = type === 'accept' ? '변경이 수락되어 승차지점을 변경했습니다.' : '변경이 거절되어 기존 승차지점을 유지합니다.';
+      if (resetArrival) r.lastEvent += ' 이전 도착 표시는 취소되었습니다. 새 장소에서 다시 알려주세요.';
+    } else if (type === 'withdraw') {
+      requireThat(r.proposal && r.proposal.id === command.proposalId, 409, '현재 제안과 일치하지 않습니다.');
+      requireThat(r.proposal.by === role, 403, '제안한 사람만 철회할 수 있습니다.');
+      r.proposal = null; r.lastEvent = '제안을 철회해 기존 승차지점을 유지합니다.';
+    } else if (type === 'end') {
+      r.outcome = r.stage === 'boarded' ? 'completed' : 'cancelled';
+      r.status = 'ended'; r.proposal = null; r.invite = null;
+      r.lastEvent = `${role === 'driver' ? '운전자' : '탑승자'}가 ` + (r.outcome === 'completed' ? '탑승 확인 후 이번 픽업을 완료했습니다.' : '탑승 완료 없이 이번 약속을 취소했습니다.');
+    } else throw new Fault(400, '알 수 없는 요청입니다.');
+    r.requests.add(requestId); r.version++;
+    return this.read(id, credential);
+  }
+}
+
+
+FILE phone-domain.mjs
+import { Board, Fault, VIEW_TTL } from './domain.mjs';
+export const LOCATION_TTL = 30000, GRANT_TTL = 20000;
+const check = (ok, status, message) => { if (!ok) throw new Fault(status, message); };
+const uuid = x => typeof x === 'string' && /^[a-f0-9]{8}-[a-f0-9]{4}-4[a-f0-9]{3}-[89ab][a-f0-9]{3}-[a-f0-9]{12}$/i.test(x);
+// Coordinates are deliberately kept outside Board rooms, events and action history.
+export class PhoneBoard extends Board {
+  constructor(now = Date.now, mono = () => performance.now()) { super(now); this.mono = mono; this.locations = new Map(); this.lastMono = mono(); }
+  sweep() {
+    const at = this.mono();
+    if (!Number.isFinite(at) || at < this.lastMono) {
+      for (const entry of this.locations.values()) { entry.grant = null; entry.sample = null; }
+    }
+    this.lastMono = at;
+    for (const [id, entry] of this.locations) {
+      const room = this.rooms.get(id);
+      if (!room) { this.locations.delete(id); continue; }
+      if (room.status !== 'active' || room.stage === 'boarded') { entry.grant = null; entry.sample = null; }
+      if (entry.grant && at >= entry.grant.until) entry.grant = null;
+      if (entry.sample && at >= entry.sample.until) entry.sample = null;
+    }
+  }
+  act(...args) {
+    const result = super.act(...args);
+    if (args[2]?.type === 'accept') {
+      const entry = this.locations.get(args[0]);
+      if (entry) { entry.grant = null; entry.sample = null; }
+    }
+    this.sweep(); return result;
+  }
+  phone(id, credential, input = null) {
+    const room = this.room(id), role = this.auth(room, credential);
+    this.sweep();
+    let entry = this.locations.get(id);
+    if (!input) {
+      const sample = entry?.sample;
+      return { source: 'rider-phone', sample: sample ? { ...sample.fix, source: 'rider-phone', receivedAt: sample.receivedAt, ageMs: sample.ageAtReceipt + this.mono() - sample.receivedMono,
+        remainingMs: Math.max(0, sample.until - this.mono()) } : null };
+    }
+    check(role === 'rider', 403, '탑승자만 위치를 공유하거나 삭제할 수 있습니다.');
+    check(typeof input === 'object' && uuid(input.consentId), 400, '공유 요청 형식이 올바르지 않습니다.');
+    check(['grant','publish','revoke'].includes(input.type), 400, '알 수 없는 위치 요청입니다.');
+    if (!entry) { entry = { ids: new Set(), grant: null, sample: null }; this.locations.set(id, entry); }
+    const { consentId, type } = input;
+    // Retain used IDs for the entire room lifetime: late grant/publish cannot resurrect consent.
+    if (type === 'revoke') {
+      // Bounded tombstones; when full, all future grants fail closed.
+      if (entry.ids.size < 100) entry.ids.add(consentId);
+      if (entry.grant?.id === consentId) entry.grant = null;
+      if (entry.sample?.id === consentId) entry.sample = null;
+      return { deleted: true };
+    }
+    check(room.status === 'active' && room.stage !== 'boarded', 409, '종료되었거나 탑승한 회차입니다.');
+    const at = this.mono();
+    check(Number.isFinite(at), 409, '시각을 확인할 수 없습니다.');
+    if (type === 'grant') {
+      check(entry.ids.size < 100, 429, '이 회차의 위치 공유 횟수를 초과했습니다.');
+      check(!entry.ids.has(consentId), 409, '새 동의 요청이 필요합니다.');
+      check(input.consent === 'pickup-location-once-v1', 400, '위치 공유 안내에 동의해 주세요.');
+      check(room.version === input.version && (room.views.get(credential) || []).some(v => v.key === input.view && this.now()-v.at >= 0 && this.now()-v.at < VIEW_TTL), 409, '회차를 다시 확인하고 동의해 주세요.');
+      entry.ids.add(consentId); entry.sample = null;
+      entry.grant = { id: consentId, until: at + GRANT_TTL, wall: this.now() };
+      return { granted: true, expiresInMs: GRANT_TTL };
+    }
+    const grant = entry.grant;
+    check(grant && grant.id === consentId && at < grant.until, 409, '공유 동의가 만료되거나 철회되었습니다.');
+    const f = input.fix;
+    check(f && ['latitude','longitude','accuracy','observedAt','ageMs'].every(k => typeof f[k] === 'number' && Number.isFinite(f[k])), 400, '위치 값을 확인할 수 없습니다.');
+    check(Math.abs(f.latitude) <= 90 && Math.abs(f.longitude) <= 180 && f.accuracy > 0 && f.accuracy <= 100, 400, '위치 정확도가 부족합니다. 수동 상태 알림을 이용해 주세요.');
+    // Device observation epoch is metadata; compare age only within the same device clock.
+    // The authenticated client reports age; this is not proof of physical location.
+    check(f.ageMs >= 0 && f.ageMs < 15000, 409, '위치 시각을 확인할 수 없습니다. 다시 동의해 주세요.');
+    entry.grant = null;
+    entry.sample = { id: consentId, until: at + LOCATION_TTL, receivedAt: this.now(), receivedMono: at, ageAtReceipt: f.ageMs,
+      fix: { latitude:f.latitude, longitude:f.longitude, accuracy:f.accuracy, observedAt:f.observedAt } };
+    return { shared: true, expiresInMs: LOCATION_TTL };
+  }
+}
+
+
+FILE phone-controller.mjs
+// Injected browser/service ports permit synthetic tests without collecting real location.
+export class PhoneShare {
+  constructor({ geo, send, allowed, notify, wall = Date.now, mono = () => performance.now(), schedule = setTimeout, cancel = clearTimeout, id = () => crypto.randomUUID() }) {
+    Object.assign(this,{geo,send,allowed,notify,wall,mono,schedule,cancel,id}); this.generation=0; this.current=null; this.watch=null; this.timer=null; this.phase='idle';
+  }
+  clear() { if(this.watch !== null) this.geo.clearWatch(this.watch); this.watch=null; if(this.timer !== null) this.cancel(this.timer); this.timer=null; }
+  async stop(message='이 기기에서 공유를 중지했습니다.') {
+    const old=this.current; ++this.generation; this.clear(); this.current=null; this.phase='idle';
+    this.notify(old ? `${message} 서버 삭제 확인 중입니다.` : message);
+    if (!old) return;
+    try { await this.send({type:'revoke',consentId:old},true); if(!this.current) this.notify(`${message} 서버 삭제를 확인했습니다.`); }
+    catch { if(!this.current) this.notify(`${message} 서버 삭제 미확인 · 마지막 전송 후 최대 30초에 만료됩니다.`); }
+  }
+  async start(snapshot) {
+    if(this.current || !this.allowed() || !this.geo) return;
+    const generation=++this.generation, consentId=this.id(), started=this.wall(), deadline=this.mono()+15000;
+    this.current=consentId; this.phase='grant'; this.notify('동의 확인 중입니다. 아직 위치를 수집하지 않습니다.');
+    const live=()=>this.generation===generation && this.current===consentId && this.allowed() && this.mono()<deadline;
+    this.timer=this.schedule(()=>{ if(this.generation===generation) void this.stop('위치 확인 시간이 초과되었습니다.'); },15000);
+    try {
+      await this.send({type:'grant',consentId,consent:'pickup-location-once-v1',version:snapshot.version,view:snapshot.view});
+      if(!live()) { if(this.generation===generation) await this.stop(); return; }
+      this.phase='collecting'; this.notify('브라우저 위치 권한을 허용하면 한 번만 공유합니다.');
+      this.watch=this.geo.watchPosition(async position=>{
+        if(!live() || this.phase!=='collecting') return;
+        const {latitude,longitude,accuracy}=position.coords, observedAt=position.timestamp;
+        if(![latitude,longitude,accuracy,observedAt].every(Number.isFinite) || accuracy<=0 || accuracy>100 || Math.abs(latitude)>90 || Math.abs(longitude)>180 || observedAt<started || this.wall()-observedAt>=15000 || observedAt>this.wall()) {
+          await this.stop('정확하거나 새로운 위치를 얻지 못했습니다. 수동 상태 알림을 이용해 주세요.'); return;
+        }
+        this.clear(); this.phase='sending';
+        try {
+          await this.send({type:'publish',consentId,fix:{latitude,longitude,accuracy,observedAt,ageMs:this.wall()-observedAt}});
+          if(!live()) { if(this.generation===generation) await this.stop(); return; }
+          this.phase='shared'; this.notify('이번 회차 운전자에게 1회 공유했습니다. 30초에 조회가 만료되고 다음 정리 주기에 삭제됩니다.');
+          this.timer=this.schedule(()=>{ if(this.generation===generation) void this.stop('공유 시간이 끝났습니다.'); },30000);
+        } catch (error) { if(this.generation===generation) await this.stop(error.status>=400 && error.status<500?'서버가 위치를 받지 않았습니다. 다시 확인하고 동의해 주세요.':'전송 결과를 확인하지 못했습니다.'); }
+      }, async error=>{ if(this.generation===generation) await this.stop(error.code===1?'위치 권한이 거부되었습니다.':error.code===3?'위치 확인 시간이 초과되었습니다.':'위치를 확인할 수 없습니다.'); },{maximumAge:0,timeout:10000,enableHighAccuracy:true});
+    } catch (error) { if(this.generation===generation) await this.stop(error.status===429?'이 회차의 위치 공유 요청 한도를 초과했습니다. 수동 상태 알림을 이용해 주세요.':error.status===409?'회차 상태가 바뀌었습니다. 새로 확인한 뒤 다시 동의해 주세요.':'동의를 확인하지 못했습니다. 새로 확인한 뒤 다시 선택해 주세요.'); }
+  }
+}
+
+
+FILE phone-page.mjs
+import { PhoneShare } from './phone-controller.mjs';
+const $=id=>document.getElementById(id);
+let session=null, state=null, freshUntil=0, sampleUntil=0, sampleSeenAt=0, sample=null, polling=false, suppressSample=false;
+try { session=JSON.parse(sessionStorage.getItem('pickupSession')); } catch {}
+const environment=()=>navigator.onLine && !document.hidden && globalThis.isSecureContext;
+const allowed=()=>environment() && session?.role==='rider' && state?.status==='active' && state.stage!=='boarded' && performance.now()<freshUntil;
+async function request(path,body,keepalive=false) {
+ const response=await fetch(`/api/rooms/${session.id}${path}`,{method:body?'POST':'GET',cache:'no-store',keepalive,signal:AbortSignal.timeout(body?4000:2000),headers:{Authorization:`Bearer ${session.token}`,...(body?{'Content-Type':'application/json'}:{})},...(body?{body:JSON.stringify(body)}:{})});
+ const data=await response.json(); if(!response.ok) {const error=new Error('서비스 확인 실패');error.status=response.status;throw error;} return data;
+}
+const share=new PhoneShare({geo:navigator.geolocation,send:(body,keep)=>request('/phone',body,keep),allowed,notify:text=>{if(!share.current){suppressSample=true;sample=null;}$('message').textContent=text; render();}});
+function render() {
+ $('consent').hidden=session?.role!=='rider';
+ $('share').disabled=!allowed() || !!share.current;
+ $('context').textContent=!session?'먼저 약속판에서 회차에 참여해 주세요.':performance.now()>=freshUntil?'현재 회차 미확인 · 위치 수집 중지':state?.status!=='active'?'회차가 종료되었습니다.':state.stage==='boarded'?'탑승이 확인되어 위치 공유를 종료합니다.':`${session.role==='rider'?'탑승자':'운전자'} · ${state.place}`;
+ if(suppressSample || !environment() || performance.now()>=sampleUntil || state?.status!=='active' || state?.stage==='boarded') sample=null;
+ $('sample').textContent=sample?`휴대폰 위치 1개 수신 · 정확도 약 ${Math.ceil(sample.accuracy)}m · 관측 ${Math.max(0,Math.floor((sample.ageMs+Math.max(0,performance.now()-sampleSeenAt))/1000))}초 전 · 자동 만료까지 ${Math.ceil((sampleUntil-performance.now())/1000)}초`:'공유된 최신 위치 없음';
+ if(share.current && !allowed()) void share.stop('회차 또는 연결을 확인할 수 없어 중지했습니다.');
+}
+async function refresh() {
+ if(!session || polling || document.hidden) return;
+ polling=true; const began=performance.now(), generation=share.generation;
+ try { const next=await request('');
+   if(generation!==share.generation || !environment()) return;
+   const placeChanged = state && state.placeRevision !== next.placeRevision;
+   state=next; freshUntil=began+6000;
+   if(placeChanged){sample=null;if(share.current) void share.stop('승차지점이 바뀌어 위치 공유를 중지했습니다. 다시 공유하려면 새로 동의해 주세요.');}
+   render();
+   if(generation!==share.generation) return;
+   const location=await request('/phone'); if(generation===share.generation && environment()){sample=location.sample; sampleSeenAt=began; sampleUntil=began+(sample?.remainingMs||0);}
+ } catch { freshUntil=0; sample=null; } finally {polling=false; render();}
+}
+$('share').onclick=()=>{if(allowed()){suppressSample=false;void share.start(state);}};
+$('stop').onclick=()=>{sample=null; void share.stop();};
+$('decline').onclick=()=>{sample=null; void share.stop('동의하지 않았습니다. 수동 상태 알림을 계속 이용할 수 있습니다.');};
+addEventListener('offline',()=>{freshUntil=0;sample=null;void share.stop('오프라인으로 수집을 중지했습니다.');render();});
+addEventListener('pagehide',()=>{void share.stop('페이지를 떠나 공유를 중지했습니다.');});
+document.addEventListener('visibilitychange',()=>{freshUntil=0;sample=null;if(document.hidden) void share.stop('페이지가 보이지 않아 공유를 중지했습니다.'); else void refresh();});
+addEventListener('online',()=>{void refresh();});
+// Permission changes are optional browser support; an error callback still stops the watch.
+navigator.permissions?.query({name:'geolocation'}).then(permission=>{permission.onchange=()=>{if(permission.state==='denied'){sample=null;void share.stop('위치 권한이 철회되었습니다.');}};}).catch(()=>{});
+if(!globalThis.isSecureContext || !navigator.geolocation) $('message').textContent='이 환경은 위치 수집을 지원하지 않습니다. 휴대폰 연결에는 HTTPS 검증이 필요합니다.';
+setInterval(refresh,2000);setInterval(render,250);render();void refresh();
+
+
+FILE phone.html
+<!doctype html><html lang="ko"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>픽업 · 휴대폰 위치</title><link rel="stylesheet" href="/phone.css"><main><p>픽업 약속판 · 선택 기능</p><h1>이번 픽업에 위치 공유</h1><p id="context">회차 확인 중</p><section id="consent" hidden><h2>한 번만 공유할까요?</h2><p>만날 때 서로 찾기 위해 현재 휴대폰 위치와 정확도, 관측 시각을 픽업 서비스와 <strong>이번 회차 운전자</strong>에게 보냅니다.</p><p>마지막 위치 1개만 서버 메모리에 둡니다. 전송 후 30초에 조회가 차단되며 다음 정리 주기(통상 1초 이내)에 메모리에서 제거됩니다. 이력·위치 로그는 저장하지 않습니다. 서버가 공유 중지·탑승·회차 종료를 처리하면 즉시 삭제합니다. 연결이 끊기면 삭제 요청의 도착은 보장되지 않으며 30초 조회 만료가 적용됩니다.</p><p>동의하지 않아도 기존 준비·탑승 알림을 쓸 수 있습니다. 페이지를 벗어나거나 오프라인이면 수집을 멈춥니다. 다시 공유하려면 다시 동의해야 합니다. 회차당 공유 요청은 최대 100회입니다.</p><button id="share" disabled>동의하고 현재 위치 한 번 공유</button><button id="stop">공유 중지 · 위치 삭제</button><button id="decline">동의하지 않음</button></section><section><h2>공유 상태</h2><p id="message" role="status">위치를 수집하지 않고 있습니다.</p><p id="sample">공유된 위치 없음</p></section><p>위치는 도착·탑승의 자동 확인에 사용하지 않습니다.</p><a href="/">약속판으로 돌아가기</a></main><script type="module" src="/phone-page.mjs"></script></html>

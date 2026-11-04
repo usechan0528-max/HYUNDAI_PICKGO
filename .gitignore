@@ -3,8 +3,6 @@ work/*
 !work/idea-tournament/
 !work/gleo-gap-research/
 output/*
-!output/J1_Android_Listening_0.1.0_debug.apk
-!output/J1_Android_Journey_0.2.0_debug.apk
 .taste-skill/
 **/.gradle/
 **/build/

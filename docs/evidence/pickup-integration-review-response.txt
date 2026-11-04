@@ -1,0 +1,53 @@
+## Integration review: local pickup board with synthetic proximity and one-shot rider location
+
+**Verdict:** I found no P0 defects and no confirmed P1 implementation defects from reading the source. One item is P1 only under a strict reading of the acceptance criteria. The rest are P2 hardening items and test gaps. This review is from source reading only. I did not run tests or browser QA.
+
+I did not write the plan file. This was a read-only review, so I've delivered it inline. Tell me if you want it saved.
+
+### Checked and holding (by reading)
+
+- **Cross-room and role auth:** `PhoneBoard.phone` authenticates against the URL's room via `this.auth(room, credential)`. Locations are keyed by room id.
+- **Consent before collection:** `PhoneShare.start` sends `grant` before `geo.watchPosition`. The server stores `entry.sample` only on `publish`.
+- **Revoke/grant/publish races:** Revoke adds the id to a tombstone set before any grant. A grant that arrives after a revoke fails with 409. A publish after a revoke fails because `entry.grant` is null. `stop()` sends revoke for the pre-grant `current` id, so an in-flight grant is also covered.
+- **One-shot:** `publish` nulls `entry.grant`, and a new consent id is required for each share.
+- **TTL split:** `LOCATION_TTL` is 30 s. `phone()` calls `sweep()` before answering, so a stale sample reads as null regardless of the 1 s interval.
+- **Late callbacks:** `PhoneShare.live()` checks generation, current id, `allowed()`, and deadline. The proximity `emit` checks `generation !== captured`. `cancel()` clears the demo timer.
+- **Revision:** `placeRevision` starts at 1 and increments only on accepted changes. It does not change on ready, propose, reject, or withdraw. A-B-A is covered by the monotonic revision and by `bind`, which rejects a lower revision.
+- **No arrival or boarding mutation from location:** `phone-*` and `proximity/*` never call `act`. The integration test shows the synthetic path cannot set `near` from a `rider-phone` sample.
+- **Route exposure:** `domain.mjs`, `phone-domain.mjs`, and `server.mjs` are not in the static map, so they return 404. Host and Origin guards are unchanged.
+
+### P1
+
+**P1-1: Accepted revision invalidates hints only on the next poll (strict reading)**
+- **Symbol:** `proximity-page.mjs` `fresh`, `refresh`, `usable`.
+- **Evidence:** `fresh = () => … performance.now() - received < 4000`. The revision check `context.revision !== next.placeRevision` runs only inside `refresh()`, which polls every 2000 ms. Between an accept on the server and the next successful poll, `usable()` can still be true and `detector.read()` can still be `near` for the old revision.
+- **Impact:** For up to about 2–4 s after an accept, a "near" hint can refer to the previous destination. The window is bounded, not permanent. This matters only if "invalidates old hints" is read as immediate.
+- **Minimum fix:** Either document the bounded window as accepted, or lower the freshness window to roughly one poll interval (about 2.5 s) so `usable()` drops faster. Server push is not available here.
+- **Uncertainty:** Depends on whether the acceptance criterion requires immediacy. Synthetic scope limits real-world impact.
+
+### P2
+
+- **P2-1 Rider can read its own sample.** `phone-domain.mjs` `phone()` GET branch has no role check. Impact is minimal (the rider already holds the data). Fix: restrict to driver, or document it.
+- **P2-2 Sample survives accepted place change.** `Board.act` `accept` increments `placeRevision`, but `entry.sample` is not cleared. The rider's sample persists up to 30 s with the old place context. Fix: record revision on the entry and sweep on mismatch.
+- **P2-3 Visibility toggle skips the next refresh.** `proximity-page.mjs` `refresh` returns early while `polling` is true. A toggle during an in-flight request therefore delays the next refresh by up to 3 s. Fix: abort the old request with an `AbortController` on lifecycle change.
+- **P2-4 Synchronous watch callback leaves watch uncleared.** `phone-controller.mjs` `start`: if `watchPosition` calls back before `this.watch` is assigned, `clear()` sees `null` and skips `clearWatch`. Browsers are async, so this is unlikely. Fix: capture the returned id in a local, or always call `clearWatch` on stop.
+- **P2-5 Demo/vehicle separation is a string tag.** `ProximityDetector.ingest` accepts any object with `source: 'synthetic'`. Separation is by convention, not by capability. Fix: a private brand from a factory owned by the demo page.
+- **P2-6 Uncaught throw in demo.** `proximity-page.mjs` `simulate` calls `detector.bind` outside any try. A clock failure throws from the click handler. Fix: wrap in try and call `cancel()`.
+- **P2-7 Location entries outlive ended rooms.** `PhoneBoard.sweep` deletes an entry only when its room is missing. Coordinates are cleared, but tombstone sets remain up to 24 h. Fix: delete the entry when the room ends.
+- **P2-8 Rider can exhaust its own grant budget.** Revoke tombstones count toward the 100-per-room cap. Only the rider is affected. Accept, or document.
+
+### Test gaps
+
+- No HTTP-level test of the 429 and 409 phone paths, or of revoke-before-grant tombstones.
+- No test that a driver's sample is cleared when place is accepted (see P2-2).
+- No test that `unavailable()` followed by re-bind to the same revision does not re-notify. The current behavior looks intentional, but nothing pins it.
+- No test that `bind` throws after `end()`.
+
+### Disclosed limits (not defects)
+
+Rider-reported `ageMs` and accuracy are not attestation. There is no HTTPS physical-phone transport, no vehicle SDK, no driving UX, and no real Gleo connection. Provider geocoding is not present.
+
+### Uncertainty
+
+- I did not see the 19 phone-controller tests, the 39 detector tests, or the Gleo readiness module. Test-coverage conclusions are limited to the tests shown in the prompt.
+- No runtime or browser behavior was observed. All conclusions come from reading the source.

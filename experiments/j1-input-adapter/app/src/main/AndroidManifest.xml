@@ -1,6 +1,0 @@
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
-<uses-permission android:name="pleos.car.permission.FUSED_LOCATION" />
-<uses-feature android:name="android.hardware.type.automotive" android:required="true" />
-<application android:label="J1 Input Probe" android:allowBackup="false" android:theme="@android:style/Theme.Material.Light.NoActionBar">
-
-</application></manifest>

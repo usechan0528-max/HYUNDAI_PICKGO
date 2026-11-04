@@ -1,0 +1,16 @@
+{
+  "experiments\\pickup-board\\domain.mjs": "f02eeb76f0eb26a84ea2e55902d31d986f9363febcb27a8f9bf48faa560fad04",
+  "experiments\\pickup-board\\server.mjs": "c6563dc87ecf440134740428701992f7b6a701e1ba31bd4ea13cca7c33ad342d",
+  "experiments\\pickup-board\\phone-domain.mjs": "c82cfeb0eb6189b740df89229c1f26961a3839d75a05f51449222a6815fc71ee",
+  "experiments\\pickup-board\\phone-controller.mjs": "69ce81af272f1e3aee544e1aa1915ffb261387ba8d0fc09bc9706ccdbbc35a3f",
+  "experiments\\pickup-board\\phone-page.mjs": "6054b4e78075d8ad21734a88ded47c8d82fce28fe49df393e9af94f6a7c1cc34",
+  "experiments\\pickup-board\\phone.html": "16d61c2b0e3fefd3870872b893e9d68ea5a51df50f713b3e5e5b2cf744552a23",
+  "experiments\\pickup-board\\phone.css": "2ed7fb743843402154b7b5c237b7aa94e72b63844930db70f8273befe2eb713f",
+  "experiments\\pickup-board\\proximity\\detector.mjs": "afbb7c7137b5deb40587b8c478eb9dc94eb8f01ba706dd083987f7ca5d7cf812",
+  "experiments\\pickup-board\\proximity-page.mjs": "40dbebb3859c9a31f765f23e04b4af31fec5695b82df445828cdb2fe4cb84a69",
+  "experiments\\pickup-board\\proximity-page.html": "35468108e911505c76bda08fbe7d071937c3de48740d3b18b65b3bd3a5790a47",
+  "experiments\\pickup-board\\proximity-page.css": "ca59ef550bcbe2c26d73c8b3d106f44284b0ab63ab1084506fe87b0543a9f9d4",
+  "experiments\\pickup-board\\location-links.css": "798619ff32320717be8994e802f3f4591e889f3ea7e65bd5cb7b52d4de4085d0",
+  "experiments\\pickup-board\\location-integration.test.mjs": "05922f633d6d54946262a643c7ee39c8f01ceda86459135c6fc239282daa4321",
+  "experiments\\pickup-board\\proximity-page.test.mjs": "b03e34fb9d90ad19bc3144fdd3f14bd6e387b0a28ff3a5e425229dfc9e49fc36"
+}

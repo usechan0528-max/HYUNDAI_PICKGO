@@ -1,0 +1,201 @@
+Read-only Haiku5.5 followup, no tools/edits. Previous review session bd7df644-00fa-43e2-8030-b912587bde07 found noP0/P1. Verify only fixes in fixed diff below. Actual26 Node tests pass; Chrome two-role arrival/place reset/board/undo/version-confirmation invalidation/completion passed. UI final responsive/offline checks ongoing.
+P2-1: persistent actionError preserved by all successful polls, clears on explicit refresh or next action. P2-2: final CSS stale override restores event/proposal paragraph even short windows, board scroll prevents overlap. P2-3: both roles end is explicitly preserved existing requirement; end now names actor. Other place proposal events retained prior semantics (no new audit requirement), explicit-owner claim confined to stage/undo/end. P3 readiness true preservation test added; stray regex removed; ready boolean400; headline follows stage and readyText no misleading prep afterboard. UI undoArrival while proposal pending remains intentionally hidden; resolve proposal then undo, cancel always available. Review assertions about undoBoarding blocked when boarded and dedup check order were inaccurate: undoBoarding requires boarded, duplicate check is before status. No new requirement for idempotent replay/history. Return concrete regressions in this patch or no findings.
+--- domain.mjs before
++++ domain.mjs after
+@@ -65,11 +65,12 @@
+     } else if (type === 'undoBoarding') {
+       requireThat(role === 'rider', 403, '탑승자만 탑승 확인을 취소할 수 있습니다.');
+       requireThat(r.stage === 'boarded', 409, '탑승 확인 상태가 아닙니다.');
+       r.stage = 'arrived'; r.lastEvent = '탑승자가 탑승 확인을 취소했습니다. 운전자 도착 표시는 유지됩니다.';
+     } else if (type === 'ready') {
+-      requireThat(role === 'rider' && typeof command.ready === 'boolean', 403, '탑승자만 준비 상태를 바꿀 수 있습니다.');
++      requireThat(role === 'rider', 403, '탑승자만 준비 상태를 바꿀 수 있습니다.');
++      requireThat(typeof command.ready === 'boolean', 400, '준비 상태는 참 또는 거짓이어야 합니다.');
+       r.ready = command.ready; r.lastEvent = r.ready ? '탑승자가 준비되었습니다.' : '탑승자가 아직 준비 중입니다.';
+     } else if (type === 'propose') {
+       requireThat(r.joined && !r.proposal, 409, '상대 참여 또는 기존 제안 처리를 기다려 주세요.');
+       requireThat(PLACES.includes(command.place) && command.place !== r.place, 400, '현재 지점과 다른 지점을 선택해 주세요.');
+       r.proposal = { id: randomUUID(), by: role, place: command.place };
+@@ -86,12 +87,11 @@
+       requireThat(r.proposal.by === role, 403, '제안한 사람만 철회할 수 있습니다.');
+       r.proposal = null; r.lastEvent = '제안을 철회해 기존 승차지점을 유지합니다.';
+     } else if (type === 'end') {
+       r.outcome = r.stage === 'boarded' ? 'completed' : 'cancelled';
+       r.status = 'ended'; r.proposal = null; r.invite = null;
+-      r.lastEvent = r.outcome === 'completed' ? '탑승 확인 후 이번 픽업을 완료했습니다.' : '탑승 완료 없이 이번 약속을 취소했습니다.';
++      r.lastEvent = `${role === 'driver' ? '운전자' : '탑승자'}가 ` + (r.outcome === 'completed' ? '탑승 확인 후 이번 픽업을 완료했습니다.' : '탑승 완료 없이 이번 약속을 취소했습니다.');
+     } else throw new Fault(400, '알 수 없는 요청입니다.');
+     r.requests.add(requestId); r.version++;
+     return this.read(id, credential);
+   }
+ }
+-
+--- server.mjs before
++++ server.mjs after
+@@ -37,6 +37,5 @@
+ }
+ if (process.argv[1] === fileURLToPath(import.meta.url)) {
+   const port = Number(process.env.PICKUP_PORT || 4180);
+   createServer().listen(port, '127.0.0.1', () => console.log(`픽업 약속판 http://127.0.0.1:${port} · 로컬 시연 / 메모리 저장`));
+ }
+-
+--- app.mjs before
++++ app.mjs after
+@@ -1,9 +1,9 @@
+ const $ = id => document.getElementById(id);
+ let session = null, state = null, received = 0, online = false, busy = false, polling = false, unavailable = false;
+ const requestTimes = new WeakMap();
+-let editing = false, ending = null;
++let editing = false, ending = null, actionError = '';
+ const invitation = new URLSearchParams(location.hash.slice(1));
+ const incoming = invitation.has('invite') ? { id: invitation.get('room'), invite: invitation.get('invite') } : null;
+ if (incoming) { history.replaceState(null, '', '/'); $('create').hidden = true; $('joinBox').hidden = false; }
+ else { try { session = JSON.parse(sessionStorage.getItem('pickupSession')); } catch {} }
+ const save = value => { session = value; sessionStorage.setItem('pickupSession', JSON.stringify(value)); };
+@@ -29,14 +29,14 @@
+   $('endConfirm').hidden = !ending;
+   $('role').textContent = session.role === 'driver' ? '운전자 화면' : '탑승자 화면';
+   $('connection').textContent = valid ? '방금 서버에서 확인' : '연결 확인 필요 · 이전 기록';
+   $('connection').classList.toggle('stale', !valid); $('facts').classList.toggle('stale', !valid);
+   $('pickupText').textContent = !valid ? '현재 미확인' : !active ? (state.outcome === 'completed' ? '픽업 완료' : '약속 취소 · 탑승 미완료') : boarded ? '탑승 확인됨' : arrived ? '운전자 도착 알림' : '도착 알림 전';
+-  $('headline').textContent = !valid ? '현재 약속을 다시 확인해 주세요.' : !active ? '이번 약속을 마쳤어요.' : !state.joined ? '함께할 사람을 기다려요.' : state.ready ? '준비됐어요. 약속을 확인해요.' : '아직 준비 중이에요.';
++  $('headline').textContent = $('pickupText').textContent;
+   $('placeLabel').textContent = valid ? '확정 승차지점' : '이전 승차지점 · 현재 미확인';
+   $('place').textContent = state?.place || '확인 전';
+-  $('readyText').textContent = !valid ? '현재 미확인' : !active ? '약속 종료' : !state.joined ? '참여 대기' : state.ready ? '준비 완료' : '아직 준비 중';
++  $('readyText').textContent = !valid ? '현재 미확인' : !active ? '약속 종료' : boarded ? '탑승자가 직접 확인 · 종료 대기' : !state.joined ? '참여 대기' : state.ready ? '준비 완료' : '아직 준비 중';
+   $('inviteBox').hidden = !valid || !active || state?.joined || !session.invite;
+   if (session.invite) { const url = `${location.origin}/#room=${session.id}&invite=${session.invite}`; $('inviteLink').href = url; $('inviteText').value = url; }
+   $('readyButtons').hidden = session.role !== 'rider' || !active || boarded;
+   document.querySelectorAll('[data-ready]').forEach(b => { b.disabled = !can || boarded; b.setAttribute('aria-pressed', String(state?.ready === (b.dataset.ready === 'true'))); });
+   $('proposal').hidden = !state?.proposal || unavailable;
+@@ -68,19 +68,19 @@
+   if ($('lastEvent').textContent !== eventText) $('lastEvent').textContent = eventText;
+ }
+ async function refresh() {
+   if (!session || polling || busy) return;
+   polling = true;
+-  try { const data = await api(`/api/rooms/${session.id}`); $('error').textContent = ''; adopt(data); }
++  try { const data = await api(`/api/rooms/${session.id}`); $('error').textContent = actionError; adopt(data); }
+   catch (e) { online = false; unavailable = [401,403,404].includes(e.status); $('error').textContent = `${e.message} 최신 상태를 확인할 수 없습니다.`; render(); }
+   finally { polling = false; }
+ }
+ async function act(type, extra = {}) {
+   if (!fresh() || busy || !state) return;
+-  busy = true; $('error').textContent = ''; render();
++  busy = true; actionError = ''; $('error').textContent = ''; render();
+   try { adopt(await api(`/api/rooms/${session.id}/actions`, { type, ...extra, version: state.version, view: state.view, requestId: crypto.randomUUID() })); }
+-  catch (e) { online = false; $('error').textContent = `${e.message} 다시 확인 후 선택해 주세요.`; }
++  catch (e) { online = false; actionError = `${e.message} 최신 상태를 확인하고 다시 선택해 주세요.`; $('error').textContent = actionError; }
+   finally { busy = false; render(); await refresh(); }
+ }
+ $('create').onsubmit = async e => { e.preventDefault(); const button = e.submitter; button.disabled = true;
+   try { save(await api('/api/rooms', { place: $('initialPlace').value }, false)); await refresh(); }
+   catch (e) { $('error').textContent = e.message; } finally { button.disabled = false; } };
+@@ -100,14 +100,13 @@
+ $('reject').onclick = () => act('reject', { proposalId: state.proposal.id });
+ $('withdraw').onclick = () => act('withdraw', { proposalId: state.proposal.id });
+ $('end').onclick = () => { if (fresh() && !busy) { ending = state.version; render(); } };
+ $('cancelEnd').onclick = () => { ending = null; render(); };
+ $('confirmEnd').onclick = () => { if (ending === state?.version) return act('end'); };
+-$('refresh').onclick = () => { $('error').textContent = ''; refresh(); };
++$('refresh').onclick = () => { actionError = ''; $('error').textContent = ''; refresh(); };
+ $('new').onclick = () => { sessionStorage.removeItem('pickupSession'); location.assign('/'); };
+ addEventListener('offline', () => { online = false; render(); });
+ addEventListener('online', refresh);
+ document.addEventListener('visibilitychange', () => { online = false; render(); if (!document.hidden) refresh(); });
+ setInterval(() => { if (!document.hidden) refresh(); }, 2000);
+ setInterval(render, 500);
+ render(); refresh();
+-
+--- index.html before
++++ index.html after
+@@ -11,6 +11,5 @@
+ <div id="normalActions" class="panel normal-actions"><h2>다음 확인</h2><p id="progressHelp"></p><div class="progress-actions"><button id="arrive" class="primary">도착했어요</button><button id="boarded" class="primary">탑승했어요</button><button id="undoArrival" class="secondary">도착 표시 취소</button><button id="undoBoarding" class="secondary">탑승 확인 취소</button><button id="openPlace" class="secondary">다른 장소 제안</button></div></div></div></div>
+ <p id="lastEvent" class="event" aria-live="polite"></p><div class="bottom"><button id="end" class="secondary">약속 종료</button><button id="new" class="primary" hidden>새 약속 시작</button><button id="refresh" class="secondary">다시 확인</button></div></section>
+ <section id="editPlace" class="edit-place" hidden><div><p class="section-label">승차지점 변경 제안</p><h2>어디로 바꿀까요?</h2><p id="editingCurrent"></p><p>장소를 누르면 제안을 보냅니다.<br>상대가 수락하기 전까지 기존 장소를 유지해요.</p></div><form id="propose"><select id="nextPlace" hidden aria-label="변경할 승차지점"><option>가상 문화센터 정문</option><option>가상 문화센터 동쪽 입구</option><option>가상 공원 안내소</option></select><div class="place-options"><button type="submit" data-place="가상 문화센터 정문">가상 문화센터 정문</button><button type="submit" data-place="가상 문화센터 동쪽 입구">가상 문화센터 동쪽 입구</button><button type="submit" data-place="가상 공원 안내소">가상 공원 안내소</button></div><button type="button" id="cancelPlace" class="secondary">돌아가기</button></form></section>
+ <section id="endConfirm" class="end-confirm" hidden><div><p class="section-label">약속 종료</p><h2 id="endTitle">이번 약속을 종료할까요?</h2><p id="endDescription"></p></div><div class="confirm-actions"><button id="cancelEnd" class="primary">계속 진행</button><button id="confirmEnd" class="secondary">종료 확정</button></div></section><p id="error" role="alert"></p>
+ </main><footer><span>Gleo·차량 미연결 · 주행 중 사용 금지</span><span class="storage-note">서버 재시작 시 약속이 사라집니다.</span></footer></div><script type="module" src="/app.mjs"></script></body></html>
+-
+--- style.css before
++++ style.css after
+@@ -17,6 +17,7 @@
+ .progress-actions{display:grid;gap:16px;margin-top:auto;padding-top:20px}.normal-actions .progress-actions button{margin-top:0;width:100%}.readiness #readyText{font-size:20px}.readiness #pickupText{font-size:38px}.normal-actions p{margin-bottom:16px}
+ /* Content may scroll on short windows; actions never overlap the footer. */
+ #board{overflow-y:auto;overflow-x:hidden}.workgrid{flex-shrink:0;min-height:min-content}.readiness{flex-shrink:0}
+ @media(max-width:899px){.readiness #pickupText{font-size:28px}.readiness #readyText{width:100%;font-size:18px}.progress-actions{gap:12px;padding-top:12px}.normal-actions .progress-actions button{min-height:76px;font-size:22px}.action-area{flex-shrink:0}.normal-actions p{margin-bottom:8px}}
+ @media(max-height:650px) and (min-width:900px){.readiness #pickupText{font-size:30px}.progress-actions{gap:12px;padding-top:12px}}
+-
++/* Retain stale disclosures at all sizes; the board scrolls when space is tight. */
++.cockpit:has(#connection.stale) .proposal p,.cockpit:has(#connection.stale) .event{display:block}
+--- board.test.mjs before
++++ board.test.mjs after
+@@ -121,11 +121,11 @@
+ });
+ test('proposal resolution invalidates arrival only on accepted changed place',()=>{
+  const {d,r,cmd,read}=setup(); cmd(d,'arrive');
+  for(const resolution of ['reject','withdraw','accept']) {
+   cmd(d,'propose',{place:PLACES[1]}); const proposalId=read().proposal.id;
+-  assert.throws(()=>cmd(r,'board'),/場所|합의/);
++  assert.throws(()=>cmd(r,'board'),/합의/);
+   cmd(resolution==='withdraw'?d:r,resolution,{proposalId});
+   assert.equal(read().stage,resolution==='accept'?'waiting':'arrived');
+  }
+  assert.equal(read().place,PLACES[1]); assert.match(read().lastEvent,/도착 표시는 취소/);
+  assert.throws(()=>cmd(r,'board'),/먼저/); cmd(d,'arrive'); cmd(r,'board');
+@@ -146,5 +146,9 @@
+  cmd(d,'arrive'); const undoView=read(d); cmd(r,'board'); assert.throws(()=>cmd(d,'undoArrival',{},undoView),/다른 변경/);
+  const endView=read(d); cmd(r,'undoBoarding'); assert.throws(()=>cmd(d,'end',{},endView),/다른 변경/);
+  assert.equal(read().status,'active'); assert.equal(read().stage,'arrived');
+ });
+ 
++ test('boarding preserves true readiness without deriving it; end names the actor',()=>{
++ const {r,d,cmd,read}=setup(); cmd(r,'ready',{ready:true}); cmd(d,'arrive'); cmd(r,'board');
++ assert.equal(read().ready,true); cmd(r,'end'); assert.match(read().lastEvent,/탑승자가/);
++ });
+--- client.test.mjs before
++++ client.test.mjs after
+@@ -4,25 +4,25 @@
+ import vm from 'node:vm';
+ import { readFile } from 'node:fs/promises';
+ const source = await readFile(new URL('./app.mjs', import.meta.url), 'utf8');
+ const html = await readFile(new URL('./index.html', import.meta.url), 'utf8');
+ async function harness(initialFailure = null) {
+-  let now=100, failure=initialFailure;
++  let now=100, failure=initialFailure, actionFailure=null;
+   const element=()=>({hidden:false,disabled:false,textContent:'',classList:{toggle(){}},setAttribute(){},querySelector(){return this.child ||= element();}});
+   const nodes=new Map([...html.matchAll(/id="([^"]+)"/g)].map(m=>[m[1],element()]));
+   const buttons=[{...element(),dataset:{ready:'true'}},{...element(),dataset:{ready:'false'}}];
+   const places=[...html.matchAll(/data-place="([^"]+)"/g)].map(m=>({...element(),dataset:{place:m[1]}}));
+   const state={id:'demo',role:'driver',version:1,status:'active',place:'가상 문화센터 정문',ready:true,joined:false,
+     proposal:{id:'proposal',by:'rider',place:'가상 공원 안내소'},lastEvent:'변경 제안',view:'view'};
+-  const sandbox={URLSearchParams,AbortSignal,performance:{now:()=>now},navigator:{onLine:true},
++  const sandbox={URLSearchParams,AbortSignal,crypto:{randomUUID:()=> 'test-request-123'},performance:{now:()=>now},navigator:{onLine:true},
+     location:{hash:'',origin:'http://127.0.0.1:4180'},history:{replaceState(){}},
+     sessionStorage:{getItem:()=>JSON.stringify({id:'demo',token:'fake-test-only',role:'driver',invite:'fake-invite'}),setItem(){}},
+     document:{hidden:false,getElementById:id=>nodes.get(id),querySelectorAll:selector=>selector==='[data-ready]'?buttons:selector==='[data-place]'?places:[],addEventListener(){}},
+     addEventListener(){},setInterval(){},
+-    fetch:async()=>failure==='network'?Promise.reject(new Error('offline')):{ok:!failure,status:failure||200,json:async()=>failure?{error:'test error'}:{...state}}};
++    fetch:async(path)=>path.endsWith('/actions') && actionFailure ? {ok:false,status:actionFailure,json:async()=>({error:'다른 변경이 있습니다.'})} : failure==='network'?Promise.reject(new Error('offline')):{ok:!failure,status:failure||200,json:async()=>failure?{error:'test error'}:{...state}}};
+   vm.createContext(sandbox); vm.runInContext(source,sandbox); await new Promise(setImmediate);
+-  return {nodes,buttons,places,state,fail:v=>{failure=v;},advance:n=>{now+=n;},refresh:()=>vm.runInContext('refresh()',sandbox),render:()=>vm.runInContext('render()',sandbox)};
++  return {nodes,buttons,places,state,failAction:v=>{actionFailure=v;},act:type=>vm.runInContext(`act('${type}')`,sandbox),fail:v=>{failure=v;},advance:n=>{now+=n;},refresh:()=>vm.runInContext('refresh()',sandbox),render:()=>vm.runInContext('render()',sandbox)};
+ }
+ test('HTTP error then successful refresh removes the accidental new-session escape',async()=>{
+   const h=await harness(); h.fail(403); await h.refresh(); assert.equal(h.nodes.get('new').hidden,false);
+   assert.equal(h.nodes.get('end').hidden,true); assert.equal(h.nodes.get('proposal').hidden,true);
+   h.fail(null); await h.refresh(); assert.equal(h.nodes.get('new').hidden,true);
+@@ -78,5 +78,13 @@
+  assert.equal(h.nodes.get('endConfirm').hidden,true); assert.equal(h.nodes.get('confirmEnd').disabled,true);
+  h.nodes.get('end').onclick(); assert.match(h.nodes.get('endTitle').textContent,/완료/);
+  assert.equal(h.nodes.get('openPlace').hidden,true);
+  h.state.stage='arrived'; h.state.version++; await h.refresh(); assert.equal(h.nodes.get('endConfirm').hidden,true);
+ });
++
++test('rejected action remains explained across successful polling until explicit refresh',async()=>{
++ const h=await harness(); h.failAction(409); await h.act('arrive');
++ assert.match(h.nodes.get('error').textContent,/다른 변경/); await h.refresh();
++ assert.match(h.nodes.get('error').textContent,/다른 변경/);
++ h.nodes.get('refresh').onclick(); await new Promise(setImmediate);
++ assert.equal(h.nodes.get('error').textContent,'');
++});

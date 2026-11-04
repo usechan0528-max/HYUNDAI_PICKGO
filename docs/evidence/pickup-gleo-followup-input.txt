@@ -1,0 +1,413 @@
+Read-only focused follow-up, no tools/edits. Actual Haiku5.5. Prior review ecd29ece-86f3-42c9-b1e4-017eabf9df0a: no P0/P1, five P2 findings. All five addressed: undefined ticket guard; any new non-reentrant prepare clears pending before authorization; data-only parser/action cached/explicit arrival branch; phase grant check; constructor synchronous actual Board type/method check. Tests now 49/49 (old27+new22). Added empty ticket, denied new command, getter action, phase mismatch, async port and dispatch reentry tests. Renamed concurrency test as queued microtasks. Exact generic policy failure asserted. APK zip has no schema.json (separate build evidence), no Android execution claimed. Review changed adapter and added tests only; do not repeat documented production blockers as defects. Keep final reply under 450 words.
+
+### experiments/pickup-board/gleo/adapter.mjs
+// IN-PROCESS READINESS ONLY. No Android caller verification, receiver, or transport.
+// Host authorization and session binding MUST NOT be populated from Intent extras.
+import { randomUUID } from 'node:crypto';
+import { performance } from 'node:perf_hooks';
+import { Board, Fault } from '../domain.mjs';
+
+export const ACTIONS = Object.freeze(['GET_PICKUP_STATUS', 'REPORT_PICKUP_ARRIVAL']);
+export const TICKET_TTL = 5000;
+const plain = value => value !== null && typeof value === 'object' &&
+  (Object.getPrototypeOf(value) === Object.prototype || Object.getPrototypeOf(value) === null);
+const fail = (name, message = 'Pickup voice integration is unavailable.') =>
+  ({ functionName: name, status: 'fail', message, mode: 'voice' });
+const actionName = input => {
+  try { const value = Object.getOwnPropertyDescriptor(input, 'action')?.value;
+    return ACTIONS.includes(value) ? value : 'UNKNOWN_ACTION';
+  } catch { return 'UNKNOWN_ACTION'; }
+};
+const dataObject = value => plain(value) && Reflect.ownKeys(value).every(key =>
+  typeof key === 'string' && Object.hasOwn(Object.getOwnPropertyDescriptor(value, key), 'value'));
+
+// Local strict candidate contract, NOT a claim about actual Gleo Intent encoding.
+// Only parameterless commands; JSON whitespace permitted, BOM/double encoding denied.
+export function parseCommand(input) {
+  if (!dataObject(input) || Object.keys(input).some(k => !['action', 'extras'].includes(k))) throw new TypeError('Unsupported command.');
+  const action = Object.getOwnPropertyDescriptor(input, 'action')?.value;
+  if (!ACTIONS.includes(action)) throw new TypeError('Unsupported command.');
+  if (input.extras !== undefined) {
+    if (!dataObject(input.extras)) throw new TypeError('Invalid extras.');
+    const keys = Object.keys(input.extras);
+    if (keys.length && (keys.length !== 1 || keys[0] !== 'ACTION_PARAM' ||
+        typeof input.extras.ACTION_PARAM !== 'string' ||
+        Buffer.byteLength(input.extras.ACTION_PARAM, 'utf8') > 1024 ||
+        !/^[\x20\t\r\n]*\{[\x20\t\r\n]*\}[\x20\t\r\n]*$/.test(input.extras.ACTION_PARAM))) {
+      throw new TypeError('Invalid parameters.');
+    }
+  }
+  return action;
+}
+
+function publicResult(name, state) {
+  const progress = { waiting: 'waiting_for_arrival', arrived: 'driver_reported_arrival', boarded: 'rider_confirmed_boarding' }[state.stage];
+  if (!progress || typeof state.ready !== 'boolean' || typeof state.joined !== 'boolean') throw new Error('Invalid state.');
+  return { functionName: name, status: 'success', mode: 'voice',
+    message: name === ACTIONS[1] ? 'The driver has reported arrival at the agreed pickup point.' : 'The current pickup status is available.',
+    data: JSON.stringify([{ progress, riderReady: state.ready, riderJoined: state.joined, locationChangePending: state.proposal !== null }]) };
+}
+
+/**
+ * Trusted host port: attest(invocation, phase) -> fresh one-use object
+ * { invocation, phase, checkedAt: monotonic ms, caller: 'verified', ux: 'allowed', online: true }.
+ * No default issuer exists. Tests supply explicit fake attestations; they are NOT
+ * caller authentication or CarUxRestrictions evidence. Every phase needs a new grant.
+ * Board must be the synchronous in-process Board, never an async HTTP client.
+ */
+export class PickupVoiceReadiness {
+  #board; #attest; #now; #lastTime = -Infinity; #binding = null;
+  #pending = null; #grants = new WeakSet(); #busy = false; #closed = false;
+  constructor(board, { attest = () => null, now = () => performance.now() } = {}) {
+    if (!(board instanceof Board) || board.read !== Board.prototype.read || board.act !== Board.prototype.act) {
+      throw new TypeError('The synchronous in-process Board is required.');
+    }
+    this.#board = board; this.#attest = attest; this.#now = now;
+  }
+  // Only a trusted host may call this; no credential is returned in a ticket.
+  bind(session) {
+    this.#pending = null; this.#binding = null;
+    if (this.#closed) return;
+    if (!plain(session) || typeof session.id !== 'string' || typeof session.token !== 'string' || !session.token) return;
+    this.#binding = { id: session.id, token: session.token };
+  }
+  clear() { this.#pending = null; this.#binding = null; }
+  dispose() { this.clear(); this.#closed = true; }
+  #time() {
+    const time = this.#now();
+    if (!Number.isFinite(time) || time < this.#lastTime) throw new Error('Invalid clock.');
+    this.#lastTime = time; return time;
+  }
+  #authorize(invocation, phase) {
+    const grant = this.#attest(invocation, phase), time = this.#time();
+    if (!plain(grant) || this.#grants.has(grant)) throw new Error('Unavailable.');
+    this.#grants.add(grant);
+    if (grant.invocation !== invocation || grant.phase !== phase || grant.caller !== 'verified' || grant.ux !== 'allowed' || grant.online !== true ||
+        !Number.isFinite(grant.checkedAt) || time < grant.checkedAt || time - grant.checkedAt >= 1000) throw new Error('Unavailable.');
+    return time;
+  }
+  #read() {
+    if (!this.#binding) throw new Error('Unavailable.');
+    const state = this.#board.read(this.#binding.id, this.#binding.token);
+    if (state.role !== 'driver' || state.status !== 'active') throw new Error('Unavailable.');
+    return state;
+  }
+  prepare(input) {
+    const name = actionName(input);
+    if (this.#busy || this.#closed) return { response: fail(name) };
+    // Even a denied/malformed new intent cancels old pending work.
+    this.#pending = null;
+    this.#busy = true;
+    try {
+      const invocation = Object.freeze({});
+      const at = this.#authorize(invocation, 'prepare');
+      let action;
+      try { action = parseCommand(input); }
+      catch { return { response: fail(name, 'This pickup voice command or its parameters are not supported.') }; }
+      const state = this.#read();
+      const ticket = Object.freeze({});
+      this.#pending = { ticket, invocation, action, at, state, binding: this.#binding, requestId: randomUUID() };
+      return { ticket };
+    } catch { return { response: fail(name) }; }
+    finally { this.#busy = false; }
+  }
+  dispatch(ticket) {
+    const pending = this.#pending;
+    const name = pending && pending.ticket === ticket ? pending.action : 'UNKNOWN_ACTION';
+    if (this.#busy || this.#closed) return fail(name);
+    this.#busy = true;
+    try {
+      // Consume before calling any external host port, including attest.
+      this.#pending = null;
+      if (!pending || pending.ticket !== ticket) return fail(name);
+      const time = this.#authorize(pending.invocation, 'dispatch');
+      if (this.#binding !== pending.binding || time - pending.at >= TICKET_TTL) return fail(name);
+      const current = this.#read();
+      if (pending.action === ACTIONS[0]) return publicResult(name, current);
+      if (pending.action !== ACTIONS[1]) return fail(name);
+      // No refresh-and-retry: capture the original version and lease, including place.
+      if (current.version !== pending.state.version) return { functionName: name, status: 'asking',
+        message: 'The pickup agreement changed. Check it and make a new arrival request.', mode: 'voice' };
+      const result = this.#board.act(pending.binding.id, pending.binding.token, {
+        type: 'arrive', requestId: pending.requestId, version: pending.state.version, view: pending.state.view
+      });
+      return publicResult(name, result);
+    } catch (error) {
+      return fail(name, error instanceof Fault && error.status === 409
+        ? 'Arrival could not be recorded for the current pickup state. Check the agreement before trying again.'
+        : 'Pickup voice integration is unavailable.');
+    } finally { this.#busy = false; }
+  }
+}
+
+### experiments/pickup-board/gleo.test.mjs
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import { readFile } from 'node:fs/promises';
+import { Board, PLACES } from './domain.mjs';
+import { ACTIONS, TICKET_TTL, parseCommand, PickupVoiceReadiness } from './gleo/adapter.mjs';
+
+const command = (action = ACTIONS[0]) => ({ action, extras: { ACTION_PARAM: '{}' } });
+function fixture(options = {}) {
+  let time = 100, wall = 1000, policy = {};
+  const board = new Board(() => wall), driver = board.create(PLACES[0]);
+  const rider = board.join(driver.id, driver.invite);
+  // Explicit FAKE trusted host. Neither Android authentication nor UX SDK evidence.
+  const attest = (invocation, phase) => ({ invocation, phase, checkedAt: time, caller: 'verified', ux: 'allowed', online: true, ...policy });
+  const adapter = new PickupVoiceReadiness(board, { now: () => time, attest, ...options });
+  adapter.bind(driver);
+  const act = (session, type, extra = {}) => {
+    const state = board.read(session.id, session.token);
+    return board.act(session.id, session.token, { type, requestId: crypto.randomUUID(), version: state.version, view: state.view, ...extra });
+  };
+  return { board, driver, rider, adapter, act,
+    run: (action = ACTIONS[0]) => { const p = adapter.prepare(command(action)); return p.response || adapter.dispatch(p.ticket); },
+    tick: n => { time += n; wall += n; }, wall: n => { wall += n; }, policy: value => { policy = value; } };
+}
+const state = f => f.board.read(f.driver.id, f.driver.token);
+const data = response => JSON.parse(response.data)[0];
+
+test('candidate schema exactly matches two parameterless commands and is outside the APK', async () => {
+  const schema = JSON.parse(await readFile(new URL('./gleo/contract/schema.candidate.json', import.meta.url)));
+  assert.equal(schema.actionCalls.length, 2);
+  assert.deepEqual(schema.actionCalls.map(x => x.function.name), ACTIONS);
+  for (const entry of schema.actionCalls) {
+    assert.equal(entry.type, 'function'); assert.equal(entry.function.component, 'activity');
+    assert.deepEqual(entry.function.parameters, { type: 'object', properties: {}, required: [] });
+    assert.match(entry.function.description, /^[\x20-\x7e]+$/);
+  }
+  const manifest = await readFile(new URL('./emulator-preview/app/src/main/AndroidManifest.xml', import.meta.url), 'utf8');
+  const gradle = await readFile(new URL('./emulator-preview/app/build.gradle', import.meta.url), 'utf8');
+  for (const name of ACTIONS) assert.ok(!manifest.includes(name));
+  assert.ok(!gradle.includes('gleo')); assert.ok(!gradle.includes('sourceSets'));
+  await assert.rejects(readFile(new URL('./emulator-preview/app/src/main/assets/schema.json', import.meta.url)), { code: 'ENOENT' });
+});
+
+test('parser accepts empty extras and JSON whitespace only; no required arguments', () => {
+  for (const action of ACTIONS) for (const extras of [undefined, {}, { ACTION_PARAM: '{}' }, { ACTION_PARAM: ' \n{ \t}\r' }]) {
+    assert.equal(parseCommand({ action, extras }), action);
+  }
+});
+test('parser rejects unknown, wrong types, mixed, injected, double-encoded and oversized inputs', () => {
+  const bad = [null, [], {}, { action: 'get_pickup_status' }, { action: ' GET_PICKUP_STATUS' },
+    ...['board', 'accept', 'end', 'propose', 'REPORT_PICKUP_BOARDING'].map(action => ({ action })),
+    { ...command(), token: 'secret' }, { ...command(), extras: null }, { ...command(), extras: [] },
+    ...[null, {}, 1, true, 'null', '[]', 'false', '"{}"', '{"ready":true}', '{"a":1,"a":2}', '{', '\ufeff{}', ' '.repeat(1025)+'{}'].map(ACTION_PARAM => ({ action: ACTIONS[1], extras: { ACTION_PARAM } })),
+    { action: ACTIONS[1], extras: { ACTION_PARAM: '{}', role: 'driver' } },
+    { action: ACTIONS[1], extras: { token: 'secret' } }];
+  for (const value of bad) assert.throws(() => parseCommand(value), TypeError);
+});
+test('default unconfigured adapter refuses every known action without consulting domain', () => {
+  const board = new Board(() => { assert.fail('domain must not be read'); });
+  const adapter = new PickupVoiceReadiness(board);
+  adapter.bind({ id: 'any', token: 'secret' });
+  for (const action of ACTIONS) assert.equal(adapter.prepare(command(action)).response.status, 'fail');
+});
+test('actual Board status uses minimal public mapping; arrival synchronizes rider view', () => {
+  const f = fixture();
+  assert.deepEqual(data(f.run()), { progress: 'waiting_for_arrival', riderReady: false, riderJoined: true, locationChangePending: false });
+  const version = state(f).version;
+  const response = f.run(ACTIONS[1]); assert.equal(response.status, 'success');
+  assert.equal(state(f).version, version + 1);
+  assert.equal(f.board.read(f.rider.id, f.rider.token).stage, 'arrived');
+  const encoded = JSON.stringify(response);
+  for (const forbidden of [f.driver.id, f.driver.token, f.rider.token, f.driver.invite, PLACES[0], 'view', 'requestId', 'lastEvent']) assert.ok(!encoded.includes(forbidden));
+  assert.equal(f.run(ACTIONS[1]).status, 'fail');
+  assert.equal(state(f).version, version + 1);
+});
+test('rider credential and forged role cannot invoke driver commands', () => {
+  const f = fixture(); f.adapter.bind({ ...f.rider, role: 'driver' });
+  assert.equal(f.run().status, 'fail'); assert.equal(f.run(ACTIONS[1]).status, 'fail');
+  assert.equal(state(f).stage, 'waiting');
+});
+test('no participant, pending location change, boarded and ended states cannot arrive', () => {
+  const f = fixture(); const solo = f.board.create(PLACES[0]); f.adapter.bind(solo);
+  assert.equal(f.run(ACTIONS[1]).status, 'fail');
+  f.adapter.bind(f.driver); f.act(f.rider, 'propose', { place: PLACES[1] });
+  assert.equal(data(f.run()).locationChangePending, true);
+  assert.equal(f.run(ACTIONS[1]).status, 'fail');
+  f.act(f.rider, 'withdraw', { proposalId: state(f).proposal.id });
+  assert.equal(f.run(ACTIONS[1]).status, 'success'); f.act(f.rider, 'board');
+  assert.equal(data(f.run()).progress, 'rider_confirmed_boarding');
+  assert.equal(f.run(ACTIONS[1]).status, 'fail'); f.act(f.driver, 'end');
+  assert.equal(f.run().status, 'fail'); assert.equal(f.run(ACTIONS[1]).status, 'fail');
+});
+test('arrival captures version and refuses intervening change; query returns fresh status', () => {
+  const f = fixture(); const first = f.adapter.prepare(command(ACTIONS[1]));
+  f.act(f.rider, 'ready', { ready: true });
+  assert.equal(f.adapter.dispatch(first.ticket).status, 'asking'); assert.equal(state(f).stage, 'waiting');
+  const query = f.adapter.prepare(command()); f.act(f.rider, 'ready', { ready: false });
+  assert.equal(data(f.adapter.dispatch(query.ticket)).riderReady, false);
+});
+test('place agreement change after preparation cannot receive old arrival', () => {
+  const f = fixture(), p = f.adapter.prepare(command(ACTIONS[1]));
+  f.act(f.rider, 'propose', { place: PLACES[1] });
+  f.act(f.driver, 'accept', { proposalId: state(f).proposal.id });
+  assert.equal(f.adapter.dispatch(p.ticket).status, 'asking'); assert.equal(state(f).stage, 'waiting');
+});
+test('same ticket is consumed once; new Intent invalidates old without applying either twice', () => {
+  const f = fixture(); const p = f.adapter.prepare(command(ACTIONS[1]));
+  const q = f.adapter.prepare(command(ACTIONS[1]));
+  // Invalid dispatch consumes pending work conservatively; a fresh invocation is required.
+  assert.equal(f.adapter.dispatch(p.ticket).status, 'fail');
+  assert.equal(f.adapter.dispatch(q.ticket).status, 'fail');
+  const r = f.adapter.prepare(command(ACTIONS[1]));
+  assert.equal(f.adapter.dispatch(r.ticket).status, 'success');
+  assert.equal(f.adapter.dispatch(r.ticket).status, 'fail'); assert.equal(state(f).version, 3);
+});
+test('simultaneously queued dispatch microtasks apply exactly once', async () => {
+  const f = fixture(), p = f.adapter.prepare(command(ACTIONS[1]));
+  const results = await Promise.all([1, 2, 3].map(() => Promise.resolve().then(() => f.adapter.dispatch(p.ticket))));
+  assert.equal(results.filter(r => r.status === 'success').length, 1); assert.equal(state(f).version, 3);
+});
+test('ticket deadline, wall-clock rollback and forward expiry fail closed', () => {
+  for (const advance of [TICKET_TTL, 6999, 7000, 8000]) {
+    const f = fixture(), p = f.adapter.prepare(command(ACTIONS[1]));
+    f.tick(advance); f.wall(-100000);
+    assert.equal(f.adapter.dispatch(p.ticket).status, 'fail'); assert.equal(state(f).stage, 'waiting');
+  }
+  const f = fixture(), p = f.adapter.prepare(command(ACTIONS[1])); f.tick(TICKET_TTL - 1);
+  assert.equal(f.adapter.dispatch(p.ticket).status, 'success');
+  const g = fixture(), q = g.adapter.prepare(command(ACTIONS[1])); g.wall(8000);
+  assert.equal(g.adapter.dispatch(q.ticket).status, 'fail');
+});
+test('monotonic clock reversal rejects dispatch', () => {
+  const f = fixture(), p = f.adapter.prepare(command(ACTIONS[1])); f.tick(-1);
+  assert.equal(f.adapter.dispatch(p.ticket).status, 'fail'); assert.equal(state(f).stage, 'waiting');
+});
+test('offline, denied/unknown/stale UX and caller are rechecked at dispatch without data leakage', () => {
+  for (const policy of [{ online: false }, { online: 'true' }, { caller: 'unknown' }, { ux: 'restricted' }, { ux: 'unknown' }, { checkedAt: -900 }, { checkedAt: 9999 }, { checkedAt: NaN }]) {
+    const f = fixture(), p = f.adapter.prepare(command(ACTIONS[1])); f.policy(policy);
+    assert.equal(f.adapter.dispatch(p.ticket).status, 'fail'); assert.equal(state(f).stage, 'waiting');
+    const withBinding = f.run(); f.adapter.clear(); assert.deepEqual(f.run(), withBinding);
+    assert.deepEqual(withBinding, { functionName: ACTIONS[0], status: 'fail', message: 'Pickup voice integration is unavailable.', mode: 'voice' });
+    assert.ok(!('data' in withBinding));
+  }
+});
+test('one-use host attestation cannot be replayed or assigned to another invocation', () => {
+  let grant;
+  const f = fixture({ attest: (invocation, phase) => grant ||= { invocation, phase, checkedAt: 100, caller: 'verified', ux: 'allowed', online: true } });
+  const p = f.adapter.prepare(command(ACTIONS[1])); assert.ok(p.ticket);
+  assert.equal(f.adapter.dispatch(p.ticket).status, 'fail');
+  assert.equal(f.run().status, 'fail'); assert.equal(state(f).stage, 'waiting');
+  const g = fixture({ attest: (_, phase) => ({ invocation: {}, phase, checkedAt: 100, caller: 'verified', ux: 'allowed', online: true }) });
+  assert.equal(g.run().status, 'fail');
+});
+test('clear, rebind, invalid binding, dispose and process recreation never restore pending commands', () => {
+  for (const mode of ['clear', 'bind', 'invalid', 'dispose', 'restart']) {
+    const f = fixture(), p = f.adapter.prepare(command(ACTIONS[1]));
+    if (mode === 'bind') f.adapter.bind(f.driver);
+    else if (mode === 'invalid') f.adapter.bind(null);
+    else if (mode === 'restart') f.adapter = new PickupVoiceReadiness(f.board);
+    else f.adapter[mode]();
+    assert.equal(f.adapter.dispatch(p.ticket).status, 'fail'); assert.equal(state(f).stage, 'waiting');
+  }
+});
+test('missing expired or restarted server room fails without room or credential in response', () => {
+  const f = fixture(), p = f.adapter.prepare(command(ACTIONS[1])); f.board.rooms.clear();
+  assert.equal(f.adapter.dispatch(p.ticket).status, 'fail'); assert.equal(f.run().status, 'fail');
+  const g = fixture(); g.wall(86400001); assert.equal(g.run().status, 'fail');
+});
+test('host exceptions and synchronous reentry cannot mutate or leak exception contents', () => {
+  const f = fixture({ attest: () => { throw new Error('secret-token'); } });
+  assert.ok(!JSON.stringify(f.run()).includes('secret-token'));
+  let adapter, nested;
+  const board = new Board(), driver = board.create(PLACES[0]); board.join(driver.id, driver.invite);
+  adapter = new PickupVoiceReadiness(board, { now: () => 100, attest: (invocation, phase) => {
+    nested = adapter.prepare(command(ACTIONS[1]));
+    return { invocation, phase, checkedAt: 100, caller: 'verified', ux: 'allowed', online: true };
+  } });
+  adapter.bind(driver); const p = adapter.prepare(command(ACTIONS[1]));
+  assert.equal(nested.response.status, 'fail'); assert.equal(adapter.dispatch(p.ticket).status, 'success');
+  assert.equal(nested.response.status, 'fail'); assert.equal(board.read(driver.id, driver.token).version, 3);
+});
+
+test('empty, fabricated and already consumed tickets return failures without throwing', () => {
+  const f = fixture();
+  for (const ticket of [undefined, null, {}, 'ticket']) assert.equal(f.adapter.dispatch(ticket).status, 'fail');
+  assert.equal(f.run().status, 'success'); assert.equal(f.adapter.dispatch().status, 'fail');
+});
+test('denied new invocation cancels pending arrival even after host policy recovers', () => {
+  const f = fixture(), p = f.adapter.prepare(command(ACTIONS[1]));
+  f.policy({ online: false }); assert.equal(f.run().status, 'fail');
+  f.policy({}); assert.equal(f.adapter.dispatch(p.ticket).status, 'fail'); assert.equal(state(f).stage, 'waiting');
+});
+test('accessor action is never executed; phase mismatch and async Board are rejected', () => {
+  const f = fixture(); let reads = 0;
+  const input = { get action() { reads++; return ACTIONS[1]; } };
+  assert.throws(() => parseCommand(input), TypeError);
+  assert.equal(f.adapter.prepare(input).response.status, 'fail'); assert.equal(reads, 0);
+  const p = f.adapter.prepare(command(ACTIONS[1])); f.policy({ phase: 'prepare' });
+  assert.equal(f.adapter.dispatch(p.ticket).status, 'fail'); assert.equal(state(f).stage, 'waiting');
+  assert.throws(() => new PickupVoiceReadiness({ read() {}, async act() {} }), TypeError);
+  const board = new Board(); board.act = async () => ({});
+  assert.throws(() => new PickupVoiceReadiness(board), TypeError);
+});
+test('dispatch reentry from trusted host attestation cannot consume twice', () => {
+  let ticket, nested;
+  const f = fixture({ attest: (invocation, phase) => {
+    if (phase === 'dispatch') nested = f.adapter.dispatch(ticket);
+    return { invocation, phase, checkedAt: 100, caller: 'verified', ux: 'allowed', online: true };
+  } });
+  ticket = f.adapter.prepare(command(ACTIONS[1])).ticket;
+  assert.equal(f.adapter.dispatch(ticket).status, 'success'); assert.equal(nested.status, 'fail');
+  assert.equal(state(f).version, 3);
+});
+
+✔ two participants share ready, pending, accepted and ended state (3.7945ms)
+✔ self acceptance and driver readiness are forbidden (0.5298ms)
+✔ reject preserves the agreed place; old proposal cannot be accepted (0.5089ms)
+✔ one-use invitation, wrong and cross-room credentials rejected (0.5328ms)
+✔ stale concurrent writes, repeated request IDs and replaced proposals rejected (0.6163ms)
+✔ server-issued read lease expires at boundary and cannot be fabricated (0.3775ms)
+✔ end before join revokes invite and pending proposal is cleared on end (0.5679ms)
+✔ malformed and unsupported commands do not change state (2.7185ms)
+✔ memory lifetime and restart are explicit disappearance, not phantom success (0.5868ms)
+✔ withdraw belongs to proposer; foreign read leases and cross-room writes fail (1.6998ms)
+✔ HTTP integration: create/join/read/write, isolation, input and origin defenses (203.9389ms)
+✔ manual arrival and boarding require owner, order and explicit end (0.9811ms)
+✔ role-owned mistake undo and cancellation preserve truthful outcome (0.4715ms)
+✔ proposal resolution invalidates arrival only on accepted changed place (0.8333ms)
+✔ arrival needs join and resolved proposals; end clears pending and cancels (0.4479ms)
+✔ stage commands reject duplicate, stale version, foreign and expired leases (0.7032ms)
+✔ boarding preserves true readiness without deriving it; end names the actor (0.238ms)
+✔ HTTP manual lifecycle shares stage/outcome and rejects a stale end after undo (225.638ms)
+✔ HTTP error then successful refresh removes the accidental new-session escape (10.1849ms)
+✔ connection failure labels every stale fact and locks all mutation controls (4.356ms)
+✔ six-second client expiry locks even without a completed network failure (2.102ms)
+✔ place editor blocks current place and offline writes; remote proposal closes editor (2.5059ms)
+✔ end confirmation isolates controls and cancellation preserves the shared round (1.6182ms)
+✔ initial network failure preserves session; ended rounds offer a new start (1.6229ms)
+✔ manual status labels and owner controls follow stage; stale locks them (2.2095ms)
+✔ remote boarding or undo invalidates an open end confirmation (2.0043ms)
+✔ rejected action remains explained across successful polling until explicit refresh (2.5278ms)
+✔ candidate schema exactly matches two parameterless commands and is outside the APK (11.8743ms)
+✔ parser accepts empty extras and JSON whitespace only; no required arguments (0.6848ms)
+✔ parser rejects unknown, wrong types, mixed, injected, double-encoded and oversized inputs (0.8915ms)
+✔ default unconfigured adapter refuses every known action without consulting domain (0.6473ms)
+✔ actual Board status uses minimal public mapping; arrival synchronizes rider view (2.5745ms)
+✔ rider credential and forged role cannot invoke driver commands (0.473ms)
+✔ no participant, pending location change, boarded and ended states cannot arrive (1.4135ms)
+✔ arrival captures version and refuses intervening change; query returns fresh status (0.5227ms)
+✔ place agreement change after preparation cannot receive old arrival (0.481ms)
+✔ same ticket is consumed once; new Intent invalidates old without applying either twice (0.5668ms)
+✔ simultaneously queued dispatch microtasks apply exactly once (0.4861ms)
+✔ ticket deadline, wall-clock rollback and forward expiry fail closed (0.7809ms)
+✔ monotonic clock reversal rejects dispatch (0.2247ms)
+✔ offline, denied/unknown/stale UX and caller are rechecked at dispatch without data leakage (1.5609ms)
+✔ one-use host attestation cannot be replayed or assigned to another invocation (0.4294ms)
+✔ clear, rebind, invalid binding, dispose and process recreation never restore pending commands (0.5494ms)
+✔ missing expired or restarted server room fails without room or credential in response (0.3271ms)
+✔ host exceptions and synchronous reentry cannot mutate or leak exception contents (0.6311ms)
+✔ empty, fabricated and already consumed tickets return failures without throwing (0.3238ms)
+✔ denied new invocation cancels pending arrival even after host policy recovers (0.2475ms)
+✔ accessor action is never executed; phase mismatch and async Board are rejected (0.444ms)
+✔ dispatch reentry from trusted host attestation cannot consume twice (0.3045ms)
+ℹ tests 49
+ℹ suites 0
+ℹ pass 49
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 594.7036

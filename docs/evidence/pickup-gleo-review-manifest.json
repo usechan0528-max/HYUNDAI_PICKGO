@@ -1,0 +1,8 @@
+{
+  "experiments/pickup-board/gleo/adapter.mjs": "02fea808d7ac7560b3ffd88af5e29c990910e4b841c2624303005685069f34c7",
+  "experiments/pickup-board/gleo/contract/schema.candidate.json": "a7c30fb7d77bd955f123379f062a5a2160186736a210b03852132f98ff1e9eed",
+  "experiments/pickup-board/gleo/README.md": "50244f1c0d46f79ac1860c1c919a4de8b80a9d870eb53b53052f09bf6fa03248",
+  "experiments/pickup-board/gleo.test.mjs": "b42724ae73ee9a085d7fb2ceb93927560d2ce6a6e46d1b6d3fd5029da2099cb5",
+  "experiments/pickup-board/domain.mjs": "97ac7d1c27638e968378c62373e8b8ea441aefa07505d3990c74f370f6c30679",
+  "experiments/pickup-board/server.mjs": "40597ff88c497c1bcde50ebb19e95758cbf3d3f7f05547fe1dd167ad8fd031f5"
+}

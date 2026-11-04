@@ -1,0 +1,31 @@
+# REVIEW TEMPLATE ONLY. Not installed or exposed by this task.
+# Replace pickup.example and certificate paths with approved infrastructure.
+# The app must use PICKUP_PUBLIC_ORIGIN=https://pickup.example, PICKUP_PORT=4180.
+# These directives belong inside nginx's http block. Do not log request bodies,
+# Authorization or URI arguments. No third-party analytics on invitation pages.
+limit_req_zone $binary_remote_addr zone=pickup_create:10m rate=3r/m;
+limit_req_zone $binary_remote_addr zone=pickup_join:10m rate=10r/m;
+server {
+    listen 443 ssl;
+    server_name pickup.example;
+    ssl_certificate /approved/path/fullchain.pem;
+    ssl_certificate_key /approved/path/privkey.pem;
+    add_header Strict-Transport-Security "max-age=31536000" always;
+    client_max_body_size 4k;
+    access_log off;
+    limit_req_status 429;
+    location = /api/rooms {
+        limit_req zone=pickup_create burst=3 nodelay;
+        proxy_set_header Host $http_host;
+        proxy_pass http://127.0.0.1:4180;
+    }
+    location ~ ^/api/rooms/[a-f0-9-]+/join$ {
+        limit_req zone=pickup_join burst=5 nodelay;
+        proxy_set_header Host $http_host;
+        proxy_pass http://127.0.0.1:4180;
+    }
+    location / {
+        proxy_set_header Host $http_host;
+        proxy_pass http://127.0.0.1:4180;
+    }
+}

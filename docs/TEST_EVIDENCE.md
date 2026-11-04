@@ -217,3 +217,35 @@ node --test experiments/journey-context/*.test.mjs 종료0,125/125. 기존109+�
 ## 2026-11-02 · Android 합성 운행 연결 최종
 node experiments/j1-listening/generate-journey-fixture.mjs 후 javac/java 교차364/경계37/기존상태 통과. node --test experiments/journey-context/*.test.mjs 125/125. gradle.bat -p experiments/j1-listening --no-daemon assembleDebug assembleDebugAndroidTest lintDebug 종료0,0errors2warnings. 최종 am instrument --user 10 -w ... 14/14,159.487초. JourneyProcessTest#testPrepareCheckpoint, 실제am force-stop, #testRestoreCheckpoint 각각1/1:1529ms저장/무음복원/명시재개2882ms/종료0. source/main 및 APK는 최종14개와 일치, 추가process시험클래스만 후속 빌드.
 서명 apksigner verify 성공/기존키, aapt 요청권한없음, WAV4개 원본해시일치. 외부UI dump idle 최초실패 수정; 이후 터치시험은 Settings/Gleo 표시와 J1 UI hierarchy 불일치로offset0 실패하여 중단. instrumentation process검증과 실제HOME터치검증을 혼동하지 않음. 실제스피커·내비공존·실차·SDKclock·ETA·최종release 미실행/차단. 상세 J1_ANDROID_JOURNEY_2026-11-02.md, 원문 evidence/j1-android-journey-*.
+
+## 2026-11-02 · C02 픽업 약속판 초기 MVP
+node --test experiments/pickup-board/*.test.mjs 종료0,14/14(도메인·실제HTTP11 + fake DOM/network3). node --check experiments/pickup-board/app.mjs 종료0. 실제 IAB 두탭 생성/참여/준비/제안/수락/거절/철회/종료확인·취소/새로고침, 서버 프로세스 중단 stale잠금/재시작404복구 확인. native confirm IAB timeout 후 화면 내 확인으로 교체·검증. Haiku5.5 2회 실제 검수, P1 수정 및 후속P0/P1없음; 최종P2복구플래그·P3초대표시 수정후14회귀. SDK/실차/Android/경쟁우위 미검증. docs/evidence/pickup-board-* 및 PICKUP_BOARD_MVP_2026-11-02.md.
+
+## 2026-11-02 · C02 차량 화면 디자인 0.2.0
+node --test experiments/pickup-board/*.test.mjs 17/17(domainHTTP11/fakeDOM6), node --check app/server 통과. IAB8크기 정상상태 및480실제서버중단/변경잠금/라벨/버튼좌표 확인, 두역할 제안·수락·종료취소/확정 확인. CSS lint0fail7warn(의미라벨). inspector/실차/SDK/dp인증 미실행. 증거 docs/evidence/pickup-design-*, 상세 PICKUP_BOARD_DESIGN_2026-11-02.md.
+
+## 2026-11-02 · C02 에뮬레이터 UI
+Node17/17재통과,CSSlint0fail7warn. preview assembleDebug/lintDebug 성공0오류1경고,adb install Success. 실제Pleos분할창생성/종료확인/취소 및최종새창역할보존관찰. docs/evidence/pickup-emulator-* 참조. 물리dp/실차/SDK/주행제한미실행.
+
+## 2026-11-03 · C02 수동 도착·탑승
+node --test experiments/pickup-board/*.test.mjs 종료0 27/27(도메인·실제HTTP18/fakeDOM9), app/domain/server node --check 종료0. Chrome 실제두역할 도착/장소수락초기화/재도착/탑승/실수취소/종료확인무효화/완료동기화 및 최종클라이언트 실제서버중단잠금 통과. CSS391x844,480x800,1280x720 가로넘침없음/버튼최소76px/내용내부스크롤. Haiku검수·재검수 완료. Pleos 최종UI와 재시작후UI복구는 Windows잠금으로 차단. 실제SDK/실차 미실행. 중간시험실패와 해결 포함 PICKUP_BOARD_STATUS_2026-11-03.md 및 evidence/pickup-status-*.
+
+
+## 2026-11-03 · C02 Gleo 준비
+node --test experiments/pickup-board/*.test.mjs 최종49/49(기존27+준비22), 종료0. 실제Board+fake host/lifecycle이며 실제Gleo/AndroidIntent시험아님. node --check gleo/adapter.mjs 통과. 기존preview offline assembleDebug/lintDebug 종료0(1실행42up-to-date), lint0오류1기존경고, APK에schema없음. adb기기5556/reverse4180만확인, 실제Gleo/실차미실행·계약/승인차단. 기존7파일SHA일치. evidence/pickup-gleo-* 및 PICKUP_GLEO_READINESS_2026-11-03.md.
+
+
+2026-11-03 잠금 해제 후속: Pleos 현재창 재식별/Raise 후 소실회차 안내→새약속복구→도착알림전→탑승없이취소확인→약속취소·탑승미완료 실제UI 확인. 증거 pickup-status-emulator-{waiting,confirm,cancelled}.png. 앱소스수정없음/최종hash일치,27시험·Claude검수결과유지. 에뮬레이터두역할전체흐름은미실행, 앞선Chrome두역할증거와구분. 기존잠금차단은이후속시각검증범위에서해소.
+
+
+## 2026-11-03 · 픽업 위치 통합 마감
+로컬 통합과 Claude Haiku5.5 독립 검수·재검수 완료. Node115/115 통과, Chrome 두역할 장소변경→도착→탑승→완료 및 위치공유 종료·서버중단 잠금 확인. 실제차량SDK/물리휴대폰HTTPS/외부지도 본연동 미완료, 최종 에뮬레이터 시각검증은 창 활성화 실패로 차단. 상세·파일·명령·검수 처리·증거는 [통합 보고서](PICKUP_LOCATION_INTEGRATION_2026-11-03.md).
+
+
+
+## 2026-11-03 · 탑승자 웹 초대
+Node 전체165/165(해당시점추천동시시험포함), 이번고정web-*16/16 종료0; app/server/domain 문법검사0. 실제Chrome 초대전새로고침/참여/위치거부/직접장소수락/도착/탑승/완료·서버단절, 보완후자기초대차단/역할복원/링크재열기 확인. 실제HTTP proxy Host/Origin 주입과 nonce재시도/기본서버phone계약 검증; 실제TLS/물리폰/SDK아님. Haiku2회검수P1수정/P2후속처리, 공개회차남용은운영게이트유지. 상세/증거 PICKUP_RIDER_WEB_2026-11-03.md 및 evidence/pickup-web-*.
+
+
+## 2026-11-03 · 픽업 추천 최종
+`python work/pickup-recommendation/verify.py --all`: 종료0,176/176(기존위치115+추천45+탑승자웹16). 실제loopbackHTTP·합성engine·fakeDOM/controller, 기본실제수집차단/유휴삭제/위치만료/철회/경쟁조건/timeout-abort/수락후양측재동의/end상한예외 포함. Chrome양측 합성 후보→제안→근거표시→수락변경 확인,최종서버보강은HTTP·단위검증만. viewport요청480 실제640이므로640가로넘침없음만기록. 실제폰/SDK/경로/강남역추천/실차미실행·차단. Claude3회중요지적처리,마지막수정Codex재시험. docs/evidence/pickup-recommendation-tests-all.txt 및 final-manifest.json,전용보고서참조.

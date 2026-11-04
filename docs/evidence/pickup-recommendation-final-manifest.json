@@ -1,0 +1,66 @@
+[
+  {
+    "path": "experiments\\pickup-board\\recommendation\\board.mjs",
+    "sha256": "8b1e6c1ce1a860454d45e27b88f4311bae739312d0ecae0084fc14658f1629f1"
+  },
+  {
+    "path": "experiments\\pickup-board\\recommendation\\controller.mjs",
+    "sha256": "492593199b94adadb821acc190768ea243e6c4f2f615d415c5bbb9cad6d0f97f"
+  },
+  {
+    "path": "experiments\\pickup-board\\recommendation\\demo-server.mjs",
+    "sha256": "5edeeb2dce42f640bc8a341b0a22ed4550483c53970bbdf3092c5017b8689017"
+  },
+  {
+    "path": "experiments\\pickup-board\\recommendation\\engine.mjs",
+    "sha256": "927eaf31b5f35f7b5835d20d4282069cca7af193fdba56d2e9ccbe179b534ef7"
+  },
+  {
+    "path": "experiments\\pickup-board\\recommendation\\page.css",
+    "sha256": "812e571eac68d9b135df5da852d67547e4156917781792df2ff90e31391f681e"
+  },
+  {
+    "path": "experiments\\pickup-board\\recommendation\\page.html",
+    "sha256": "975acfde387e4651ebf5298b35f52ad97737ef6791ff94920e8ec599ab35c292"
+  },
+  {
+    "path": "experiments\\pickup-board\\recommendation\\page.mjs",
+    "sha256": "7a46d6ac8275f6165f42230a70c9a175d56eabd6789f1a8d3ea94a9bebb7754d"
+  },
+  {
+    "path": "experiments\\pickup-board\\recommendation\\providers.mjs",
+    "sha256": "4d8ed4b395096a336528c90b8bafbb978aa4aa4367c113b510b587b411ddf6b6"
+  },
+  {
+    "path": "experiments\\pickup-board\\recommendation\\README.md",
+    "sha256": "81af277a13eabda21df8da933ca5855f878c166f49ffb02b469fd35ec65c8f12"
+  },
+  {
+    "path": "experiments\\pickup-board\\recommendation-controller.test.mjs",
+    "sha256": "3f085880b12e6ea5eb8d6220cedc3682f862faf244edbe090c1e1a6276a39769"
+  },
+  {
+    "path": "experiments\\pickup-board\\recommendation-http.test.mjs",
+    "sha256": "a0360838d94e71cf2c3d0040fe5af05f239f00272b2cd221c8d0d75c312c172c"
+  },
+  {
+    "path": "experiments\\pickup-board\\recommendation-page.test.mjs",
+    "sha256": "a609f35ec290218937887d0e09d70cf517d1eeea45d63354d509daaf6ce2fab7"
+  },
+  {
+    "path": "experiments\\pickup-board\\recommendation.test.mjs",
+    "sha256": "54450f3bd99531c4625c4e3940ce7ac95a289290512fcff90310483d8a931ee7"
+  },
+  {
+    "path": "experiments\\pickup-board\\server.mjs",
+    "sha256": "d2edbe5d4787de638572a286083bedfe329fd92ffa86004c1bb002e900f9c362"
+  },
+  {
+    "path": "experiments\\pickup-board\\index.html",
+    "sha256": "66f8b979a61b47993d8eec9ca86e02f760d9c780ea1c513de9cb57c8d9c4a31e"
+  },
+  {
+    "path": "experiments\\pickup-board\\domain.mjs",
+    "sha256": "3b3068aae17172601103fc4694c09aff37cf9bc7a07e1ca033e180ae61c278a4"
+  }
+]

@@ -1,0 +1,24 @@
+✔ lost join response retries same capability only for five minutes, never after end (3.9152ms)
+✔ default RecommendationBoard preserves real HTTP phone grant/publish/read API (155.0142ms)
+✔ explicit HTTPS proxy origin: independent rider joins and completes without location (25.0498ms)
+✔ invite survives pre-join reload without account or location collection (6.3367ms)
+✔ already joined rider reopens original link without consuming invitation twice (1.3744ms)
+✔ malformed invite cannot accidentally create a driver room or call join (1.0823ms)
+✔ storage denial keeps invitation in fragment for reload and explains limitation (0.9757ms)
+✔ same-room driver cannot replace their own credential with rider role (0.9367ms)
+✔ persistent notice survives refresh; reopening same invite preserves retry key (1.1938ms)
+✔ existing other session is preserved until explicit join; invitation can be dismissed (0.9686ms)
+✔ dismissing an attempted invitation explains recovery loss before deleting retry key (1.2335ms)
+✔ copy failure exposes selectable link and local-only notice; used invitation gets scrubbed (2.1173ms)
+✔ failed credential save preserves retry key and persistent five-minute recovery notice (1.5861ms)
+✔ public origin is opt-in HTTPS with no path, credentials or token (1.0945ms)
+✔ loopback default rejects external hosts and spoofed forwarding headers (0.1742ms)
+✔ proxy origin requires exact Host/Origin; navigation without Origin can open invite (0.1851ms)
+ℹ tests 16
+ℹ suites 0
+ℹ pass 16
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 311.9351

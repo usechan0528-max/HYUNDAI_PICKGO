@@ -1,0 +1,599 @@
+Read-only Haiku5.5 follow-up; English <=700 words. No tools/edits. Prior session 3b378e10-d906-416c-9257-25bd3dbf6373 findings and actions: F1 fixed ALL non-synthetic grant/publish fail server-side, default mode unavailable. F2 proposed auto-delete e.proposal NOT adopted: dropping binding while Board proposal remains would allow /actions bypass; keep minimal candidate/proposal binding for room lifetime, remove derived summary when either fix/grant gone. Proposal is persistent user intent, not evidence: acceptance always recalculates fresh. Remove unused until/revision, summaryUntil is display-only stale label. F3 page gets fresh Board view before accept, retains all server CAS/context checks. F4 evidence checked within demo policy15min+arrival margin60sec; live source policy remains blocked. F5 proposal evidence summary displayed with stale/recheck labels. F6 buttons reused when snapshot ID+room version identical, notify invalidates snapshot not role freshness; successful publish intentionally invalidates recommendations using previous fix. F7 bounded pending latest fix drained with queued-age correction. F8 tests added default privacy, cap, timeout, actual rec acceptance after fix expiry, withdraw during accept, stale evidence and controller pending. Additional page tests clear expiry/offline/revoke/race. Tests156/156 exit0. Current engine explicit synthetic only; Gangnam Station selected by human as first real area but no verified stopping entrance/route/provider account yet, no real recommendation claim. Full current changed files+test output below, fixed snapshot. Identify remaining P0/P1/P2 with evidence, don't claim executing anything.
+
+FILE experiments\pickup-board\recommendation\board.mjs
+import { randomUUID } from 'node:crypto';
+import { PhoneBoard } from '../phone-domain.mjs';
+import { Fault, VIEW_TTL, PLACES } from '../domain.mjs';
+import { rankCandidates, freshFix, POLICY } from './engine.mjs';
+import { unavailableProvider } from './providers.mjs';
+const check=(ok,status,message)=>{if(!ok)throw new Fault(status,message);};
+const uuid=x=>typeof x==='string'&&/^[a-f0-9-]{36}$/.test(x);
+export class RecommendationBoard extends PhoneBoard {
+  constructor(now=Date.now,mono=()=>performance.now(),provider=unavailableProvider) {
+    super(now,mono); this.provider=provider; this.recommendations=new Map(); this.recLastMono=mono();
+  }
+  sweep() {
+    super.sweep(); if(!this.recommendations)return;
+    const at=this.mono(), invalid=!Number.isFinite(at)||at<this.recLastMono; this.recLastMono=at;
+    for(const [id,e] of this.recommendations){
+      const r=this.rooms.get(id); if(!r){this.recommendations.delete(id);continue;}
+      for(const role of ['driver','rider']){
+        const p=e[role];
+        if(invalid||r.status!=='active'||r.stage==='boarded'||(p.grant&&at>=p.grant.until)){p.grant=null;p.fix=null;e.snapshot=null;}
+        if(p.fix&&!freshFix(p.fix,at)){p.fix=null;e.snapshot=null;}
+      }
+      if(e.snapshot&&at>=e.snapshot.until)e.snapshot=null;
+      // Keep only proposal binding so ordinary /actions cannot bypass revalidation.
+      // Derived route summaries disappear with either party's location/consent.
+      if(e.proposal&&(!e.driver.fix||!e.rider.fix||!e.driver.grant||!e.rider.grant))e.proposal.summary=null;
+    }
+  }
+  entry(id){
+    if(!this.recommendations.has(id))this.recommendations.set(id,{driver:{used:new Set(),grant:null,fix:null},rider:{used:new Set(),grant:null,fix:null},snapshot:null,proposal:null,revision:0,busy:false});
+    return this.recommendations.get(id);
+  }
+  active(r){check(r.status==='active'&&r.stage!=='boarded'&&r.joined,409,'상대 참여와 탑승 전 회차를 확인해 주세요.');}
+  context(r,credential,input){check(r.version===input.version&&(r.views.get(credential)||[]).some(v=>v.key===input.view&&this.now()-v.at>=0&&this.now()-v.at<VIEW_TTL),409,'최신 회차를 다시 확인해 주세요.');}
+  async recommend(id,credential,input=null){
+    const r=this.room(id),role=this.auth(r,credential); this.sweep(); const e=this.entry(id),p=e[role];
+    if(!input)return this.status(e,role);
+    check(input&&typeof input==='object',400,'추천 요청을 확인해 주세요.');
+    if(input.type==='revoke'){
+      check(uuid(input.consentId),400,'동의 식별자가 필요합니다.');
+      if(p.used.size<100)p.used.add(input.consentId);
+      if(p.grant?.id===input.consentId){p.grant=null;p.fix=null;e.snapshot=null;e.revision++;}
+      return this.status(e,role);
+    }
+    this.active(r);
+    if(['grant','publish'].includes(input.type))check(this.provider!==unavailableProvider&&this.provider.mode==='synthetic',409,'실제 추천 위치 기능이 연결되지 않아 수집하지 않습니다.');
+    if(input.type==='grant'){
+      this.context(r,credential,input);
+      check(input.consent==='pickup-recommendation-continuous-v1'&&uuid(input.consentId),400,'추천용 연속 위치 공유에 별도로 동의해 주세요.');
+      check(p.used.size<100&&!p.used.has(input.consentId),409,'새 동의가 필요합니다.');
+      p.used.add(input.consentId);p.grant={id:input.consentId,until:this.mono()+600000,sequence:-1};p.fix=null;e.snapshot=null;e.revision++;
+    }else if(input.type==='publish'){
+      check(p.grant&&p.grant.id===input.consentId,409,'공유 동의가 만료되거나 철회되었습니다.');
+      check(Number.isSafeInteger(input.sequence)&&input.sequence>p.grant.sequence,409,'이전 위치 갱신입니다.');
+      const f=input.fix;
+      const fix=f&&{id:randomUUID(),at:this.mono(),latitude:f.latitude,longitude:f.longitude,accuracy:f.accuracy,ageMs:f.ageMs};
+      check(freshFix(fix,this.mono()),400,'위치 시각 또는 정확도를 확인할 수 없습니다.');
+      check(input.source===(this.provider.mode==='synthetic'?'synthetic':role==='rider'?'browser-geolocation':'verified-vehicle'),400,'위치 출처가 일치하지 않습니다.');
+      // Native authenticated SDK publisher is not connected. Browser cannot impersonate it.
+      check(this.provider.mode==='synthetic'||role==='rider',409,'실제 차량 위치 연결이 준비되지 않았습니다.');
+      p.grant.sequence=input.sequence;p.fix=fix;e.snapshot=null;e.revision++;
+    }else if(input.type==='calculate'||input.type==='accept'){
+      const accepting=input.type==='accept';
+      if(accepting){this.context(r,credential,input);check(e.proposal&&e.proposal.proposalId===r.proposal?.id&&input.proposalId===r.proposal.id&&r.proposal.by!==role,409,'상대의 현재 추천 제안을 확인해 주세요.');}
+      if(this.provider===unavailableProvider)return {...this.status(e,role),status:'provider-unavailable'};
+      check(!e.busy,429,'추천 계산 중입니다.');
+      check(e.driver.grant&&e.rider.grant&&freshFix(e.driver.fix,this.mono())&&freshFix(e.rider.fix,this.mono()),409,'양측의 새 위치 공유가 필요합니다.');
+      const rev=e.revision,version=r.version; e.busy=true; e.snapshot=null;
+      let timer;
+      try{
+        const data=await Promise.race([this.provider.evaluate({driver:{...e.driver.fix},rider:{...e.rider.fix},now:this.mono(),wall:this.now()}),new Promise((_,reject)=>{timer=setTimeout(()=>reject(new Error('timeout')),3000);})]);
+        this.sweep();this.active(r);
+        check(rev===e.revision&&version===r.version&&e.driver.grant&&e.rider.grant&&freshFix(e.driver.fix,this.mono())&&freshFix(e.rider.fix,this.mono()),409,'위치나 약속이 변경되었습니다. 다시 계산해 주세요.');
+        const ranked=rankCandidates({...data,driver:e.driver.fix,rider:e.rider.fix,mode:this.provider.mode},this.mono(),this.now());
+        // Current Board only supports the named synthetic destinations. Live catalog binding remains gated.
+        ranked.candidates=ranked.candidates.filter(c=>this.provider.mode==='synthetic'&&PLACES.includes(c.name));
+        if(ranked.status==='ready'&&!ranked.candidates.length)ranked.status='catalog-unavailable';
+        if(accepting){
+          check(ranked.candidates.some(c=>c.id===e.proposal?.candidateId&&c.name===r.proposal?.place),409,'현재 위치와 근거로 제안 지점을 추천할 수 없습니다. 제안을 거절하거나 철회해 주세요.');
+          this.context(r,credential,input);
+          super.act(id,credential,{...input,type:'accept'});e.proposal=null;e.snapshot=null;
+          return {...this.status(e,role),accepted:true};
+        }
+        if(ranked.candidates.length)e.snapshot={...ranked,id:randomUUID(),until:this.mono()+ranked.remainingMs,revision:rev,version};
+        return {...this.status(e,role),status:ranked.status};
+      }catch(err){if(err instanceof Fault)throw err;return {...this.status(e,role),status:'provider-unavailable'};}
+      finally{clearTimeout(timer);e.busy=false;}
+    }else if(input.type==='select'){
+      this.context(r,credential,input);
+      const s=e.snapshot;
+      check(s&&s.id===input.snapshotId&&s.version===r.version&&s.revision===e.revision,409,'추천이 만료되었습니다. 다시 계산해 주세요.');
+      const c=s.candidates.find(c=>c.id===input.candidateId);check(c,400,'추천 후보를 선택해 주세요.');
+      const result=super.act(id,credential,{...input,type:'propose',place:c.name});
+      e.proposal={proposalId:result.proposal.id,candidateId:c.id,summary:{...c},summaryUntil:s.until};e.snapshot=null;
+      return {...this.status(e,role),proposed:true};
+    }else throw new Fault(400,'알 수 없는 추천 요청입니다.');
+    return this.status(e,role);
+  }
+  status(e,role){const s=e.snapshot;return {mode:this.provider.mode,status:this.provider===unavailableProvider?'provider-unavailable':s?'ready':'waiting',sharing:!!e[role].grant,shareRemainingMs:e[role].grant?Math.max(0,e[role].grant.until-this.mono()):0,driverFresh:!!e.driver.fix,riderFresh:!!e.rider.fix,proposalEvidence:e.proposal?.summary?{...e.proposal.summary,stale:this.mono()>=e.proposal.summaryUntil}:null,snapshot:s?{id:s.id,candidates:s.candidates,remainingMs:Math.max(0,s.until-this.mono())}:null};}
+  act(id,credential,command){
+    this.sweep(); const e=this.recommendations.get(id),r=this.room(id);
+    if(command?.type==='accept'&&e?.proposal?.proposalId===r.proposal?.id){
+      throw new Fault(409,'추천 화면에서 최신 경로와 정차 근거를 다시 확인하고 수락해 주세요.');
+    }
+    const result=super.act(id,credential,command);
+    if(e){e.snapshot=null;if(['accept','reject','withdraw','end'].includes(command.type))e.proposal=null;}
+    this.sweep();return result;
+  }
+}
+
+FILE experiments\pickup-board\recommendation\controller.mjs
+export class ContinuousShare {
+  constructor({geo,send,allowed,notify=()=>{},mono=()=>performance.now(),wall=Date.now}){Object.assign(this,{geo,send,allowed,notify,mono,wall});this.generation=0;this.current=null;}
+  async start(context,{synthetic=false,longitude=127}={}){
+    if(this.current||!this.allowed())return;
+    const generation=++this.generation,consentId=crypto.randomUUID();
+    const c=this.current={consentId,generation,watch:null,timer:null,sequence:0,busy:false,until:this.mono()+600000};
+    try{
+      await this.send({...context,type:'grant',consentId,consent:'pickup-recommendation-continuous-v1'});
+      if(this.current!==c){await this.send({type:'revoke',consentId},true).catch(()=>{});return;}
+      if(!this.allowed()){await this.stop();return;}
+      const publish=async (fix,sampledAt=this.mono())=>{
+        if(this.current!==c||!this.allowed()||this.mono()>=c.until){if(this.current===c)await this.stop();return;}
+        if(c.busy){c.pending={fix,sampledAt};return;}c.busy=true;
+        try{await this.send({type:'publish',consentId,sequence:c.sequence++,source:synthetic?'synthetic':'browser-geolocation',fix:{...fix,ageMs:fix.ageMs+Math.max(0,this.mono()-sampledAt)}});if(this.current===c)this.notify('위치 공유 중 · 마지막 수신 위치를 사용합니다.');}
+        catch{if(this.current===c)await this.stop('위치 갱신에 실패해 공유를 중지했습니다.');}finally{c.busy=false;const pending=c.pending;c.pending=null;if(pending&&this.current===c)void publish(pending.fix,pending.sampledAt);}
+      };
+      if(synthetic){const sample=()=>publish({latitude:37,longitude,accuracy:5,ageMs:0});await sample();if(this.current===c)c.timer=setInterval(sample,8000);}
+      else{
+        const watch=this.geo.watchPosition(p=>{
+          if(this.current!==c)return;
+          const ageMs=this.wall()-p.timestamp;
+          if(!Number.isFinite(ageMs)||ageMs<0||ageMs>=15000){void this.stop('위치가 오래되어 중지했습니다.');return;}
+          void publish({latitude:p.coords.latitude,longitude:p.coords.longitude,accuracy:p.coords.accuracy,ageMs});
+        },()=>{if(this.current===c)void this.stop('위치 권한 또는 수신 오류로 중지했습니다.');},{enableHighAccuracy:true,maximumAge:0,timeout:10000});
+        if(this.current===c)c.watch=watch;else this.geo.clearWatch(watch);
+      }
+    }catch{if(this.current===c)await this.stop('위치 공유를 시작하지 못했습니다.');}
+  }
+  async stop(message='공유를 중지했습니다.'){
+    const c=this.current;this.current=null;this.generation++;
+    if(c){c.pending=null;if(c.watch!==null)this.geo?.clearWatch(c.watch);clearInterval(c.timer);
+      try{await this.send({type:'revoke',consentId:c.consentId},true);}catch{message+=' 서버 삭제 미확인 · 마지막 위치는 관측 후 15초에 조회 만료됩니다.';}}
+    this.notify(message);
+  }
+}
+
+FILE experiments\pickup-board\recommendation\demo-server.mjs
+import { createServer } from '../server.mjs';
+import { RecommendationBoard } from './board.mjs';
+import { syntheticProvider } from './providers.mjs';
+const port=Number(process.env.PICKUP_PORT||4187);
+createServer(new RecommendationBoard(Date.now,()=>performance.now(),syntheticProvider)).listen(port,'127.0.0.1',()=>console.log(`합성 추천 전용 시연 http://127.0.0.1:${port} · 실제 위치/경로/정차 데이터 아님`));
+
+FILE experiments\pickup-board\recommendation\engine.mjs
+// Provider-normalized contract, not a claim that any public API supplies curb permission.
+export const POLICY = Object.freeze({ fixTtlMs: 15000, maxAccuracyM: 50, resultTtlMs: 5000, dwellSeconds: 60, arrivalMarginSeconds:60, evidenceMaxAgeMs:900000, uturnPenaltySeconds: 120 });
+const finite = x => typeof x === 'number' && Number.isFinite(x);
+const nonnegative = x => finite(x) && x >= 0;
+const text = x => typeof x === 'string' && x.length > 0 && x.length <= 300;
+export function freshFix(f, now) {
+  return f && text(f.id) && finite(now) && finite(f.at) && nonnegative(f.ageMs) && now >= f.at && now - f.at + f.ageMs < POLICY.fixTtlMs &&
+    finite(f.latitude) && Math.abs(f.latitude) <= 90 && finite(f.longitude) && Math.abs(f.longitude) <= 180 &&
+    finite(f.accuracy) && f.accuracy > 0 && f.accuracy <= POLICY.maxAccuracyM;
+}
+export function rankCandidates({ driver, rider, route, candidates, mode }, now, wall) {
+  const empty = reason => ({ status: reason, candidates: [], mode });
+  if (!['live','synthetic'].includes(mode)) return empty('provider-unavailable');
+  if (!freshFix(driver, now) || !freshFix(rider, now)) return empty('location-unavailable');
+  if (!route || !text(route.id) || route.driverFixId !== driver.id || route.riderFixId !== rider.id || route.mode !== mode ||
+      !finite(route.until) || now >= route.until || !finite(route.at) || now < route.at || now-route.at >= POLICY.fixTtlMs) return empty('route-unavailable');
+  if (!Array.isArray(candidates) || candidates.length > 100) return empty('provider-invalid');
+  const ids = new Set();
+  const eligible = [];
+  for (const c of candidates) {
+    if (!c || !text(c.id) || ids.has(c.id)) continue;
+    ids.add(c.id);
+    const e=c.evidence, v=c.vehicle, w=c.walk;
+    if (!text(c.name) || !text(c.entranceId) || c.mode !== mode || !e || !v || !w) continue;
+    if (e.entranceId !== c.entranceId || e.mode !== mode || !text(e.source) || !text(e.reference) ||
+        e.pickupAllowed !== true || e.vehicleAllowed !== true || e.closed !== false || e.prohibited !== false ||
+        !finite(e.checkedAt) || e.checkedAt > wall || wall-e.checkedAt>=POLICY.evidenceMaxAgeMs || !finite(e.validFrom) || wall < e.validFrom || !finite(e.validUntil) ||
+        !finite(e.maxDwellSeconds) || e.maxDwellSeconds < POLICY.dwellSeconds) continue;
+    if (v.routeId !== route.id || w.routeId !== route.id || v.entranceId !== c.entranceId || w.entranceId !== c.entranceId ||
+        v.reachable !== true || v.legalApproach !== true || w.reachable !== true || w.pathVerified !== true ||
+        !text(v.source) || !text(w.source) || !text(v.approach) || !nonnegative(v.detourSeconds) || !nonnegative(v.arrivalSeconds) ||
+        !Number.isInteger(v.uturns) || v.uturns < 0 || !nonnegative(w.seconds) || !nonnegative(w.meters)) continue;
+    // Permission must cover arrival of BOTH parties and the planned pickup dwell.
+    if (wall + (Math.max(v.arrivalSeconds, w.seconds) + POLICY.dwellSeconds + POLICY.arrivalMarginSeconds)*1000 >= e.validUntil) continue;
+    const score=v.detourSeconds+w.seconds+v.uturns*POLICY.uturnPenaltySeconds;
+    eligible.push({ id:c.id, name:c.name, entranceId:c.entranceId, score, mode,
+      detourSeconds:v.detourSeconds, walkSeconds:w.seconds, walkMeters:w.meters, uturns:v.uturns,
+      approach:v.approach, source:e.source, reference:e.reference, checkedAt:e.checkedAt, validUntil:e.validUntil,
+      maxDwellSeconds:e.maxDwellSeconds,
+      reason:`차량 우회 ${v.detourSeconds}초 · 보행 경로 ${w.seconds}초/${w.meters}m · 유턴 ${v.uturns}회` });
+  }
+  eligible.sort((a,b)=>a.score-b.score || a.id.localeCompare(b.id));
+  return { status:eligible.length?'ready':'no-eligible-candidate', mode, candidates:eligible.slice(0,3),
+    remainingMs:Math.max(0, Math.min(POLICY.resultTtlMs, route.until-now, POLICY.fixTtlMs-(now-driver.at+driver.ageMs), POLICY.fixTtlMs-(now-rider.at+rider.ageMs))) };
+}
+
+FILE experiments\pickup-board\recommendation\page.css
+@font-face{font-family:Asta;src:url('/fonts/AstaSans.ttf')}*{box-sizing:border-box}body{margin:0;background:#eeefeb;color:#202824;font:18px Asta,sans-serif}main{max-width:1100px;margin:auto;padding:28px}header,.row{display:flex;gap:14px;align-items:center;justify-content:space-between;flex-wrap:wrap}a{color:inherit}h1{font-size:clamp(30px,5vw,48px);margin:12px 0}h2{font-size:24px}.eyebrow{letter-spacing:.18em;font-size:14px}section{background:#fafbf8;padding:24px;margin:20px 0;border-top:1px solid #c8ccc5}p{line-height:1.6}button{font:inherit;min-height:64px;padding:16px 22px;border:1px solid #526357;border-radius:2px;background:#e4e9e1;color:#202824;cursor:pointer;touch-action:manipulation}button:disabled{opacity:.45;cursor:default}#candidates{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:14px}.candidate{text-align:left;display:flex;flex-direction:column;gap:12px;min-width:0;overflow-wrap:anywhere;transition:background .2s ease}.candidate strong{font-size:23px}.candidate small{font-size:15px;line-height:1.5}footer{padding:15px 0;line-height:1.6}[hidden]{display:none!important}@media(max-width:520px){main{padding:16px}section{padding:18px}.row button{width:100%}#mode{font-size:14px}}
+
+FILE experiments\pickup-board\recommendation\page.html
+<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>픽업 · 지점 추천</title><link rel="stylesheet" href="/recommendation/page.css"></head>
+<body><main><header><a href="/">← 약속판</a><span id="mode">연결 확인 중</span></header>
+<p class="eyebrow">PICKUP POINT</p><h1>동선에 맞는 만날 곳</h1><p id="context">회차 확인 중</p>
+<section><h2>추천용 위치 공유</h2><p>양측이 별도로 동의하면 이 화면이 보이는 동안 최대 10분간 위치를 갱신합니다. 서버 메모리에 각자 마지막 위치 1개만 보관하며 관측 후 15초에 조회가 만료되고 다음 정리 주기에 삭제됩니다. 중지·탑승·종료 시 삭제합니다. 연결이 끊기면 삭제 요청이 도착하지 않을 수 있습니다.</p><p>실제 차량 위치·경로 공급자·정차 구역 대장은 아직 미연동입니다. 아래 시연은 합성 위치와 가상 도로만 사용하며 실제 위치 권한을 요청하지 않습니다.</p>
+<div class="row"><button id="west" disabled>서쪽 합성 위치 공유 동의</button><button id="east" disabled>동쪽 합성 위치 공유 동의</button><button id="stop">공유 중지</button></div><p id="sharing">공유하지 않음</p></section>
+<section><div class="row"><h2>추천 후보</h2><button id="calculate" disabled>현재 위치로 다시 추천</button></div><p>정차 근거가 있는 후보 안에서 차량 우회초 + 보행초 + 유턴 1회당 120초로 비교하는 실험 정책입니다. 실제 최적 지점이나 현장 정차 가능성을 보장하지 않습니다.</p><p id="message" role="status"></p><div id="candidates"></div></section>
+<section id="proposal" hidden><h2>상대와 장소 합의</h2><p id="proposed"></p><p id="proposalEvidence"></p><div class="row"><button id="accept">최신 근거 확인 후 수락</button><button id="reject">거절</button><button id="withdraw">제안 철회</button></div></section>
+<footer>재계산은 확정 지점을 바꾸지 않습니다. 상대 수락 후에만 변경됩니다.</footer></main><script type="module" src="/recommendation/page.mjs"></script></body></html>
+
+FILE experiments\pickup-board\recommendation\page.mjs
+import { ContinuousShare } from './controller.mjs';
+const $=id=>document.getElementById(id);
+let session=null,state=null,result=null,until=0,freshUntil=0,busy=false,polling=false,renderedSnapshot=null;
+try{session=JSON.parse(sessionStorage.getItem('pickupSession'));}catch{}
+const environment=()=>navigator.onLine&&!document.hidden;
+const allowed=()=>environment()&&state?.status==='active'&&state?.stage!=='boarded'&&state?.joined&&performance.now()<freshUntil;
+async function request(path,body,keepalive=false){
+ const response=await fetch(`/api/rooms/${session.id}${path}`,{method:body?'POST':'GET',cache:'no-store',keepalive,signal:AbortSignal.timeout(4000),headers:{Authorization:`Bearer ${session.token}`,...(body?{'Content-Type':'application/json'}:{})},...(body?{body:JSON.stringify(body)}:{})});
+ const data=await response.json();if(!response.ok)throw Error(data.error||'연결을 확인해 주세요.');return data;
+}
+const share=new ContinuousShare({geo:navigator.geolocation,allowed,send:(body,keep)=>request('/recommendation',body,keep),notify:text=>{if(!share.current){result=null;$('message').textContent=text;}else if(result){result={...result,snapshot:null};}render();}});
+const context=()=>({version:state.version,view:state.view,requestId:crypto.randomUUID()});
+function render(){
+ const can=allowed()&&!busy;
+ $('context').textContent=!session?'약속판에서 먼저 회차에 참여해 주세요.':!allowed()?'현재 회차 미확인 또는 공유 불가':`${session.role==='driver'?'운전자':'탑승자'} · 확정 지점: ${state.place}`;
+ for(const id of ['west','east'])$(id).disabled=!can||!!share.current||result?.mode!=='synthetic';
+ $('calculate').disabled=!can||!result?.driverFresh||!result?.riderFresh;
+ $('sharing').textContent=`내 공유 ${share.current?'켜짐':'꺼짐'} · 차량 ${result?.driverFresh?'최신':'미확인'} · 탑승자 ${result?.riderFresh?'최신':'미확인'}`;
+ if(!can||!result?.snapshot||performance.now()>=until){$('candidates').replaceChildren();renderedSnapshot=null;}
+ $('proposal').hidden=!state?.proposal||!allowed();
+ if(state?.proposal){$('proposed').textContent=state.proposal.place;const e=result?.proposalEvidence;$('proposalEvidence').textContent=e?`제안 당시 근거${e.stale?' · 현재 재확인 필요':''}: ${e.reason} · ${e.source} (${e.reference}) · 확인 ${new Date(e.checkedAt).toLocaleTimeString()} · 유효 ${new Date(e.validUntil).toLocaleTimeString()}. 수락 시 최신 위치·경로·정차 근거를 다시 확인합니다.`:'추천 근거가 없거나 현재 미확인입니다. 추천 화면 수락은 검증된 추천 제안에만 적용됩니다.';const own=state.proposal.by===session.role;$('accept').hidden=$('reject').hidden=own;$('withdraw').hidden=!own;for(const id of ['accept','reject','withdraw'])$(id).disabled=!can;}
+ if(share.current&&(!allowed()||performance.now()>=share.current.until))void share.stop('위치 공유 조건이 끝나 중지했습니다.');
+}
+const statuses={'provider-unavailable':'실제 위치·경로·정차 데이터가 연결되지 않았습니다. 수동 장소 합의를 이용해 주세요.','no-eligible-candidate':'정차·접근 근거를 만족하는 후보가 없습니다.','location-unavailable':'양측의 새 위치가 필요합니다.','route-unavailable':'현재 위치에 맞는 경로가 없습니다.','catalog-unavailable':'검증된 장소 대장이 연결되지 않았습니다.'};
+function show(data,began){
+ result=data;until=began+(data.snapshot?.remainingMs||0);$('mode').textContent=data.mode==='synthetic'?'합성 위치·경로·정차 근거 시연':'실제 연동 준비 · 추천 비활성';
+ if(statuses[data.status])$('message').textContent=statuses[data.status];
+ if(!allowed()||!data.snapshot||performance.now()>=until){$('candidates').replaceChildren();renderedSnapshot=null;return;}
+ const renderKey=`${data.snapshot.id}:${state.version}`;if(renderedSnapshot===renderKey)return;
+ $('candidates').replaceChildren();renderedSnapshot=renderKey;
+ for(const [i,c] of (data.snapshot?.candidates||[]).entries()){
+  const b=document.createElement('button');b.className='candidate';b.disabled=!!state.proposal||c.name===state.place;
+  const title=document.createElement('strong');title.textContent=`${i+1}. ${c.name}`;
+  const reason=document.createElement('span');reason.textContent=c.reason;
+  const evidence=document.createElement('small');evidence.textContent=`${c.approach} · ${c.source} (${c.reference}) · 확인 ${new Date(c.checkedAt).toLocaleTimeString()} · 유효 ${new Date(c.validUntil).toLocaleTimeString()} · 정차 한도 ${c.maxDwellSeconds}초 · 위치 정확도는 합성 5m`;
+  b.append(title,reason,evidence);b.onclick=()=>run('select',{snapshotId:data.snapshot.id,candidateId:c.id});$('candidates').append(b);
+ }
+}
+async function refresh(){if(!session||polling||busy||document.hidden)return;polling=true;const began=performance.now(),generation=share.generation;try{
+ const next=await request('');if(!environment()||generation!==share.generation)return;
+ state=next;freshUntil=began+6000;const data=await request('/recommendation');if(environment()&&generation===share.generation)show(data,began);
+ }catch{freshUntil=0;result=null;$('message').textContent='연결을 확인할 수 없어 추천을 지웠습니다.';}finally{polling=false;render();}}
+async function run(type,extra={}){if(!allowed()||busy)return;busy=true;const began=performance.now(),generation=share.generation;$('candidates').replaceChildren();try{
+ const path=['reject','withdraw'].includes(type)?'/actions':'/recommendation';
+ if(type==='accept'){state=await request('');freshUntil=performance.now();freshUntil+=5000;if(!environment()||generation!==share.generation)return;}
+ const data=await request(path,{...context(),type,...extra});
+ if(environment()&&generation===share.generation){if(path==='/recommendation')show(data,began);$('message').textContent=data.proposed?'변경 제안 완료 · 상대 수락 대기':data.accepted?'상대 제안을 수락했습니다.':statuses[data.status]||'최신 상태를 확인했습니다.';}
+ }catch(e){$('message').textContent=e.message;result=null;}finally{busy=false;await refresh();render();}}
+for(const [id,longitude]of [['west',127],['east',127.002]])$(id).onclick=()=>{if(allowed()&&result?.mode==='synthetic')void share.start(context(),{synthetic:true,longitude});};
+$('stop').onclick=()=>{result=null;void share.stop();};$('calculate').onclick=()=>run('calculate');
+for(const type of ['accept','reject','withdraw'])$(type).onclick=()=>run(type,{proposalId:state?.proposal?.id});
+for(const event of ['offline','pagehide'])addEventListener(event,()=>{freshUntil=0;result=null;void share.stop();render();});
+document.addEventListener('visibilitychange',()=>{freshUntil=0;result=null;if(document.hidden)void share.stop();else void refresh();render();});
+setInterval(refresh,2000);setInterval(render,250);render();void refresh();
+
+FILE experiments\pickup-board\recommendation\providers.mjs
+import { PLACES } from '../domain.mjs';
+export const unavailableProvider = Object.freeze({ mode:'unavailable', async evaluate() { return null; } });
+// Explicit opt-in synthetic graph; costs are graph-edge sums, never straight-line walking estimates.
+export const syntheticProvider = Object.freeze({
+  mode:'synthetic',
+  async evaluate({driver,rider,now,wall}) {
+    const routeId=`demo:${driver.id}:${rider.id}`;
+    const east=driver.longitude>127.001;
+    const riderEast=rider.longitude>127.001;
+    const driving=east?[240,30,90]:[30,210,90];
+    const walking=riderEast?[240,40,120]:[30,240,120];
+    return { mode:'synthetic', driver, rider,
+      route:{id:routeId, driverFixId:driver.id, riderFixId:rider.id, mode:'synthetic',at:now,until:now+5000},
+      candidates:PLACES.map((name,i)=>({id:`demo-${i}`,name,entranceId:`demo-entrance-${i}`,mode:'synthetic',
+        evidence:{entranceId:`demo-entrance-${i}`,mode:'synthetic',source:'합성 승하차 구역 대장',reference:`fixture:pickup-zone-${i}`,checkedAt:wall,validFrom:wall-1000,validUntil:wall+3600000,pickupAllowed:true,vehicleAllowed:true,closed:false,prohibited:false,maxDwellSeconds:120},
+        vehicle:{routeId,entranceId:`demo-entrance-${i}`,reachable:true,legalApproach:true,source:'합성 방향 도로 그래프',approach:east?'동쪽 도로 → 지정 진입로':'서쪽 도로 → 지정 진입로',detourSeconds:driving[i],arrivalSeconds:driving[i]+60,uturns:i===(east?0:1)?1:0},
+        walk:{routeId,entranceId:`demo-entrance-${i}`,reachable:true,pathVerified:true,source:'합성 보행 그래프',seconds:walking[i],meters:walking[i]*1.2}
+      })) };
+  }
+});
+
+FILE experiments\pickup-board\recommendation-controller.test.mjs
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import { ContinuousShare } from './recommendation/controller.mjs';
+const flush=()=>new Promise(resolve=>setImmediate(resolve));
+function setup(){const calls=[],cleared=[];let callback,error,allowed=true;const share=new ContinuousShare({geo:{watchPosition(fn,fail){callback=fn;error=fail;return 42;},clearWatch(id){cleared.push(id);}},send:async body=>{calls.push(body);},allowed:()=>allowed,wall:()=>10000});return{share,calls,cleared,fix:()=>callback({timestamp:10000,coords:{latitude:37,longitude:127,accuracy:5}}),error:()=>error(),deny:()=>allowed=false};}
+test('no collection before consent; stop clears watch and ignores late callback',async()=>{const x=setup();assert.equal(x.calls.length,0);await x.share.start({});x.fix();await flush();assert.equal(x.calls.filter(c=>c.type==='publish').length,1);await x.share.stop();x.fix();await flush();assert.deepEqual(x.cleared,[42]);assert.equal(x.calls.filter(c=>c.type==='publish').length,1);assert.equal(x.calls.at(-1).type,'revoke');});
+test('permission error and loss of foreground eligibility stop sharing',async()=>{for(const way of ['error','deny']){const x=setup();await x.share.start({});x[way]();if(way==='deny')x.fix();await flush();assert.equal(x.share.current,null);assert.equal(x.calls.at(-1).type,'revoke');}});
+test('old grant resolution does not terminate a newer consent',async()=>{let resolve;let first=true;const calls=[];const share=new ContinuousShare({geo:{watchPosition(){return 3;},clearWatch(){}},allowed:()=>true,send:body=>{calls.push(body);if(body.type==='grant'&&first){first=false;return new Promise(r=>resolve=r);}return Promise.resolve();}});const old=share.start({});await share.stop();await share.start({});const current=share.current;resolve();await old;assert.equal(share.current,current);await share.stop();});
+test('revoke network failure still ends local collection',async()=>{const x=setup();await x.share.start({});x.share.send=async()=>{throw Error('offline');};await x.share.stop();assert.equal(x.share.current,null);assert.deepEqual(x.cleared,[42]);});
+test('busy publisher drains only newest queued fix',async()=>{let callback,release;const calls=[];let first=true;const share=new ContinuousShare({allowed:()=>true,wall:()=>10000,geo:{watchPosition(fn){callback=fn;return 1;},clearWatch(){}},send:async body=>{calls.push(body);if(body.type==='publish'&&first){first=false;await new Promise(r=>release=r);}}});await share.start({});for(const longitude of [127,127.001,127.002])callback({timestamp:10000,coords:{latitude:37,longitude,accuracy:5}});release();await flush();assert.deepEqual(calls.filter(c=>c.type==='publish').map(c=>c.fix.longitude),[127,127.002]);await share.stop();});
+
+FILE experiments\pickup-board\recommendation-http.test.mjs
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {randomUUID} from 'node:crypto';
+import {createServer} from './server.mjs';
+import {RecommendationBoard} from './recommendation/board.mjs';
+import {syntheticProvider} from './recommendation/providers.mjs';
+import {PLACES} from './domain.mjs';
+test('actual HTTP authenticated recommendation, selection and latest-evidence acceptance',async t=>{
+ const server=createServer(new RecommendationBoard(Date.now,()=>performance.now(),syntheticProvider));await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));t.after(()=>server.close());const base=`http://127.0.0.1:${server.address().port}`;
+ const req=async(path,body,token)=>{const r=await fetch(base+path,{method:body?'POST':'GET',headers:{...(body?{'Content-Type':'application/json'}:{}),...(token?{Authorization:`Bearer ${token}`}:{})},...(body?{body:JSON.stringify(body)}:{})});return{status:r.status,data:await r.json()};};
+ const d=(await req('/api/rooms',{place:PLACES[2]})).data,root=`/api/rooms/${d.id}`;const r=(await req(root+'/join',{invite:d.invite})).data;
+ const call=async(who,type,extra={})=>{const v=(await req(root,null,who.token)).data;return req(root+'/recommendation',{version:v.version,view:v.view,requestId:randomUUID(),type,...extra},who.token);};
+ for(const who of [d,r]){const consentId=randomUUID();assert.equal((await call(who,'grant',{consentId,consent:'pickup-recommendation-continuous-v1'})).status,200);assert.equal((await call(who,'publish',{consentId,source:'synthetic',sequence:0,fix:{latitude:37,longitude:127,accuracy:5,ageMs:0}})).status,200);}
+ assert.equal((await req(root+'/recommendation',null,'wrong')).status,403);
+ const result=await call(d,'calculate'),s=result.data.snapshot;assert.equal(s.candidates.length,3);
+ assert.equal((await call(d,'select',{snapshotId:s.id,candidateId:s.candidates[0].id,place:'injected'})).status,200);
+ const view=(await req(root,null,r.token)).data;assert.equal(view.place,PLACES[2]);
+ assert.equal((await call(r,'accept',{proposalId:view.proposal.id})).status,200);assert.equal((await req(root,null,r.token)).data.place,PLACES[0]);
+ const denied=await fetch(base+root+'/recommendation',{headers:{Origin:'https://evil.example',Authorization:`Bearer ${r.token}`}});assert.equal(denied.status,403);
+ const page=await fetch(base+'/recommendation');assert.equal(page.status,200);assert.match(await page.text(),/합성 위치/);
+});
+
+FILE experiments\pickup-board\recommendation-page.test.mjs
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {readFile} from 'node:fs/promises';
+import vm from 'node:vm';
+const source=(await readFile(new URL('./recommendation/page.mjs',import.meta.url),'utf8')).replace("import { ContinuousShare } from './controller.mjs';",'');
+const flush=()=>new Promise(r=>setImmediate(r));
+async function harness(){
+ let now=100, pending=null;const timers=[],events={},elements=new Map();
+ const element=()=>({hidden:false,disabled:false,textContent:'',children:[],append(...c){this.children.push(...c);},replaceChildren(...c){this.children=c;}});
+ const get=id=>{if(!elements.has(id))elements.set(id,element());return elements.get(id);};
+ const document={hidden:false,getElementById:get,createElement:element,addEventListener:(e,f)=>events[e]=f};
+ const snapshot={id:'snapshot',remainingMs:5000,candidates:[{id:'one',name:'Other place',reason:'route evidence',approach:'entrance',source:'synthetic',reference:'fixture',checkedAt:1,validUntil:999999,maxDwellSeconds:120}]};
+ const status=()=>({mode:'synthetic',driverFresh:true,riderFresh:true,snapshot});
+ const state={status:'active',stage:'waiting',joined:true,place:'Current',version:1,view:'lease'};
+ const share={current:null,generation:0,async start(){},async stop(){this.generation++;this.current=null;}};
+ const context={document,navigator:{onLine:true},performance:{now:()=>now},sessionStorage:{getItem:()=>JSON.stringify({id:'room',token:'token',role:'rider'})},ContinuousShare:class{constructor(options){share.notify=options.notify;return share;}},crypto:{randomUUID:()=> 'request'},AbortSignal:{timeout:()=>null},Date,console,setInterval:f=>timers.push(f),addEventListener:(e,f)=>events[e]=f,
+ fetch:async(url,options)=>{const body=options.body&&JSON.parse(options.body);if(body?.type==='calculate'&&pending)return pending;return{ok:true,json:async()=>url.endsWith('/recommendation')?status():state};}};
+ vm.runInNewContext(source,context);await flush();return{get,timers,events,document,context,share,tick:n=>now+=n,delay:()=>{let resolve;pending=new Promise(r=>resolve=r);return()=>resolve({ok:true,json:async()=>status()});}};
+}
+test('page clears candidates at response-relative expiry and offline',async()=>{const x=await harness();assert.equal(x.get('candidates').children.length,1);x.tick(5000);x.timers[1]();assert.equal(x.get('candidates').children.length,0);x.events.offline();assert.equal(x.get('calculate').disabled,true);});
+test('page hides candidate snapshot immediately on local sharing invalidation',async()=>{const x=await harness();x.share.notify('stopped');assert.equal(x.get('candidates').children.length,0);});
+test('late calculate response after page hide cannot render candidates',async()=>{const x=await harness(),resolve=x.delay();x.get('calculate').onclick();x.document.hidden=true;x.events.visibilitychange();resolve();await flush();assert.equal(x.get('candidates').children.length,0);assert.equal(x.get('calculate').disabled,true);});
+
+FILE experiments\pickup-board\recommendation.test.mjs
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import { randomUUID } from 'node:crypto';
+import { RecommendationBoard } from './recommendation/board.mjs';
+import { syntheticProvider } from './recommendation/providers.mjs';
+import { rankCandidates } from './recommendation/engine.mjs';
+import { PLACES } from './domain.mjs';
+function setup(provider=syntheticProvider){
+  let now=1000;const b=new RecommendationBoard(()=>1700000000000+now,()=>now,provider);
+  const d=b.create(PLACES[2]),r=b.join(d.id,d.invite);
+  const command=(who,type,extra={})=>({...b.read(d.id,who.token),type,requestId:randomUUID(),...extra});
+  const send=(who,type,extra={})=>b.recommend(d.id,who.token,command(who,type,extra));
+  const grants={};
+  const share=async(who,lon=127)=>{const consentId=randomUUID();grants[who.role]=consentId;await send(who,'grant',{consentId,consent:'pickup-recommendation-continuous-v1'});await send(who,'publish',{consentId,sequence:0,source:'synthetic',fix:{latitude:37,longitude:lon,accuracy:5,ageMs:0}});};
+  return {b,d,r,command,send,share,grants,tick:n=>now+=n};
+}
+test('fresh route-based ranking → proposal → counterpart acceptance; never automatic',async()=>{
+ const x=setup();await x.share(x.d);await x.share(x.r);const out=await x.send(x.d,'calculate');
+ assert.equal(out.snapshot.candidates[0].name,PLACES[0]);assert.equal(x.b.read(x.d.id,x.d.token).place,PLACES[2]);
+ await x.send(x.d,'select',{snapshotId:out.snapshot.id,candidateId:out.snapshot.candidates[0].id});
+ const v=x.b.read(x.d.id,x.r.token);await x.send(x.r,'accept',{proposalId:v.proposal.id});assert.equal(x.b.read(x.d.id,x.d.token).place,PLACES[0]);
+});
+test('east graph changes ranking; no synthetic recommendation by default',async()=>{
+ const x=setup();await x.share(x.d,127.002);await x.share(x.r,127.002);assert.equal((await x.send(x.d,'calculate')).snapshot.candidates[0].name,PLACES[1]);
+ const b=new RecommendationBoard();const d=b.create(PLACES[0]);b.join(d.id,d.invite);assert.equal((await b.recommend(d.id,d.token,{type:'calculate'})).status,'provider-unavailable');
+});
+test('one-shot consent cannot authorize continuous sharing or client supplied route',async()=>{
+ const x=setup();await assert.rejects(x.send(x.r,'grant',{consentId:randomUUID(),consent:'pickup-location-once-v1'}));
+ await assert.rejects(x.send(x.r,'publish',{consentId:randomUUID(),sequence:0,fix:{}}));
+ await assert.rejects(x.b.recommend(x.d.id,'wrong',{type:'calculate'}));
+});
+for(const kind of ['expiry','revoke','new-fix','ended','rollback'])test(`${kind} invalidates recommendation and prevents delayed selection`,async()=>{
+ const x=setup();await x.share(x.d);await x.share(x.r);const out=await x.send(x.d,'calculate');
+ if(kind==='expiry')x.tick(5000);
+ if(kind==='revoke')await x.send(x.r,'revoke',{consentId:x.grants.rider});
+ if(kind==='new-fix')await x.share(x.r,127.002);
+ if(kind==='ended')x.b.act(x.d.id,x.d.token,x.command(x.d,'end'));
+ if(kind==='rollback')x.tick(-1);
+ await assert.rejects(x.send(x.d,'select',{snapshotId:out.snapshot.id,candidateId:out.snapshot.candidates[0].id}));
+});
+test('revoke tombstone rejects late grant and publish; reordered updates fail',async()=>{
+ const x=setup(),consentId=randomUUID();await x.send(x.r,'revoke',{consentId});await assert.rejects(x.send(x.r,'grant',{consentId,consent:'pickup-recommendation-continuous-v1'}));
+ await x.share(x.r);const p={consentId:x.grants.rider,sequence:0,source:'synthetic',fix:{latitude:37,longitude:127,accuracy:5,ageMs:0}};await assert.rejects(x.send(x.r,'publish',p));
+ await x.send(x.r,'revoke',{consentId:x.grants.rider});await assert.rejects(x.send(x.r,'publish',{...p,sequence:1}));
+});
+test('ordinary actions cannot bypass recommendation evidence; reject still works',async()=>{
+ const x=setup();await x.share(x.d);await x.share(x.r);const s=(await x.send(x.d,'calculate')).snapshot;
+ await x.send(x.d,'select',{snapshotId:s.id,candidateId:s.candidates[0].id});x.tick(5000);const v=x.b.read(x.d.id,x.r.token);
+ assert.throws(()=>x.b.act(x.d.id,x.r.token,x.command(x.r,'accept',{proposalId:v.proposal.id})));
+ x.b.act(x.d.id,x.r.token,x.command(x.r,'reject',{proposalId:v.proposal.id}));assert.equal(x.b.read(x.d.id,x.d.token).place,PLACES[2]);
+});
+test('in-flight provider response cannot resurrect revoked inputs',async()=>{
+ let release;const provider={mode:'synthetic',evaluate:args=>new Promise(resolve=>{release=()=>resolve(syntheticProvider.evaluate(args));})};
+ const x=setup(provider);await x.share(x.d);await x.share(x.r);const pending=x.send(x.d,'calculate');await x.send(x.r,'revoke',{consentId:x.grants.rider});release();await assert.rejects(pending);assert.equal((await x.send(x.d,'calculate').catch(()=>null)),null);
+});
+test('provider failures return no candidates',async()=>{const x=setup({mode:'synthetic',evaluate:async()=>{throw Error('private provider details');}});await x.share(x.d);await x.share(x.r);assert.equal((await x.send(x.d,'calculate')).status,'provider-unavailable');});
+const fixture=async()=>syntheticProvider.evaluate({driver:{id:'d',at:1000,ageMs:0,latitude:37,longitude:127,accuracy:5},rider:{id:'r',at:1000,ageMs:0,latitude:37,longitude:127,accuracy:5},now:1000,wall:1700000000000});
+for(const [name,mutate] of Object.entries({
+ 'unknown stopping permission':c=>delete c.evidence.pickupAllowed,
+ 'prohibited curb':c=>c.evidence.prohibited=true,
+ 'closure':c=>c.evidence.closed=true,
+ 'vehicle class denied':c=>c.evidence.vehicleAllowed=false,
+ 'permission expires before arrival':c=>c.evidence.validUntil=1700000005000,
+ 'wrong entrance evidence':c=>c.evidence.entranceId='other',
+ 'no pedestrian path':c=>c.walk.pathVerified=false,
+ 'wrong route':c=>c.vehicle.routeId='old',
+ 'unknown approach':c=>c.vehicle.legalApproach=false,
+ 'negative travel time':c=>c.walk.seconds=-1,
+ 'mixed synthetic data':c=>c.mode='live',
+ 'unknown source':c=>c.evidence.source='',
+ 'stale permission evidence':c=>c.evidence.checkedAt=1700000000000-900000,
+ 'short dwell permission':c=>c.evidence.maxDwellSeconds=30
+}))test(`exclude ${name}`,async()=>{const f=await fixture();f.candidates.forEach(mutate);assert.equal(rankCandidates(f,1000,1700000000000).candidates.length,0);});
+test('accuracy, future time and stale source cannot produce ranking',async()=>{for(const mutate of [f=>f.driver.accuracy=51,f=>f.rider.ageMs=15000,f=>f.driver.at=1001,f=>f.route.driverFixId='old']){const f=await fixture();mutate(f);assert.equal(rankCandidates(f,1000,1700000000000).candidates.length,0);}});
+test('unconfigured live provider rejects grants and fixes server-side',async()=>{const b=new RecommendationBoard();const d=b.create(PLACES[0]),r=b.join(d.id,d.invite);for(const type of ['grant','publish'])await assert.rejects(b.recommend(d.id,r.token,{type,consentId:randomUUID(),consent:'pickup-recommendation-continuous-v1',...b.read(d.id,r.token)}),e=>e.status===409);assert.equal(b.entry(d.id).rider.fix,null);assert.equal(b.entry(d.id).rider.grant,null);});
+test('expired positions prevent recommendation acceptance and delete derived summary',async()=>{const x=setup();await x.share(x.d);await x.share(x.r);const s=(await x.send(x.d,'calculate')).snapshot;await x.send(x.d,'select',{snapshotId:s.id,candidateId:s.candidates[0].id});x.tick(15000);const v=x.b.read(x.d.id,x.r.token);await assert.rejects(x.send(x.r,'accept',{proposalId:v.proposal.id}));assert.equal((await x.b.recommend(x.d.id,x.r.token)).proposalEvidence,null);assert.throws(()=>x.b.act(x.d.id,x.r.token,x.command(x.r,'accept',{proposalId:v.proposal.id})));});
+test('consent ID cap remains fail closed including revoked IDs',async()=>{const x=setup();for(let i=0;i<100;i++)await x.send(x.r,'revoke',{consentId:randomUUID()});await assert.rejects(x.send(x.r,'grant',{consentId:randomUUID(),consent:'pickup-recommendation-continuous-v1'}));});
+test('withdraw during provider acceptance prevents delayed acceptance',async()=>{let release,delay=false;const provider={mode:'synthetic',evaluate:args=>delay?new Promise(resolve=>release=()=>resolve(syntheticProvider.evaluate(args))):syntheticProvider.evaluate(args)};const x=setup(provider);await x.share(x.d);await x.share(x.r);const s=(await x.send(x.d,'calculate')).snapshot;await x.send(x.d,'select',{snapshotId:s.id,candidateId:s.candidates[0].id});const proposalId=x.b.read(x.d.id,x.r.token).proposal.id;delay=true;const pending=x.send(x.r,'accept',{proposalId});x.b.act(x.d.id,x.d.token,x.command(x.d,'withdraw',{proposalId}));release();await assert.rejects(pending);assert.equal(x.b.read(x.d.id,x.r.token).place,PLACES[2]);});
+test('provider timeout returns no candidate and releases busy guard',async()=>{const x=setup({mode:'synthetic',evaluate:()=>new Promise(()=>{})});await x.share(x.d);await x.share(x.r);assert.equal((await x.send(x.d,'calculate')).status,'provider-unavailable');assert.equal(x.b.entry(x.d.id).busy,false);});
+
+ACTUAL TEST OUTPUT
+✔ two participants share ready, pending, accepted and ended state (3.7785ms)
+✔ self acceptance and driver readiness are forbidden (0.5528ms)
+✔ reject preserves the agreed place; old proposal cannot be accepted (1.3939ms)
+✔ one-use invitation, wrong and cross-room credentials rejected (0.4836ms)
+✔ stale concurrent writes, repeated request IDs and replaced proposals rejected (0.6521ms)
+✔ server-issued read lease expires at boundary and cannot be fabricated (0.4485ms)
+✔ end before join revokes invite and pending proposal is cleared on end (0.652ms)
+✔ malformed and unsupported commands do not change state (0.4434ms)
+✔ memory lifetime and restart are explicit disappearance, not phantom success (0.3566ms)
+✔ withdraw belongs to proposer; foreign read leases and cross-room writes fail (1.0585ms)
+✔ HTTP integration: create/join/read/write, isolation, input and origin defenses (200.2145ms)
+✔ manual arrival and boarding require owner, order and explicit end (0.8955ms)
+✔ role-owned mistake undo and cancellation preserve truthful outcome (0.3726ms)
+✔ proposal resolution invalidates arrival only on accepted changed place (0.5558ms)
+✔ arrival needs join and resolved proposals; end clears pending and cancels (0.3613ms)
+✔ stage commands reject duplicate, stale version, foreign and expired leases (0.5898ms)
+✔ boarding preserves true readiness without deriving it; end names the actor (0.3145ms)
+✔ HTTP manual lifecycle shares stage/outcome and rejects a stale end after undo (240.3775ms)
+✔ HTTP error then successful refresh removes the accidental new-session escape (7.7904ms)
+✔ connection failure labels every stale fact and locks all mutation controls (3.4885ms)
+✔ six-second client expiry locks even without a completed network failure (1.8739ms)
+✔ place editor blocks current place and offline writes; remote proposal closes editor (2.4457ms)
+✔ end confirmation isolates controls and cancellation preserves the shared round (2.0975ms)
+✔ initial network failure preserves session; ended rounds offer a new start (1.6482ms)
+✔ manual status labels and owner controls follow stage; stale locks them (2.1749ms)
+✔ remote boarding or undo invalidates an open end confirmation (2.1441ms)
+✔ rejected action remains explained across successful polling until explicit refresh (2.4497ms)
+✔ candidate schema exactly matches two parameterless commands and is outside the APK (13.563ms)
+✔ parser accepts empty extras and JSON whitespace only; no required arguments (0.7739ms)
+✔ parser rejects unknown, wrong types, mixed, injected, double-encoded and oversized inputs (0.7344ms)
+✔ default unconfigured adapter refuses every known action without consulting domain (0.6149ms)
+✔ actual Board status uses minimal public mapping; arrival synchronizes rider view (2.7505ms)
+✔ rider credential and forged role cannot invoke driver commands (0.4376ms)
+✔ no participant, pending location change, boarded and ended states cannot arrive (1.3353ms)
+✔ arrival captures version and refuses intervening change; query returns fresh status (0.4585ms)
+✔ place agreement change after preparation cannot receive old arrival (0.466ms)
+✔ same ticket is consumed once; new Intent invalidates old without applying either twice (0.549ms)
+✔ simultaneously queued dispatch microtasks apply exactly once (0.6441ms)
+✔ ticket deadline, wall-clock rollback and forward expiry fail closed (0.8154ms)
+✔ monotonic clock reversal rejects dispatch (0.201ms)
+✔ offline, denied/unknown/stale UX and caller are rechecked at dispatch without data leakage (1.2071ms)
+✔ one-use host attestation cannot be replayed or assigned to another invocation (0.3634ms)
+✔ clear, rebind, invalid binding, dispose and process recreation never restore pending commands (0.3823ms)
+✔ missing expired or restarted server room fails without room or credential in response (0.2504ms)
+✔ host exceptions and synchronous reentry cannot mutate or leak exception contents (0.5632ms)
+✔ empty, fabricated and already consumed tickets return failures without throwing (0.2537ms)
+✔ denied new invocation cancels pending arrival even after host policy recovers (0.2264ms)
+✔ accessor action is never executed; phase mismatch and async Board are rejected (0.4938ms)
+✔ dispatch reentry from trusted host attestation cannot consume twice (0.4676ms)
+✔ accepted place revision changes even A-B-A; readiness and phone shares do not change it (3.9653ms)
+✔ combined real HTTP: phone sharing and synthetic proximity never mark arrival; boarding clears phone sample (339.685ms)
+✔ accepted place change invalidates both published phone fix and outstanding consent (1.1028ms)
+✔ page shows explicit consent without collection, driver has no consent controls (10.2706ms)
+✔ pagehide while GET pending cannot restore fresh authority or old sample (2.451ms)
+✔ late sample after decline cannot reappear and ended/boarded render clears immediately (2.6315ms)
+✔ poll started after stop cannot re-show old remote sample while delete is pending (2.2059ms)
+✔ fresh explicit consent clears local suppression without auto-resuming from a poll (3.4394ms)
+✔ accepted place revision stops collection and requires a new explicit consent (3.5487ms)
+✔ phone requires explicit consent, correct rider and same room; no location in ordinary read (3.9158ms)
+✔ revoke-before-grant tombstone, stale revoke, late publish and consumed replay cannot resurrect (0.7815ms)
+✔ read and sweep enforce grant20s/sample30s boundaries and monotonic rollback (0.6621ms)
+✔ invalid accuracy/ranges/types/old/future fixes rejected without version changes (1.8836ms)
+✔ boarding/end synchronously erase and undo does not restore; new consent supersedes prior (2.0933ms)
+✔ grant requires fresh actual view and bounded IDs; room prune deletes raw coordinate memory (1.378ms)
+✔ client never collects before explicit start and server grant; stop ignores late callbacks (0.9449ms)
+✔ pending grant stop sends revoke and late grant cannot start watch (0.3016ms)
+✔ one shot clears watch, ignores duplicate callback and stop deletes published fix (0.389ms)
+✔ denied/offline/inaccurate/timeout and failed delete are explicit; no automatic restart (8.6509ms)
+✔ HTTP real transport authenticates phone endpoint and enforces delete and no-store (144.5197ms)
+✔ device epoch skew is metadata and does not defeat bounded same-clock age/TTL (0.4146ms)
+✔ HTTP phone rejects driver grant, late publish, bad origin and malformed bodies (73.4414ms)
+✔ grant cap and stale state errors do not invite blind retries and never collect (0.5417ms)
+✔ UI synthetic proximity stays distinct from manual arrival and expires on render (6.6952ms)
+✔ accepted revision invalidates near, including same place after A-B-A (3.3703ms)
+✔ permission denial, pending changes and manual stage block proximity hints (2.5124ms)
+✔ rider cannot use vehicle demo and late lifecycle response cannot reactivate it (3.1246ms)
+✔ geodesic calculation, dateline, poles and invalid coordinates (5.1464ms)
+✔ two separate fixes confirm near; notification fires only once and reads never repeat it (1.076ms)
+✔ entry and exit accuracy margins and hysteresis (0.5026ms)
+✔ uncertain valid sample resets candidate; unknown needs two far observations (0.3976ms)
+✔ TTL expires at exactly 5000 ms on read without new callback (0.3311ms)
+✔ first candidate must remain fresh; two observations across expiry cannot confirm (0.2079ms)
+✔ duplicate and out-of-order observations cannot confirm or refresh freshness (0.2416ms)
+✔ observation time cannot be replaced by fresh receipt time (0.2161ms)
+✔ invalid time rejected NaN (0.2801ms)
+✔ invalid time rejected Infinity (0.3257ms)
+✔ invalid time rejected -1 (0.1576ms)
+✔ invalid time rejected 1000 (0.106ms)
+✔ invalid time rejected null (0.2078ms)
+✔ future, observation after receipt, and backwards host clock fail closed (0.2666ms)
+✔ invalid accuracy rejected -1 (0.1307ms)
+✔ invalid accuracy rejected 30.001 (0.1072ms)
+✔ invalid accuracy rejected NaN (0.0821ms)
+✔ invalid accuracy rejected Infinity (0.0628ms)
+✔ invalid accuracy rejected 5 (0.0687ms)
+✔ invalid accuracy rejected null (0.0815ms)
+✔ accuracy max is inclusive; coordinates reject invalid latitude/longitude (0.2034ms)
+✔ vehicle or unlabelled input never enters synthetic policy (0.1276ms)
+✔ permission-denied invalidates old generation and recovery does not repeat notification (0.2339ms)
+✔ disconnected invalidates old generation and recovery does not repeat notification (0.2113ms)
+✔ unsupported invalidates old generation and recovery does not repeat notification (0.1169ms)
+✔ initializing invalidates old generation and recovery does not repeat notification (0.1512ms)
+✔ manual-stage invalidates old generation and recovery does not repeat notification (0.1757ms)
+✔ background invalidates old generation and recovery does not repeat notification (0.1064ms)
+✔ same binding idempotent; new revision invalidates callbacks and gives new notification (0.401ms)
+✔ conflicting coordinates with same revision invalidate previous state and token (0.3536ms)
+✔ pre-bind observation cannot be used for a new destination (0.252ms)
+✔ end/dispose clear state and reject delayed callback (0.315ms)
+✔ isolated detector calls leave Board unchanged; manual Board actions still operate (1.8458ms)
+✔ review M1: stale replay cannot downgrade still fresh near (0.1617ms)
+✔ review M2: changing destination ID requires increasing revision (0.2091ms)
+✔ review L3: rejected poor fix does not consume valid observation timestamp (0.1859ms)
+✔ exact computed accuracy margins include enter100 and exit150 boundaries (0.2002ms)
+✔ review follow-up: end is terminal even for the same session (0.1749ms)
+✔ review follow-up: detector cannot switch sessions to reset revision history (0.2406ms)
+✔ no collection before consent; stop clears watch and ignores late callback (12.0929ms)
+✔ permission error and loss of foreground eligibility stop sharing (1.2735ms)
+✔ old grant resolution does not terminate a newer consent (0.5635ms)
+✔ revoke network failure still ends local collection (0.3734ms)
+✔ busy publisher drains only newest queued fix (2.1331ms)
+✔ actual HTTP authenticated recommendation, selection and latest-evidence acceptance (289.2493ms)
+✔ page clears candidates at response-relative expiry and offline (23.7824ms)
+✔ page hides candidate snapshot immediately on local sharing invalidation (1.9644ms)
+✔ late calculate response after page hide cannot render candidates (3.2228ms)
+✔ fresh route-based ranking → proposal → counterpart acceptance; never automatic (5.9863ms)
+✔ east graph changes ranking; no synthetic recommendation by default (1.7217ms)
+✔ one-shot consent cannot authorize continuous sharing or client supplied route (0.5892ms)
+✔ expiry invalidates recommendation and prevents delayed selection (0.6878ms)
+✔ revoke invalidates recommendation and prevents delayed selection (0.5559ms)
+✔ new-fix invalidates recommendation and prevents delayed selection (0.6929ms)
+✔ ended invalidates recommendation and prevents delayed selection (0.6492ms)
+✔ rollback invalidates recommendation and prevents delayed selection (0.4372ms)
+✔ revoke tombstone rejects late grant and publish; reordered updates fail (0.7268ms)
+✔ ordinary actions cannot bypass recommendation evidence; reject still works (0.8785ms)
+✔ in-flight provider response cannot resurrect revoked inputs (0.7174ms)
+✔ provider failures return no candidates (0.4733ms)
+✔ exclude unknown stopping permission (0.1944ms)
+✔ exclude prohibited curb (0.1028ms)
+✔ exclude closure (0.1109ms)
+✔ exclude vehicle class denied (0.1154ms)
+✔ exclude permission expires before arrival (0.1148ms)
+✔ exclude wrong entrance evidence (0.1253ms)
+✔ exclude no pedestrian path (0.1372ms)
+✔ exclude wrong route (0.191ms)
+✔ exclude unknown approach (0.1502ms)
+✔ exclude negative travel time (0.1346ms)
+✔ exclude mixed synthetic data (0.106ms)
+✔ exclude unknown source (0.1018ms)
+✔ exclude stale permission evidence (0.1442ms)
+✔ exclude short dwell permission (0.0896ms)
+✔ accuracy, future time and stale source cannot produce ranking (0.9576ms)
+✔ unconfigured live provider rejects grants and fixes server-side (0.6069ms)
+✔ expired positions prevent recommendation acceptance and delete derived summary (1.0654ms)
+✔ consent ID cap remains fail closed including revoked IDs (2.3651ms)
+✔ withdraw during provider acceptance prevents delayed acceptance (0.695ms)
+✔ provider timeout returns no candidate and releases busy guard (3009.44ms)
+ℹ tests 156
+ℹ suites 0
+ℹ pass 156
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 3349.8902

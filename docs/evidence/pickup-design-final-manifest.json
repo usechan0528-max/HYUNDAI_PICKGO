@@ -1,0 +1,12 @@
+{
+  "experiments/pickup-board/app.mjs": "76b40a104ef3ab431a5ff0ee6cd601c9cebd6569b96c0af2d75439899aab148c",
+  "experiments/pickup-board/board.test.mjs": "00f137b17dfaf75dae77f25bd2015d538936f68b6f53dd48708a59a463458977",
+  "experiments/pickup-board/client.test.mjs": "994eb9c498485650cc6cc6da7fc9f72eb99af998781650474753ddc478412e21",
+  "experiments/pickup-board/domain.mjs": "5b893fe7321603f3298e0c74bd52a751a0378e13fd0a02756642d6ef6fe452dd",
+  "experiments/pickup-board/index.html": "fa6a12bd5005326c69d1ef90e274b29e4042e12f87b149f0b03032ce31bc7367",
+  "experiments/pickup-board/README.md": "439aed350657133cb77a38aff4379cf381a963961d01e55561b1043eefce640f",
+  "experiments/pickup-board/server.mjs": "40597ff88c497c1bcde50ebb19e95758cbf3d3f7f05547fe1dd167ad8fd031f5",
+  "experiments/pickup-board/style.css": "97e9cb705b268f442cca32a9673db7f33f869daf79058fcd6a512319fc62a2c9",
+  "experiments/pickup-board/fonts/AstaSans.ttf": "f68410bf7d04deb992097758640145c72ddcf234070794237fc4994e18991c33",
+  "experiments/pickup-board/fonts/OFL.txt": "2448ea782a6364d571a4848c34db8a042311f44c78cf00265888db19ea10d5a4"
+}
