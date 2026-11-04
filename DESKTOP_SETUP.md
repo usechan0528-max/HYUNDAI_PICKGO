@@ -1,5 +1,7 @@
 # 픽업 프로젝트를 다른 컴퓨터에서 실행하기
 
+공동작업자 기본 환경은 Node.js 22 이상(npm 포함) 설치 후 저장소 루트에서 `npm run setup`으로 설정합니다. 사전 확인은 `npm run setup:plan`, 설치 후 확인은 `npm run doctor`입니다. Windows 프로그램·프로젝트 스킬을 설치하고 개인 인증/플러그인/Pleos의 남은 설정 목록을 만듭니다. [설치 도구 안내](tools/team-setup/README.md).
+
 ```sh
 git clone https://github.com/usechan0528-max/HYUNDAI_AI.git
 cd HYUNDAI_AI

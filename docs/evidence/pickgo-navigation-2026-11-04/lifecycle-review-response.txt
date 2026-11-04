@@ -1,0 +1,7 @@
+**결론: 두 수정에서 P0/P1 회귀는 찾지 못했습니다.** 다만 기기 검증 전 확인할 점이 세 가지 있습니다.
+
+1. **`singleTask` 재실행 시 위 액티비티 정리**: `singleTask`는 기존 인스턴스 위에 쌓인 액티비티를 제거합니다. `requestNavigationScreen(Foreground)`가 같은 태스크에 현대 내비 액티비티를 띄운다면, 런처 재실행 시 그 화면이 정리될 수 있습니다. 실제 기기에서 확인하세요.
+2. **재실행 시 `onCreate`가 다시 실행되지 않음**: 이제 `credential`, `roomId`, `displayed`, `sent` 같은 메모리 상태가 유지됩니다. `onPause`에서 `displayed=null`과 `generation++`를 하고 `tick`이 재조회하므로 복귀 경로는 정상으로 보입니다.
+3. **콜백 가드의 `reading` 해제**: 조기 return 경로 모두 `reading=false`를 실행하므로 `reading`이 고착되지 않습니다.
+
+기기 검증 항목: 4개 생성 → 1개로 줄었는지, 복귀 후 `sessionStorage` 회차가 유지되는지, 45초 관찰 후 `sent=false`로 재진입이 정상인지.

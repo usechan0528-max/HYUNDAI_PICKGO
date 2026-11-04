@@ -1,0 +1,193 @@
+Read-only independent Haiku review. No tools or edits. Emulator public SDK experiment only, not production PICKGO. Evaluate whether conclusion is too strong, callback receiver fails, evidence misinterpreted. Report <=3 important issues. Baseline actual navigation UI starts 42dot, two other POIs selected via official SearchPlace screen, destination/waypoint buttons NOT pressed. Existing destination and ROUTE_GUIDING remain; no selected POI event. No full polyline identity assertion allowed. Build exit0, lint0errors4warnings (dependency,backup,static Activity,icon). Static Activity cleared onDestroy, probe intentionally alive during <=10min capture. Review source and fixed evidence below.
+
+FILE docs\PICKGO_NAVI_SELECTION_TEST_2026-11-04.md
+# PICKGO 현대 내비 장소 선택 수신 시험
+
+## 판정
+
+사용자 요청: 현대 내비에서 장소를 선택한 뒤 기존 경로를 임의 변경하지 않고 PICKGO에 좌표를 받을 수 있는지 실제 에뮬레이터 시험.
+
+**이번 공개 SDK 시험에서 수용 조건 미충족.** 다른 장소를 검색·선택해 상세를 열어도 기존 42dot 목적지와 ROUTE_GUIDING은 유지되었으나, 선택 장소 좌표는 수신되지 않았다. 불가능을 모든 버전·비공개 계약으로 일반화하지 않는다. 제품 PICKGO 웹에 실제 좌표 수신 기능이 연결됐다는 뜻도 아니다.
+
+## 환경·범위
+
+- 날짜: 2026-11-04 KST. 에뮬레이터 화면/로그 시각(03~04시)은 게스트 시계이며 사용자 현재 시각과 동일하다고 가정하지 않는다.
+- emulator-5556, Android API34, active user10, 내비 ai.umos.maps.android.navigation.app 3.3.2-rc5-hotfix.3.
+- NaviHelper3.0.5 / navi-data3.0.4 / navi-aidl3.0.1 실제 AAR, JDK17, Gradle8.9, AGP8.7.3.
+- 새 독립 Android 시험 앱 org.example.pickgonaviprobe. 기존 PICKGO 제품/웹 코드는 수정하지 않았다. 원시 fixture 좌표는 로컬 시험 로그에만 기록; 실제 차량·개인 목적지에서 실행 금지.
+- NAVI_ROUTE / NAVI_CUSTOM_MAP normal 권한 실제 granted=true 확인. NAVI_ROUTE_SEARCH 및 경로 변경 권한 없음; requestRoute/addWaypoint/cancelRoute 사용 없음.
+- Dynamic Proxy가 NaviHelperEventListener 전체 이벤트 메서드를 기록한다. getDestinationInfo/getRouteStateInfo 2초 간격, 최대300회. onActivityResult/onNewIntent/onResume 기록. 내비 화면에서 기다리는 동안 프로세스가 살아 있고 조회 응답을 받는 것을 확인했다.
+- 기존 debug 키 재사용. 데이터 초기화·키 생성·권한 수동 변경·외부 발송·push 없음. 기존 다른 작업자의 미커밋 변경 보존.
+
+## 실행 및 관찰
+
+1. SDK 연결 성공. 처음 내비는 not ready였고 목적지 조회 응답이 없었다. 내비 UI를 열자 정상 수신. 초기 목적지 빈 값, SAFE_GUIDING/FREE_DRIVE 확인.
+2. 초기 활성 경로가 없어 내비 UI의 기존 시험 POI 42dot에 `목적지로` → `안내 시작`을 눌러 기준 경로 생성. 37.48544722,127.03636666 / 12km / 17분 / ROUTE_GUIDING 확인. 시험 전제 설정이며 선택 결과 획득 우회가 아니다.
+3. `SearchPlace("현대자동차")` 요청 후 내비 검색 목록에서 **현대자동차 AVP본부** 선택. 상세에 목적지로/경유지로 버튼이 있지만 누르지 않았다. SDK에는 계속 기존42dot 좌표와 ROUTE_GUIDING 수신. 11-poi-selected부터12-return-to-receiver까지 선택상세·수신앱 복귀 확인. 복귀는 adb로 수동 수행했으며 자동 선택결과 복귀가 아니다. 새 Intent extras=null, 선택결과 ActivityResult 없음.
+4. 후속 검색 반복 중 목록이 안 보이고 지도만 남는 현상 관찰. 초기 추정과 달리 앱 전환만 원인으로 확정하지 않는다. 내비를 foreground로 유지하는 DUMP 권한 보호 debug CommandReceiver로도 관찰했고, UI `내 위치로` 복귀 뒤 SearchPlace를 요청하자 목록 정상 표시. 이 반복 진입 문제는 별도 미해결이며 숨기지 않는다.
+5. `SearchPlace("하나로마트")` → **하나로마트 성남농협대왕지점** 선택. 22-second-selected(04:00:3x)부터23-second-observed(04:01:1x)까지 상세를 30초 이상 유지. 목적지/경유지 버튼 미사용. 기존42dot 좌표/ROUTE_GUIDING 지속, 새 선택좌표 이벤트 없음. 24-final-return 수동 복귀 후에도 동일.
+
+| 수용 조건 | 결과 |
+|---|---|
+| 실제 SDK 연결 및 조회 | 통과 |
+| 내비 검색어 전달·검색 결과·다른 POI 상세 선택 | 2개 장소에서 확인; 반복 진입 UI 문제는 별도 존재 |
+| 선택 중 기존 목적지·안내 상태 유지 | 관찰 범위에서 통과 |
+| 선택 장소 좌표를 공개 SDK 수신 앱에 전달 | 실패: 두 장소 모두 선택좌표 미수신 |
+| 선택 결과로 PICKGO 자동 복귀 | 미관찰; 수동 복귀만 수행 |
+| 전체 경로 polyline/routeId 완전 동일 | 미검증. 목적지·안내 상태와 변경 이벤트 관찰을 전체 경로 동일성으로 확대하지 않음 |
+| 실제 PICKGO 제품 연결·실차 | 미실행 |
+
+`isRouting=false`는 활성 안내 중에도 관찰됨. 안내 활성 여부는 ROUTE_GUIDING 및 내비 화면으로 판정했다. 수신 콜백이 계속 정상 도착했기 때문에 앱 미연결/리스너 전면 실패와 선택결과 부재를 구분할 수 있다. 다른 미공개 Intent·별도 승인 API까지 부재로 증명한 시험은 아니다.
+
+## 명령·증거
+
+소스: `experiments/pickgo-navi-selection/`. 실제 빌드:
+
+```powershell
+$env:JAVA_HOME=(Resolve-Path work/pleos-environment/jdk/jdk-17.0.20.1+1).Path
+$env:ANDROID_HOME=(Resolve-Path work/pleos-environment/android-sdk).Path
+& ./work/pleos-environment/gradle/gradle-8.9/bin/gradle.bat -p experiments/pickgo-navi-selection --offline --no-daemon assembleDebug
+& ./work/pleos-environment/gradle/gradle-8.9/bin/gradle.bat -p experiments/pickgo-navi-selection --offline --no-daemon lintDebug
+& ./work/pleos-environment/android-sdk/platform-tools/adb.exe -s emulator-5556 install -r experiments/pickgo-navi-selection/app/build/outputs/apk/debug/app-debug.apk
+& ./work/pleos-environment/android-sdk/platform-tools/adb.exe -s emulator-5556 shell am start --user 10 -n org.example.pickgonaviprobe/.ProbeActivity
+& ./work/pleos-environment/android-sdk/platform-tools/adb.exe -s emulator-5556 shell am broadcast --user 10 -n org.example.pickgonaviprobe/.CommandReceiver --es command search --es keyword 하나로마트
+python experiments/pickgo-navi-selection/capture.py 24-final-return
+```
+
+전체 증거는 `docs/evidence/pickgo-navi-selection-2026-11-04/`의 번호별 PNG/XML/log. 주요 증거: 08 기준안내, 10 검색목록, 11 첫선택, 12 첫복귀, 21 두번째목록, 22·23 두번째선택/관찰, 24 최종복귀. UI 캡처와 SDK 수신을 별도 증거로 보존. 캡처 도구의 adb uiautomator는 시험 관찰용이며 제품의 좌표 추출 수단이 아니다.
+
+## 협업·남은 범위
+
+별도 공개자료 조사 채팅01a1a664-ba47-77e2-a367-63602cefaa07과 범위 분리 통보: 이 채팅만 시험 앱/에뮬레이터 담당, 상대는 공개 계약 조사만 담당. Dot 새 외부 조사는 이 실행 시험에서 중복 하달하지 않았다. 사용자 신규 승인 없이 다른 지도 공급자로 전환하지 않는다.
+
+공개 지원 계약이 추가로 확보되면 그 계약으로 별도 시험한다. 현재 PICKGO 설계에서 `현대 내비 검색 선택→좌표 수신`을 구현 가능으로 확정하지 않는다.
+
+FILE experiments\pickgo-navi-selection\app\src\main\java\org\example\pickgonaviprobe\CommandReceiver.java
+package org.example.pickgonaviprobe;
+import android.content.BroadcastReceiver;
+import android.content.Context;
+import android.content.Intent;
+/** Debug emulator control only; avoids bringing the observer over the navigation UI. */
+public final class CommandReceiver extends BroadcastReceiver {
+ @Override public void onReceive(Context context, Intent intent) {
+  if (ProbeActivity.current != null) ProbeActivity.current.command(intent);
+ }
+}
+
+FILE experiments\pickgo-navi-selection\app\src\main\java\org\example\pickgonaviprobe\ProbeActivity.java
+package org.example.pickgonaviprobe;
+
+import android.app.Activity;
+import android.content.Intent;
+import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
+import android.util.Log;
+import android.widget.TextView;
+import java.lang.reflect.Proxy;
+import java.util.Arrays;
+import ai.pleos.playground.navi.helper.NaviHelper;
+import ai.pleos.playground.navi.helper.listener.NaviHelperEventListener;
+import ai.pleos.playground.navi.data.NavigationScreenRequest;
+import kotlin.Unit;
+
+/** Emulator-only public SDK observation. No route write permission or route mutation calls.
+ * Logs fixture coordinates locally; never use on a real vehicle or personal destinations. */
+public final class ProbeActivity extends Activity {
+ static ProbeActivity current;
+ private final Handler handler = new Handler(Looper.getMainLooper());
+ private NaviHelper navi;
+ private NaviHelperEventListener listener;
+ private boolean ready;
+ private int polls;
+ private TextView text;
+ private void record(String value) { Log.i("PickgoNaviProbe", value); }
+ private final Runnable poll = new Runnable() { public void run() {
+  if (!ready || polls++ >= 300) return;
+  try { record("POLL " + polls); navi.getDestinationInfo(); navi.getRouteStateInfo(); }
+  catch (Exception e) { record("QUERY_ERROR " + e); }
+  handler.postDelayed(this, 2000);
+ }};
+ @Override public void onCreate(Bundle saved) {
+  super.onCreate(saved);
+  current = this;
+  text = new TextView(this); text.setTextSize(26);
+  text.setText("PICKGO 내비 수신 시험\n제품 앱 아님 · 에뮬레이터 전용\n경로 쓰기 권한 없음\n선택 결과는 SDK 이벤트로만 관찰"); setContentView(text);
+  record("CREATE action=" + getIntent().getAction());
+  listener = (NaviHelperEventListener) Proxy.newProxyInstance(NaviHelperEventListener.class.getClassLoader(), new Class<?>[]{NaviHelperEventListener.class}, (proxy, method, args) -> {
+   if (method.getName().equals("hashCode")) return System.identityHashCode(proxy);
+   if (method.getName().equals("equals")) return proxy == args[0];
+   if (method.getName().equals("toString")) return "PickgoObserver";
+   record("EVENT " + method.getName() + " " + Arrays.toString(args));
+   return null;
+  });
+  navi = new NaviHelper(this);
+  try { navi.initialize(() -> { handler.post(() -> {
+   ready = true; navi.addListener(listener); record("CONNECTED"); handler.post(poll); command(getIntent());
+  }); return Unit.INSTANCE; }, error -> { record("CONNECT_ERROR " + error); return Unit.INSTANCE; }); }
+  catch (Exception e) { record("INIT_ERROR " + e); }
+ }
+ void command(Intent intent) {
+  if (!ready) return;
+  String command = intent.getStringExtra("command");
+  record("COMMAND " + command);
+  try {
+   if ("search".equals(command)) navi.requestNavigationScreen(new NavigationScreenRequest.SearchPlace(intent.getStringExtra("keyword")));
+   if ("foreground".equals(command)) navi.requestNavigationScreen(NavigationScreenRequest.Foreground.INSTANCE);
+  } catch (Exception e) { record("COMMAND_ERROR " + e); }
+ }
+ @Override protected void onNewIntent(Intent intent) { super.onNewIntent(intent); setIntent(intent); record("NEW_INTENT action=" + intent.getAction() + " data=" + intent.getData() + " extras=" + intent.getExtras()); command(intent); }
+ @Override protected void onActivityResult(int request, int result, Intent data) { super.onActivityResult(request,result,data); record("ACTIVITY_RESULT " + request + " " + result + " " + data); }
+ @Override protected void onResume() { super.onResume(); record("RESUME"); }
+ @Override protected void onPause() { record("PAUSE"); super.onPause(); }
+ @Override protected void onDestroy() { current=null; ready=false; handler.removeCallbacksAndMessages(null); if(navi!=null) { navi.removeListener(listener); navi.release(); } record("DESTROY"); super.onDestroy(); }
+}
+
+FILE experiments\pickgo-navi-selection\app\src\main\AndroidManifest.xml
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+ <uses-permission android:name="pleos.car.permission.NAVI_ROUTE" />
+ <uses-permission android:name="pleos.car.permission.NAVI_CUSTOM_MAP" />
+ <uses-feature android:name="android.hardware.type.automotive" android:required="false" />
+ <application android:label="PICKGO 내비 수신 시험" android:theme="@android:style/Theme.Material.NoActionBar" android:allowBackup="false">
+  <receiver android:name=".CommandReceiver" android:exported="true" android:permission="android.permission.DUMP" />
+  <activity android:name=".ProbeActivity" android:exported="true" android:launchMode="singleTask">
+   <intent-filter><action android:name="android.intent.action.MAIN"/><category android:name="android.intent.category.LAUNCHER"/></intent-filter>
+  </activity>
+ </application>
+</manifest>
+
+FILE docs\evidence\pickgo-navi-selection-2026-11-04\summary.json
+{
+  "first": {
+    "start_guest_time": "03:55:36",
+    "end_guest_time": "03:56:06",
+    "events": {
+      "onCurrentRoadSpeedLimit": 31,
+      "onDestinationInfo": 16,
+      "onRouteStateInfo": 15
+    },
+    "destinations": [
+      "DestinationInfo(latitude=37.48544722, longitude=127.03636666, displayLatitude=null, displayLongitude=null, name=42dot, address=강남구 도곡동, remainDistance=12000, remainTime=1020, tollFare=0, poiId=36khp37hh8gqcm5nqhe5, poiSubId=null, poiProvider=)"
+    ],
+    "selected_place_received": false
+  },
+  "second": {
+    "start_guest_time": "04:00:30",
+    "end_guest_time": "04:02:55",
+    "events": {
+      "onCurrentRoadSpeedLimit": 145,
+      "onRouteStateInfo": 72,
+      "onDestinationInfo": 71
+    },
+    "destinations": [
+      "DestinationInfo(latitude=37.48544722, longitude=127.03636666, displayLatitude=null, displayLongitude=null, name=42dot, address=강남구 도곡동, remainDistance=12000, remainTime=1020, tollFare=0, poiId=36khp37hh8gqcm5nqhe5, poiSubId=null, poiProvider=)"
+    ],
+    "selected_place_received": false
+  }
+}
+UI 11-poi-selected.xml
+<?xml version='1.0' encoding='UTF-8' standalone='yes' ?><hierarchy rotation="0"><node index="0" text="" resource-id="" class="android.widget.FrameLayout" package="ai.umos.maps.android.navigation.app" content-desc="" checkable="false" checked="false" clickable="false" enabled="true" focusable="false" focused="false" scrollable="false" long-clickable="false" password="false" selected="false" bounds="[853,90][2535,1300]"><node index="0" text="" resource-id="" class="android.widget.LinearLayout" package="ai.umos.maps.android.navigation.app" content-desc="" checkable="false" checked="false" clickable="false" enabled="true" focusable="false" focused="false" scrollable="false" long-clickable="false" password="false" selected="false" bounds="[853,90][2535,1300]"><node index="0" text="" resource-id="android:id/content" class="android.widget.FrameLayout" package="ai.umos.maps.android.navigation.app" content-desc="" checkable="false" checked="false" clickable="false" enabled="true" focusable="false" focused="false" scrollable="false" long-clickable="false" password="false" selected="false" bounds="[853,90][2535,1300]"><node index="0" text="" resource-id="" class="androidx.compose.ui.platform.ComposeView" package="ai.umos.maps.android.navigation.app" content-desc="" checkable="false" checked="false" clickable="false" enabled="true" focusable="false" focused="false" scrollable="false" long-clickable="false" password="false" selected="false" bounds="[853,90][2535,1300]"><node index="0" text="" resource-id="" class="android.view.View" package="ai.umos.maps.android.navigation.app" content-desc="" checkable="false" checked="false" clickable="false" enabled="true" focusable="false" focused="false" scrollable="false" long-clickable="false" password="false" selected="false" bounds="[853,90][2535,1300]"><node index="1" text="" resource-id="" class="android.view.View" package="ai.umos.maps.android.navigation.app" content-desc="" checkable="false" checked="false" clickable="true" enabled="true" focusable="true" focused="false" scrollable="false" long-clickable="false" password="false" selected="false" bounds="[1589,1176][1800,1276]"><node index="0" text="" resource-id="" class="android.view.View" package="ai.umos.maps.android.navigation.app" content-desc="" checkable="false" checked="false" clickable="false" enabled="true" focusable="false" focused="false" scrollable="false" long-clickable="false" password="false" selected="false" bounds="[1621,1208][1657,1244]" /><node index="1" text="내 위치로" resource-id="" class="android.widget.TextView" package="ai.umos.maps.android.navigation.app" content-desc="" checkable="false" checked="false" clickable="false" enabled="true" focusable="false" focused="false" scrollable="false" long-clickable="false" password="false" selected="false" bounds="[1665,1209][1768,1243]" /></node><node index="2" text="" resource-id="" class="android.view.View" package="ai.umos.maps.android.navigation.app" content-desc="" checkable="false" checked="false" clickable="true" enabled="true" focusable="true" focused="false" scrollable="false" long-clickable="false" password="false" selected="false" bounds="[853,90][1457,218]"><node NAF="true" index="0" text="" resource-id="" class="android.view.View" package="ai.umos.maps.android.navigation.app" content-desc="" checkable="false" checked="false" clickable="true" enabled="true" focusable="true" focused="false" scrollable="false" long-clickable="false" password="false" selected="false" bounds="[853,218][1457,226]" /><node index="1" text="" resource-id="" class="android.view.View" package="ai.umos.maps.android.navigation.app" content-desc="" checkable="false" checked="false" clickable="true" enabled="true" focusable="true" focused="false" scrollable="false" long-clickable="false" password="false" selected="false" bounds="[853,90][1457,218]"><node index="0" text="700m" resource-id="" class="android.widget.TextView" package="ai.umos.maps.android.navigation.app" content-desc="" checkable="false" checked="false" clickable="false" enabled="true" focusable="false" focused="false" scrollable="false" long-clickable="false" password="false" selected="false" bounds="[973,142][1078,190]" /><node index="1" text="대왕판교IC 방면" resource-id="" class="android.widget.TextView" package="ai.umos.maps.android.navigation.app" content-desc="" checkable="false" checked="false" clickable="false" enabled="true" focusable="false" focused="false" scrollable="false" long-clickable="false" password="false" selected="false" bounds="[1090,149][1272,183]" /></node></node><node index="3" text="" resource-id="" class="android.view.View" package="ai.umos.maps.android.navigation.app" content-desc="" checkable="false" checked="false" clickable="true" enabled="true" focusable="true" focused="false" scrollable="false" long-clickable="false" password="false" selected="false" bounds="[853,908][1457,1300]"><node index="0" text="" resource-id="" class="android.view.View" package="ai.umos.maps.android.navigation.app" content-desc="" checkable="false" checked="false" clickable="true" enabled="true" focusable="true" focused="false" scrollable="false" long-clickable="false" password="false" selected="false" bounds="[877,908][1457,1276]"><node NAF="true" index="0" text="" resource-id="" class="android.view.View" package="ai.umos.maps.android.navigation.app" content-desc="" checkable="false" checked="false" clickable="true" enabled="true" focusable="true" focused="false" scrollable="false" long-clickable="false" password="false" selected="false" bounds="[867,898][987,1018]" /><node index="1" text="" resource-id="" class="android.widget.TextView" package="ai.umos.maps.android.navigation.app" content-desc="" checkable="false" checked="false" clickable="false" enabled="true" focusable="false" focused="false" scrollable="false" long-clickable="false" password="false" selected="false" bounds="[1002,939][1235,977]" /><node NAF="true" index="2" text="" resource-id="" class="android.view.View" package="ai.umos.maps.android.navigation.app" content-desc="" checkable="false" checked="false" clickable="true" enabled="true" focusable="true" focused="false" scrollable="false" long-clickable="false" password="false" selected="false" bounds="[1246,898][1347,1008]" /><node NAF="true" index="3" text="" resource-id="" class="android.view.View" package="ai.umos.maps.android.navigation.app" content-desc="" checkable="false" checked="false" clickable="true" enabled="true" focusable="true" focused="false" scrollable="false" long-clickable="false" password="false" selected="false" bounds="[1347,898][1467,1018]" /><node index="4" text="" resource-id="" class="android.view.View" package="ai.umos.maps.android.navigation.app" content-desc="" checkable="false" checked="false" clickable="false" enabled="true" focusable="false" focused="false" scrollable="false" long-clickable="false" password="false" selected="false" bounds="[877,1008][1457,1176]"><node index="0" text="현대자동차 AVP본부 기업" resource-id="" class="android.widget.TextView" package="ai.umos.maps.android.navigation.app" content-desc="" checkable="false" checked="false" clickable="false" enabled="true" focusable="false" focused="false" scrollable="false" long-clickable="false" password="false" selected="false" bounds="[901,1044][1433,1082]" /><node index="1" text="경기도 성남시 수정구 창업로40번길 20" resource-id="" class="android.widget.TextView" package="ai.umos.maps.android.navigation.app" content-desc="" checkable="false" checked="false" clickable="false" enabled="true" focusable="false" focused="false" scrollable="false" long-clickable="false" password="false" selected="false" bounds="[948,1106][1379,1140]" /></node><node index="5" text="" resource-id="" class="android.view.View" package="ai.umos.maps.android.navigation.app" content-desc="" checkable="false" checked="false" clickable="true" enabled="true" focusable="true" focused="false" scrollable="false" long-clickable="false" password="false" selected="false" bounds="[877,1176][1166,1276]"><node index="0" text="목적지로" resource-id="" class="android.widget.TextView" package="ai.umos.maps.android.navigation.app" content-desc="" checkable="false" checked="false" clickable="false" enabled="true" focusable="false" focused="false" scrollable="false" long-clickable="false" password="false" selected="false" bounds="[974,1209][1070,1243]" /><node index="1" text="" resource-id="" class="android.widget.Button" package="ai.umos.maps.android.navigation.app" content-desc="" checkable="false" checked="false" clickable="false" enabled="true" focusable="false" focused="false" scrollable="false" long-clickable="false" password="false" selected="false" bounds="[877,1176][1167,1276]" /></node><node index="6" text="" resource-id="" class="android.view.View" package="ai.umos.maps.android.navigation.app" content-desc="" checkable="false" checked="false" clickable="true" enabled="true" focusable="true" focused="false" scrollable="false" long-clickable="false" password="false" selected="false" bounds="[1166,1176][1457,1276]"><node index="0" text="경유지로" resource-id="" class="android.widget.TextView" package="ai.umos.maps.android.navigation.app" content-desc="" checkable="false" checked="false" clickable="false" enabled="true" focusable="false" focused="false" scrollable="false" long-clickable="false" password="false" selected="false" bounds="[1264,1209][1360,1243]" /><node index="1" text="" resource-id="" class="android.widget.Button" package="ai.umos.maps.android.navigation.app" content-desc="" checkable="false" checked="false" clickable="false" enabled="true" focusable="false" focused="false" scrollable="false" long-clickable="false" password="false" selected="false" bounds="[1166,1176][1457,1276]" /></node></node></node><node NAF="true" index="4" text="" resource-id="" class="android.view.View" package="ai.umos.maps.android.navigation.app" content-desc="" checkable="false" checked="false" clickable="true" enabled="true" focusable="true" focused="false" scrollable="false" long-clickable="true" password="false" selected="false" bounds="[2435,1250][2535,1300]" /></node></node></node></node></node></hierarchy>
+UI 23-second-observed.xml
+<?xml version='1.0' encoding='UTF-8' standalone='yes' ?><hierarchy rotation="0"><node index="0" text="" resource-id="" class="android.widget.FrameLayout" package="ai.umos.maps.android.navigation.app" content-desc="" checkable="false" checked="false" clickable="false" enabled="true" focusable="false" focused="false" scrollable="false" long-clickable="false" password="false" selected="false" bounds="[853,90][2535,1300]"><node index="0" text="" resource-id="" class="android.widget.LinearLayout" package="ai.umos.maps.android.navigation.app" content-desc="" checkable="false" checked="false" clickable="false" enabled="true" focusable="false" focused="false" scrollable="false" long-clickable="false" password="false" selected="false" bounds="[853,90][2535,1300]"><node index="0" text="" resource-id="android:id/content" class="android.widget.FrameLayout" package="ai.umos.maps.android.navigation.app" content-desc="" checkable="false" checked="false" clickable="false" enabled="true" focusable="false" focused="false" scrollable="false" long-clickable="false" password="false" selected="false" bounds="[853,90][2535,1300]"><node index="0" text="" resource-id="" class="androidx.compose.ui.platform.ComposeView" package="ai.umos.maps.android.navigation.app" content-desc="" checkable="false" checked="false" clickable="false" enabled="true" focusable="false" focused="false" scrollable="false" long-clickable="false" password="false" selected="false" bounds="[853,90][2535,1300]"><node index="0" text="" resource-id="" class="android.view.View" package="ai.umos.maps.android.navigation.app" content-desc="" checkable="false" checked="false" clickable="false" enabled="true" focusable="false" focused="false" scrollable="false" long-clickable="false" password="false" selected="false" bounds="[853,90][2535,1300]"><node index="1" text="" resource-id="" class="android.view.View" package="ai.umos.maps.android.navigation.app" content-desc="" checkable="false" checked="false" clickable="true" enabled="true" focusable="true" focused="false" scrollable="false" long-clickable="false" password="false" selected="false" bounds="[1589,1176][1800,1276]"><node index="0" text="" resource-id="" class="android.view.View" package="ai.umos.maps.android.navigation.app" content-desc="" checkable="false" checked="false" clickable="false" enabled="true" focusable="false" focused="false" scrollable="false" long-clickable="false" password="false" selected="false" bounds="[1621,1208][1657,1244]" /><node index="1" text="내 위치로" resource-id="" class="android.widget.TextView" package="ai.umos.maps.android.navigation.app" content-desc="" checkable="false" checked="false" clickable="false" enabled="true" focusable="false" focused="false" scrollable="false" long-clickable="false" password="false" selected="false" bounds="[1665,1209][1768,1243]" /></node><node index="2" text="" resource-id="" class="android.view.View" package="ai.umos.maps.android.navigation.app" content-desc="" checkable="false" checked="false" clickable="true" enabled="true" focusable="true" focused="false" scrollable="false" long-clickable="false" password="false" selected="false" bounds="[853,90][1457,218]"><node NAF="true" index="0" text="" resource-id="" class="android.view.View" package="ai.umos.maps.android.navigation.app" content-desc="" checkable="false" checked="false" clickable="true" enabled="true" focusable="true" focused="false" scrollable="false" long-clickable="false" password="false" selected="false" bounds="[853,218][1457,226]" /><node index="1" text="" resource-id="" class="android.view.View" package="ai.umos.maps.android.navigation.app" content-desc="" checkable="false" checked="false" clickable="true" enabled="true" focusable="true" focused="false" scrollable="false" long-clickable="false" password="false" selected="false" bounds="[853,90][1457,218]"><node index="0" text="700m" resource-id="" class="android.widget.TextView" package="ai.umos.maps.android.navigation.app" content-desc="" checkable="false" checked="false" clickable="false" enabled="true" focusable="false" focused="false" scrollable="false" long-clickable="false" password="false" selected="false" bounds="[973,142][1078,190]" /><node index="1" text="대왕판교IC 방면" resource-id="" class="android.widget.TextView" package="ai.umos.maps.android.navigation.app" content-desc="" checkable="false" checked="false" clickable="false" enabled="true" focusable="false" focused="false" scrollable="false" long-clickable="false" password="false" selected="false" bounds="[1090,149][1272,183]" /></node></node><node index="3" text="" resource-id="" class="android.view.View" package="ai.umos.maps.android.navigation.app" content-desc="" checkable="false" checked="false" clickable="true" enabled="true" focusable="true" focused="false" scrollable="false" long-clickable="false" password="false" selected="false" bounds="[853,862][1457,1300]"><node index="0" text="" resource-id="" class="android.view.View" package="ai.umos.maps.android.navigation.app" content-desc="" checkable="false" checked="false" clickable="true" enabled="true" focusable="true" focused="false" scrollable="false" long-clickable="false" password="false" selected="false" bounds="[877,862][1457,1276]"><node NAF="true" index="0" text="" resource-id="" class="android.view.View" package="ai.umos.maps.android.navigation.app" content-desc="" checkable="false" checked="false" clickable="true" enabled="true" focusable="true" focused="false" scrollable="false" long-clickable="false" password="false" selected="false" bounds="[867,852][987,972]" /><node index="1" text="" resource-id="" class="android.widget.TextView" package="ai.umos.maps.android.navigation.app" content-desc="" checkable="false" checked="false" clickable="false" enabled="true" focusable="false" focused="false" scrollable="false" long-clickable="false" password="false" selected="false" bounds="[1002,893][1235,931]" /><node NAF="true" index="2" text="" resource-id="" class="android.view.View" package="ai.umos.maps.android.navigation.app" content-desc="" checkable="false" checked="false" clickable="true" enabled="true" focusable="true" focused="false" scrollable="false" long-clickable="false" password="false" selected="false" bounds="[1246,852][1347,962]" /><node NAF="true" index="3" text="" resource-id="" class="android.view.View" package="ai.umos.maps.android.navigation.app" content-desc="" checkable="false" checked="false" clickable="true" enabled="true" focusable="true" focused="false" scrollable="false" long-clickable="false" password="false" selected="false" bounds="[1347,852][1467,972]" /><node index="4" text="" resource-id="" class="android.view.View" package="ai.umos.maps.android.navigation.app" content-desc="" checkable="false" checked="false" clickable="false" enabled="true" focusable="false" focused="false" scrollable="false" long-clickable="false" password="false" selected="false" bounds="[877,962][1457,1176]"><node index="0" text="하나로마트 성남농협대왕지점 슈퍼,마트" resource-id="" class="android.widget.TextView" package="ai.umos.maps.android.navigation.app" content-desc="" checkable="false" checked="false" clickable="false" enabled="true" focusable="false" focused="false" scrollable="false" long-clickable="false" password="false" selected="false" bounds="[901,998][1433,1036]" /><node index="1" text="경기도 성남시 수정구 대왕판교로 989" resource-id="" class="android.widget.TextView" package="ai.umos.maps.android.navigation.app" content-desc="" checkable="false" checked="false" clickable="false" enabled="true" focusable="false" focused="false" scrollable="false" long-clickable="false" password="false" selected="false" bounds="[948,1060][1363,1094]" /><node index="2" text="031-758-9421" resource-id="" class="android.widget.TextView" package="ai.umos.maps.android.navigation.app" content-desc="" checkable="false" checked="false" clickable="false" enabled="true" focusable="false" focused="false" scrollable="false" long-clickable="false" password="false" selected="false" bounds="[948,1106][1133,1140]" /></node><node index="5" text="" resource-id="" class="android.view.View" package="ai.umos.maps.android.navigation.app" content-desc="" checkable="false" checked="false" clickable="true" enabled="true" focusable="true" focused="false" scrollable="false" long-clickable="false" password="false" selected="false" bounds="[877,1176][1117,1276]"><node index="0" text="목적지로" resource-id="" class="android.widget.TextView" package="ai.umos.maps.android.navigation.app" content-desc="" checkable="false" checked="false" clickable="false" enabled="true" focusable="false" focused="false" scrollable="false" long-clickable="false" password="false" selected="false" bounds="[950,1209][1046,1243]" /><node index="1" text="" resource-id="" class="android.widget.Button" package="ai.umos.maps.android.navigation.app" content-desc="" checkable="false" checked="false" clickable="false" enabled="true" focusable="false" focused="false" scrollable="false" long-clickable="false" password="false" selected="false" bounds="[877,1176][1118,1276]" /></node><node index="6" text="" resource-id="" class="android.view.View" package="ai.umos.maps.android.navigation.app" content-desc="" checkable="false" checked="false" clickable="true" enabled="true" focusable="true" focused="false" scrollable="false" long-clickable="false" password="false" selected="false" bounds="[1117,1176][1357,1276]"><node index="0" text="경유지로" resource-id="" class="android.widget.TextView" package="ai.umos.maps.android.navigation.app" content-desc="" checkable="false" checked="false" clickable="false" enabled="true" focusable="false" focused="false" scrollable="false" long-clickable="false" password="false" selected="false" bounds="[1190,1209][1286,1243]" /><node index="1" text="" resource-id="" class="android.widget.Button" package="ai.umos.maps.android.navigation.app" content-desc="" checkable="false" checked="false" clickable="false" enabled="true" focusable="false" focused="false" scrollable="false" long-clickable="false" password="false" selected="false" bounds="[1117,1176][1358,1276]" /></node><node NAF="true" index="7" text="" resource-id="" class="android.view.View" package="ai.umos.maps.android.navigation.app" content-desc="" checkable="false" checked="false" clickable="true" enabled="true" focusable="true" focused="false" scrollable="false" long-clickable="false" password="false" selected="false" bounds="[1357,1176][1457,1276]" /></node></node><node NAF="true" index="4" text="" resource-id="" class="android.view.View" package="ai.umos.maps.android.navigation.app" content-desc="" checkable="false" checked="false" clickable="true" enabled="true" focusable="true" focused="false" scrollable="false" long-clickable="true" password="false" selected="false" bounds="[2435,1250][2535,1300]" /></node></node></node></node></node></hierarchy>
+UI 25-receiver-confirmed.xml
+<?xml version='1.0' encoding='UTF-8' standalone='yes' ?><hierarchy rotation="0"><node index="0" text="" resource-id="" class="android.widget.FrameLayout" package="org.example.pickgonaviprobe" content-desc="" checkable="false" checked="false" clickable="false" enabled="true" focusable="false" focused="false" scrollable="false" long-clickable="false" password="false" selected="false" bounds="[853,90][2535,1300]"><node index="0" text="" resource-id="" class="android.widget.LinearLayout" package="org.example.pickgonaviprobe" content-desc="" checkable="false" checked="false" clickable="false" enabled="true" focusable="false" focused="false" scrollable="false" long-clickable="false" password="false" selected="false" bounds="[853,90][2535,1300]"><node index="0" text="" resource-id="android:id/content" class="android.widget.FrameLayout" package="org.example.pickgonaviprobe" content-desc="" checkable="false" checked="false" clickable="false" enabled="true" focusable="false" focused="false" scrollable="false" long-clickable="false" password="false" selected="false" bounds="[853,90][2535,1300]"><node index="0" text="PICKGO 내비 수신 시험&#10;제품 앱 아님 · 에뮬레이터 전용&#10;경로 쓰기 권한 없음&#10;선택 결과는 SDK 이벤트로만 관찰" resource-id="" class="android.widget.TextView" package="org.example.pickgonaviprobe" content-desc="" checkable="false" checked="false" clickable="false" enabled="true" focusable="false" focused="false" scrollable="false" long-clickable="false" password="false" selected="false" bounds="[853,90][2535,1300]" /></node></node></node></hierarchy>

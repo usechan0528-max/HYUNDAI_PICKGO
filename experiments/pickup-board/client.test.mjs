@@ -11,8 +11,8 @@ async function harness(initialFailure = null) {
   const nodes=new Map([...html.matchAll(/id="([^"]+)"/g)].map(m=>[m[1],element()]));
   const buttons=[{...element(),dataset:{ready:'true'}},{...element(),dataset:{ready:'false'}}];
   const places=[...html.matchAll(/data-place="([^"]+)"/g)].map(m=>({...element(),dataset:{place:m[1]}}));
-  const state={id:'demo',role:'driver',version:1,status:'active',place:'가상 문화센터 정문',ready:true,joined:false,
-    proposal:{id:'proposal',by:'rider',place:'가상 공원 안내소'},lastEvent:'변경 제안',view:'view'};
+  const state={id:'demo',role:'driver',version:1,status:'active',place:'하나로마트 양재점',ready:true,joined:false,
+    proposal:{id:'proposal',by:'rider',place:'서울도로교통공단 서울지부'},lastEvent:'변경 제안',view:'view'};
   const sandbox={URLSearchParams,AbortSignal,crypto:{randomUUID:()=> 'test-request-123'},performance:{now:()=>now},navigator:{onLine:true},
     location:{hash:'',origin:'http://127.0.0.1:4180'},history:{replaceState(){}},
     sessionStorage:{getItem:key=>key==='pickupSession'?JSON.stringify({id:'demo',token:'fake-test-only',role:'driver',invite:'fake-invite'}):null,setItem(){},removeItem(){}},
@@ -47,7 +47,7 @@ test('place editor blocks current place and offline writes; remote proposal clos
   h.nodes.get('openPlace').onclick(); assert.equal(h.nodes.get('editPlace').hidden,false); assert.equal(h.nodes.get('board').hidden,true);
   assert.equal(h.places.find(b=>b.dataset.place===h.state.place).disabled,true);
   h.fail('network'); await h.refresh(); assert.ok(h.places.every(b=>b.disabled));
-  h.fail(null); h.state.version++; h.state.proposal={id:'new',by:'rider',place:'가상 공원 안내소'}; await h.refresh();
+  h.fail(null); h.state.version++; h.state.proposal={id:'new',by:'rider',place:'서울도로교통공단 서울지부'}; await h.refresh();
   assert.equal(h.nodes.get('editPlace').hidden,true); assert.equal(h.nodes.get('board').hidden,false);
 });
 test('end confirmation isolates controls and cancellation preserves the shared round',async()=>{
@@ -59,7 +59,7 @@ test('initial network failure preserves session; ended rounds offer a new start'
   const h=await harness('network'); assert.equal(h.nodes.get('new').hidden,true);
   h.fail(null); h.state.status='ended'; h.state.proposal=null; await h.refresh();
   assert.equal(h.nodes.get('new').hidden,false); assert.equal(h.nodes.get('end').hidden,true);
-  assert.equal(h.nodes.get('proposal').hidden,true); assert.equal(h.nodes.get('readyText').textContent,'약속 종료');
+  assert.equal(h.nodes.get('proposal').hidden,true); assert.equal(h.nodes.get('readyText').textContent,'픽업 종료');
 });
 
 test('manual status labels and owner controls follow stage; stale locks them',async()=>{
@@ -67,7 +67,7 @@ test('manual status labels and owner controls follow stage; stale locks them',as
  assert.equal(h.nodes.get('arrive').hidden,false); assert.equal(h.nodes.get('boarded').hidden,true);
  h.state.stage='arrived'; h.state.version++; await h.refresh();
  assert.equal(h.nodes.get('arrive').hidden,true); assert.equal(h.nodes.get('undoArrival').hidden,false);
- assert.equal(h.nodes.get('pickupText').textContent,'운전자 도착 알림');
+ assert.equal(h.nodes.get('pickupText').textContent,'운전자 도착');
  h.fail('network'); await h.refresh(); assert.equal(h.nodes.get('pickupText').textContent,'현재 미확인');
  for(const id of ['arrive','boarded','undoArrival','undoBoarding']) assert.equal(h.nodes.get(id).disabled,true);
 });

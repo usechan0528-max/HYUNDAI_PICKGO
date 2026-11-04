@@ -1,1 +1,10 @@
-.location-page{max-width:900px;margin:auto;padding:24px;gap:24px;display:flex;height:auto}.location-page h1{font-size:32px}.location-page .panel{display:grid;gap:16px}.demo-buttons{display:grid;gap:12px}.location-page p{overflow-wrap:anywhere}.location-page #proximityError{color:#f0c580}.location-page>a{align-self:flex-start}
+/* Page layout; shared shell in phone.css, controls in style.css. */
+.proximity-page .demo-buttons { display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px; }
+.proximity-page #proximityState { font-size:30px; }
+.proximity-page #proximityConnection { color:var(--muted);font-size:18px; }
+.proximity-page #proximityReason:empty,.proximity-page #proximityNotice:empty { display:none; }
+@media(max-width:899px) { .proximity-page .demo-buttons { grid-template-columns:1fr; } }
+@media(max-width:479px) { .proximity-page #proximityState { font-size:24px; } }
+
+.proximity-page .vehicle-source { display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px;padding-top:16px;border-top:1px solid #464646; }
+.proximity-page .support-label { color:var(--muted); }

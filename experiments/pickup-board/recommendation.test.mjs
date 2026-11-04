@@ -56,7 +56,6 @@ test('in-flight provider response cannot resurrect revoked inputs',async()=>{
 test('provider failures return no candidates',async()=>{const x=setup({mode:'synthetic',evaluate:async()=>{throw Error('private provider details');}});await x.share(x.d);await x.share(x.r);assert.equal((await x.send(x.d,'calculate')).status,'provider-unavailable');});
 const fixture=async()=>syntheticProvider.evaluate({driver:{id:'d',at:1000,ageMs:0,latitude:37,longitude:127,accuracy:5},rider:{id:'r',at:1000,ageMs:0,latitude:37,longitude:127,accuracy:5},now:1000,wall:1700000000000});
 for(const [name,mutate] of Object.entries({
- 'unknown stopping permission':c=>delete c.evidence.pickupAllowed,
  'prohibited curb':c=>c.evidence.prohibited=true,
  'closure':c=>c.evidence.closed=true,
  'vehicle class denied':c=>c.evidence.vehicleAllowed=false,
@@ -69,7 +68,12 @@ for(const [name,mutate] of Object.entries({
  'mixed synthetic data':c=>c.mode='live',
  'unknown source':c=>c.evidence.source='',
  'stale permission evidence':c=>c.evidence.checkedAt=1700000000000-900000,
- 'short dwell permission':c=>c.evidence.maxDwellSeconds=30
+ 'zero dwell permission':c=>c.evidence.maxDwellSeconds=0,
+ 'short stop prohibited':c=>c.evidence.stopProhibited=true,
+ 'bus-only':c=>c.evidence.publicTransportOnly=true,
+ 'taxi-only':c=>c.evidence.taxiOnly=true,
+ 'building interior':c=>c.evidence.positionType='building-interior',
+ 'motorway center':c=>c.evidence.positionType='motorway-lane'
 }))test(`exclude ${name}`,async()=>{const f=await fixture();f.candidates.forEach(mutate);assert.equal(rankCandidates(f,1000,1700000000000).candidates.length,0);});
 test('accuracy, future time and stale source cannot produce ranking',async()=>{for(const mutate of [f=>f.driver.accuracy=51,f=>f.rider.ageMs=15000,f=>f.driver.at=1001,f=>f.route.driverFixId='old']){const f=await fixture();mutate(f);assert.equal(rankCandidates(f,1000,1700000000000).candidates.length,0);}});
 test('unconfigured live provider rejects grants and fixes server-side',async()=>{const b=new RecommendationBoard();const d=b.create(PLACES[0]),r=b.join(d.id,d.invite);for(const type of ['grant','publish'])await assert.rejects(b.recommend(d.id,r.token,{type,consentId:randomUUID(),consent:'pickup-recommendation-continuous-v1',...b.read(d.id,r.token)}),e=>e.status===409);assert.equal(b.entry(d.id).rider.fix,null);assert.equal(b.entry(d.id).rider.grant,null);});
@@ -80,3 +84,41 @@ test('provider timeout aborts and prevents stacking a provider that ignores abor
 test('manual proposals remain explicit manual choices; recommendation origin cannot bypass binding loss',async()=>{const x=setup();x.b.act(x.d.id,x.d.token,x.command(x.d,'propose',{place:PLACES[1]}));let v=x.b.read(x.d.id,x.r.token);assert.equal(v.proposal.origin,undefined);x.b.act(x.d.id,x.r.token,x.command(x.r,'accept',{proposalId:v.proposal.id}));await x.share(x.d);await x.share(x.r);const s=(await x.send(x.d,'calculate')).snapshot;await x.send(x.d,'select',{snapshotId:s.id,candidateId:s.candidates[0].id});v=x.b.read(x.d.id,x.r.token);assert.equal(v.proposal.origin,'recommendation');x.b.entry(x.d.id).proposal=null;assert.throws(()=>x.b.act(x.d.id,x.r.token,x.command(x.r,'accept',{proposalId:v.proposal.id})));await assert.rejects(x.send(x.r,'accept',{proposalId:v.proposal.id}));});
 test('accepted manual and recommended place changes revoke both continuous grants',async()=>{for(const manual of [true,false]){const x=setup();await x.share(x.d);await x.share(x.r);if(manual)x.b.act(x.d.id,x.d.token,x.command(x.d,'propose',{place:PLACES[0]}));else{const s=(await x.send(x.d,'calculate')).snapshot;await x.send(x.d,'select',{snapshotId:s.id,candidateId:s.candidates[0].id});}const proposalId=x.b.read(x.d.id,x.r.token).proposal.id;if(manual)x.b.act(x.d.id,x.r.token,x.command(x.r,'accept',{proposalId}));else await x.send(x.r,'accept',{proposalId});for(const who of [x.d,x.r]){assert.equal(x.b.entry(x.d.id)[who.role].grant,null);assert.equal(x.b.entry(x.d.id)[who.role].fix,null);await assert.rejects(x.send(who,'publish',{consentId:x.grants[who.role],sequence:2,source:'synthetic',fix:{latitude:37,longitude:127,accuracy:5,ageMs:0}}));}}});
 test('explicit end remains available at mutation cap and removes locations',async()=>{const x=setup();await x.share(x.r);x.b.room(x.d.id).requests=new Set(Array.from({length:1000},(_,i)=>`used-${i}`));x.b.act(x.d.id,x.d.token,x.command(x.d,'end'));assert.equal(x.b.entry(x.d.id).rider.fix,null);});
+
+test('ordinary curb unknown permission, parking-only ban and short dwell remain selectable',async()=>{
+ for(const mutate of [c=>delete c.evidence.pickupAllowed,c=>c.evidence.parkingProhibited=true,c=>c.evidence.maxDwellSeconds=30,c=>c.evidence.enforcementCamera=true]){
+  const f=await fixture();f.candidates.forEach(mutate);const out=rankCandidates(f,1000,1700000000000);
+  assert.equal(out.candidates.length,3);assert.ok(out.candidates[0].advisories.includes('정차 허용 여부 미확인'));
+ }
+});
+test('new prohibition blocks recommendation selection and manual bypass',async()=>{
+ let blocked=false;const provider={mode:'synthetic',evaluate:async args=>{const f=await syntheticProvider.evaluate(args);if(blocked)f.candidates[0].evidence.stopProhibited=true;return f;}};
+ const x=setup(provider);await x.share(x.d);await x.share(x.r);const s=(await x.send(x.d,'calculate')).snapshot;blocked=true;
+ await assert.rejects(x.send(x.d,'select',{snapshotId:s.id,candidateId:'demo-0'}));
+ assert.throws(()=>x.b.act(x.d.id,x.d.token,x.command(x.d,'propose',{place:PLACES[0]})));
+ assert.throws(()=>x.b.create(PLACES[0]));
+});
+test('server restriction catalogue guards manual creation, proposal and acceptance',()=>{
+ let blocked=false;const x=setup({...syntheticProvider,selectionEvidence:name=>name===PLACES[0]&&blocked?{positionType:'building-interior'}:{}});
+ x.b.act(x.d.id,x.d.token,x.command(x.d,'propose',{place:PLACES[0]}));const proposalId=x.b.read(x.d.id,x.r.token).proposal.id;blocked=true;
+ assert.throws(()=>x.b.act(x.d.id,x.r.token,x.command(x.r,'accept',{proposalId})));
+ assert.throws(()=>x.b.create(PLACES[0]));
+});
+
+test('missing or stale restriction updates cannot erase a known ban',async()=>{
+ let phase=0;const provider={mode:'synthetic',selectionEvidence:()=>({}),evaluate:async args=>{const f=await syntheticProvider.evaluate(args);const e=f.candidates[0].evidence;if(phase===0)e.stopProhibited=true;if(phase===1)delete e.stopProhibited;if(phase===2)e.checkedAt-=900001;return f;}};
+ const x=setup(provider);await x.share(x.d);await x.share(x.r);
+ for(phase=0;phase<3;phase++){const out=await x.send(x.d,'calculate');assert.ok(!out.snapshot?.candidates.some(c=>c.id==='demo-0'));assert.throws(()=>x.b.create(PLACES[0]));}
+ phase=3;assert.ok((await x.send(x.d,'calculate')).snapshot.candidates.some(c=>c.id==='demo-0'));assert.doesNotThrow(()=>x.b.create(PLACES[0]));
+});
+
+test('out-of-catalogue top scores do not hide selectable catalogue candidates',async()=>{
+ const x=setup({mode:'synthetic',evaluate:async args=>{const f=await syntheticProvider.evaluate(args);const alien=structuredClone(f.candidates[0]);alien.name='unbound';alien.vehicle.detourSeconds=0;alien.walk.seconds=0;f.candidates.unshift(...[0,1,2].map(i=>({...alien,id:'alien-'+i})));return f;}});
+ await x.share(x.d);await x.share(x.r);assert.equal((await x.send(x.d,'calculate')).snapshot.candidates.length,3);
+});
+
+test('another entrance cannot overwrite a known ban under the same place name',async()=>{
+ let change=false;const x=setup({mode:'synthetic',evaluate:async args=>{const f=await syntheticProvider.evaluate(args),c=f.candidates[0];if(change){c.entranceId=c.evidence.entranceId=c.vehicle.entranceId=c.walk.entranceId='other-entrance';}else c.evidence.stopProhibited=true;return f;}});
+ await x.share(x.d);await x.share(x.r);await x.send(x.d,'calculate');change=true;
+ assert.equal((await x.send(x.d,'calculate')).status,'provider-invalid');assert.throws(()=>x.b.create(PLACES[0]));
+});

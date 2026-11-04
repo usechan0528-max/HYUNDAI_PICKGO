@@ -1,0 +1,38 @@
+[
+  {
+    "width": 1440,
+    "near": "근처입니다 · 합성 좌표"
+  },
+  {
+    "width": 1440,
+    "candidateCount": 3,
+    "consentDecline": true,
+    "overflow": false,
+    "proposalWithdrawal": true,
+    "backLink": true
+  },
+  {
+    "width": 768,
+    "near": "근처입니다 · 합성 좌표"
+  },
+  {
+    "width": 768,
+    "candidateCount": 3,
+    "consentDecline": true,
+    "overflow": false,
+    "proposalWithdrawal": true,
+    "backLink": true
+  },
+  {
+    "width": 390,
+    "near": "근처입니다 · 합성 좌표"
+  },
+  {
+    "width": 390,
+    "candidateCount": 3,
+    "consentDecline": true,
+    "overflow": false,
+    "proposalWithdrawal": true,
+    "backLink": true
+  }
+]

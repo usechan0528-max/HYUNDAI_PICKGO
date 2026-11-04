@@ -1,0 +1,41 @@
+[
+  {
+    "width": 1440,
+    "height": 900,
+    "horizontalOverflow": false,
+    "candidateSelect": true,
+    "blockedAnchor": true,
+    "toggleAndHome": true,
+    "createAndReturn": true
+  },
+  {
+    "width": 1280,
+    "height": 600,
+    "horizontalOverflow": false,
+    "candidateSelect": true,
+    "blockedAnchor": true,
+    "toggleAndHome": true,
+    "createAndReturn": true
+  },
+  {
+    "width": 768,
+    "height": 1024,
+    "horizontalOverflow": false,
+    "candidateSelect": true,
+    "blockedAnchor": true,
+    "toggleAndHome": true,
+    "createAndReturn": true
+  },
+  {
+    "width": 390,
+    "height": 844,
+    "horizontalOverflow": false,
+    "candidateSelect": true,
+    "blockedAnchor": true,
+    "toggleAndHome": true,
+    "createAndReturn": true
+  },
+  {
+    "mainMapLink": true
+  }
+]

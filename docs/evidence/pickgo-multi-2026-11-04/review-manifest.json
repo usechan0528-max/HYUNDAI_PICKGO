@@ -1,0 +1,10 @@
+{
+  "experiments/pickup-board/multi/board.mjs": "27cad8cd09de9c13cfb74a8c5b6d52b337e09902129bbb290e69aa590d92729c",
+  "experiments/pickup-board/multi/planner.mjs": "d113aa67dcbca8a73f0a7e163ecb69f8fa04314ba09969acab759cdf600cfc8b",
+  "experiments/pickup-board/multi/page.mjs": "3f9030307be827061488224e71e303353af4b13e0379f1b078673b5ef0705a66",
+  "experiments/pickup-board/multi/page.html": "40ae5cee65af70c4278508f9a60d60c797d020b3627b425ab58089dabc02a6c7",
+  "experiments/pickup-board/multi.test.mjs": "149c7470f6ed2c8acae4cded6d67cef4b4db79c63bf05620cf81b952b07eeec9",
+  "experiments/pickup-board/multi-http.test.mjs": "7a89f13dbe3ee9be6f7a6468c3df690c01fec46e246bae0bc09f5439b7b4573e",
+  "experiments/pickup-board/server.mjs": "7425f781fcc1b7cf2e4cb807978b10714ede84438c7e65e9edba7a7590583743",
+  "experiments/pickup-board/web-origin.mjs": "fe52fe2eb417fc94ce6c12eab16001bbf10f78ada79025b1d66b6d935f4f73e1"
+}

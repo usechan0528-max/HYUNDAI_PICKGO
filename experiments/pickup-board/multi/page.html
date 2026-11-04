@@ -1,0 +1,19 @@
+<!doctype html>
+<html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>PICKGO · 함께 픽업</title><link rel="stylesheet" href="/style.css"><link rel="stylesheet" href="/multi/page.css"></head>
+<body><div class="multi-shell"><header><a href="/">PICKGO</a><span>함께 픽업</span></header><main>
+<p class="notice">주행 중 조작 금지 · 차량 미연결 웹 시연 · 서버 재시작 시 기록 소실</p>
+<p id="error" role="alert"></p><p id="message" role="status"></p>
+<section id="setup"><h1>함께 갈 사람을 모으세요</h1><p>승차 지점을 묶고, 픽업 순서를 정합니다.</p>
+<form id="createTrip" class="panel"><h2>출발과 목적지</h2><label>출발 지점<select id="origin" required></select></label><label>최종 목적지<select id="destination"><option value="">마지막 픽업에서 종료</option></select></label>
+<label class="check"><input id="demo" type="checkbox">합성 이동시간으로 순서 추천 시연</label><p>실제 경로 데이터는 미연결입니다. 선택하지 않으면 수동 순서를 사용합니다. 지도 후보의 현장 정차 조건은 직접 확인하세요.</p><button class="primary">회차 만들기</button></form></section>
+<section id="invitation" hidden class="panel"><h1>픽업 초대</h1><p id="invitationText"></p><p>참여하면 이 승차 지점에 동의합니다. 위치 수집은 하지 않습니다.</p><button id="join" class="primary">이 지점으로 참여</button></section>
+<section id="trip" hidden><div class="heading"><h1 id="title">픽업 순서</h1><button id="refresh">다시 확인</button></div><p id="mode"></p><p id="tripStatus"></p>
+<div id="driver" hidden><section id="addPanel" class="panel"><h2>탑승자 추가</h2><form id="addPerson"><label>표시 이름<input id="personName" maxlength="30" required autocomplete="off"></label><label>승차 지점<select id="pickup" required></select></label><button class="primary">추가하고 초대 링크 만들기</button></form><p>최대 6명 · 인원은 실제 차량 정원에 맞추세요. 초대 후 장소를 바꾸려면 취소 후 새로 초대하세요.</p></section>
+<div class="columns"><section class="panel"><h2>경유 순서</h2><p id="routeSummary"></p><ol id="stops"></ol><div class="actions"><button id="recommend">추천 순서 보기</button><button id="next" class="primary">다음 픽업 선택</button><button id="arrive">이 지점 도착 확인</button></div><p>‘다음 픽업 선택’은 회차의 진행 지점을 선택합니다. 현대 내비 안내는 아직 연결되지 않았습니다.</p></section>
+<section class="panel"><h2>탑승자</h2><div id="people"></div></section></div>
+<section id="recommendation" class="panel" hidden><h2>추천 순서 확인</h2><p id="recommendationText"></p><p id="recommendationSource"></p><button id="apply" class="primary">이 순서 적용</button></section>
+<button id="end" class="secondary">픽업 회차 종료</button></div>
+<section id="rider" class="panel" hidden><h2 id="myPlace"></h2><p id="myStatus"></p><div class="actions"><button id="ready">준비 완료</button><button id="notReady">아직 준비 중</button><button id="board" class="primary">탑승했어요</button><button id="cancelSelf" class="secondary">내 픽업 취소</button></div></section>
+<button id="leave" class="secondary">이 화면 닫기</button></section>
+<dialog id="confirm"><h2>픽업을 취소할까요?</h2><p id="confirmText"></p><div class="actions"><button id="keep">유지</button><button id="confirmCancel">취소 확정</button></div></dialog>
+</main></div><script type="module" src="/multi/page.mjs"></script></body></html>

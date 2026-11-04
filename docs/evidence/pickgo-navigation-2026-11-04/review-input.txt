@@ -1,0 +1,270 @@
+읽기 전용 고정 스냅샷 독립검수. 모델 claude-haiku-5-5. 도구/네트워크/수정 없이 아래 코드만 검토. 사용자 승인 OSM 확정 픽업→현대 내비 안내 시연. J1 제외. 실제 차량용 제품 완료 아님, 로컬4194/adb reverse/API34 에뮬레이터 시연 앱. 기존 웹 공통코드 다른담당 소유로 미수정; native 명시 버튼을 wrapper에 추가. JS-callable interface 없이 mainframe evaluateJavascript로 sessionStorage credential만 수신, native HTTP read가 서버 권한/확정좌표 재검증. 요청 직전 version 재검증, 발신 후 동일회차revision 영구중복차단(불확실한 재전송 차단). 새 기능이나 넓은 아키텍처 재설계 말고 중요한 P0/P1/P2 결함, 구체 위치·근거·최소수정 제시. 수용조건: 제안중/취소/오래된선택/중복/원점/입력검증/연결실패/시간초과, 목적지좌표+ROUTE_GUIDING으로 성공 판정, 호출반환만으로 성공 금지. 실제 수행: assembleDebug 성공, lint 0오류3경고(버전/backup/icon), Java25정책assertions. 실제 UI OSM핀 [127.0358465,37.4661039] 생성, 참여는 CDP테스트 participant, native 안내버튼으로 requestRoute, 현대내비 경로선택 화면에서 최종 안내시작 버튼 필요. 이후 DESTINATION_MATCH=true와 ROUTE_GUIDING, 별도기존read-only probe에서도 정확한 목적지37.4661039,127.0358465/ROUTE_GUIDING 확인. 첫실행 영상90초. minSdk28 readNBytes lint오류는 bounded loop로 수정. RouteInfo null불허 문자열은 빈문자열로 수정 후 실제성공. 권한 NAVI_ROUTE_SEARCH normal granted=true. SDK exact onDestinationInfo DestinationInfo lat/lon, onRouteStateInfo.getNaviMode()==ROUTE_GUIDING. 실제CarUxRestrictions/실차/HTTPS/물리폰 미검증. 반환 후 native 최종버튼 대기 중 웹 회차가 취소/변경되는 상황에서 이미 전달한 내비 경로를 자동취소하지 않음(기존경로 임의변경 금지); 이 범위와 성공표시 적절성도 검토. 서버 authority read 시점과 route IPC 사이의 물리적 원자성 불가, 네트워크 작업 취소·lifecycle 영향도 봐주세요. SDKonError는 연결실패이외오류도 포함하며 정확한 enum의미는 미제공.
+
+FILE experiments/pickgo-navigation/app/src/main/java/org/example/pickgonavigation/NavigationActivity.java
+package org.example.pickgonavigation;
+
+import android.annotation.SuppressLint;
+import android.app.Activity;
+import android.net.Uri;
+import android.os.*;
+import android.util.Log;
+import android.webkit.*;
+import android.widget.*;
+import android.graphics.Color;
+import java.io.*;
+import java.net.*;
+import java.nio.charset.StandardCharsets;
+import java.util.concurrent.*;
+import org.json.*;
+import ai.pleos.playground.navi.helper.NaviHelper;
+import ai.pleos.playground.navi.helper.listener.NaviHelperEventListener;
+import ai.pleos.playground.navi.data.*;
+import ai.pleos.playground.navi.constants.*;
+import kotlin.Unit;
+
+/** Local emulator demonstration. No JavaScript-callable native interface and no Intent commands.
+ * Only the native button can request a route. This is not a driving-enabled production shell. */
+public final class NavigationActivity extends Activity {
+ private static final String ORIGIN = "http://127.0.0.1:4194";
+ private final Handler main = new Handler(Looper.getMainLooper());
+ private final ExecutorService io = Executors.newSingleThreadExecutor();
+ private WebView web;
+ private TextView status;
+ private Button start;
+ private NaviHelper navi;
+ private boolean connected, destroyed, resumed, reading, starting, sent, guiding, destinationMatches;
+ private int generation;
+ private long requestedAt, destinationAt, modeAt;
+ private RouteGate.Target displayed, requested;
+ private String credential, roomId;
+ private static long now() { return SystemClock.elapsedRealtime(); }
+ private void message(String value) { if (!destroyed) status.setText(value); }
+ private void record(String value) { Log.i("PickgoNavigation", value); }
+ private static boolean local(Uri uri) {
+  return uri != null && "http".equals(uri.getScheme()) && "127.0.0.1".equals(uri.getHost())
+   && uri.getPort()==4194 && uri.getUserInfo()==null;
+ }
+ private boolean home() { return web != null && local(Uri.parse(web.getUrl()==null?"":web.getUrl())) && "/".equals(Uri.parse(web.getUrl()).getPath()); }
+ private boolean used(RouteGate.Target t) { return t != null && getPreferences(MODE_PRIVATE).getBoolean(t.key(),false); }
+ private void buttons() { start.setEnabled(resumed && home() && connected && !starting && !sent && RouteGate.fresh(displayed,now()) && !used(displayed)); }
+ private final NaviHelperEventListener listener = new NaviHelperEventListener() {
+  @Override public void onDestinationInfo(DestinationInfo info) { main.post(() -> {
+   if (!sent || destroyed) return;
+   destinationMatches=RouteGate.matches(requested,info.getLatitude(),info.getLongitude()); destinationAt=now();
+   record("DESTINATION_MATCH="+destinationMatches); verified();
+  }); }
+  @Override public void onRouteStateInfo(RouteStateInfo info) { main.post(() -> {
+   if (!sent || destroyed) return;
+   guiding=info.getNaviMode()==NaviMode.ROUTE_GUIDING; modeAt=now();
+   record("MODE="+info.getNaviMode()); verified();
+  }); }
+  @Override public void onError(NaviErrorCode error) { main.post(() -> {
+   if(destroyed)return; record("SDK_ERROR="+error); message("내비 응답 오류 · 안내 여부는 현대 내비에서 확인하세요.");
+  }); }
+ };
+ private void verified() {
+  if (sent && destinationMatches && guiding && now()-destinationAt<3000 && now()-modeAt<3000) {
+   message("현대 내비 안내 확인 · 확정 지점과 목적지가 일치합니다."); record("GUIDANCE_CONFIRMED");
+  }
+ }
+ private final Runnable tick = new Runnable() { public void run() {
+  if(destroyed)return;
+  if(sent && now()-requestedAt<45000) {
+   try { navi.getDestinationInfo(); navi.getRouteStateInfo(); }
+   catch(Exception e) { connected=false; message("내비 연결이 끊겼습니다. 현대 내비에서 안내 상태를 확인하세요."); }
+  } else if(sent) {
+   if(!(destinationMatches&&guiding)) message("안내 확인 시간 초과 · 재전송하지 않았습니다. 현대 내비에서 확인하세요.");
+   sent=false; record("OBSERVATION_FINISHED");
+  }
+  if(resumed && !starting && !sent) refresh();
+  buttons(); main.postDelayed(this,1500);
+ }};
+ @SuppressLint("SetJavaScriptEnabled") @Override public void onCreate(Bundle saved) {
+  super.onCreate(saved);
+  WebView.setWebContentsDebuggingEnabled((getApplicationInfo().flags & android.content.pm.ApplicationInfo.FLAG_DEBUGGABLE)!=0);
+  LinearLayout layout=new LinearLayout(this); layout.setOrientation(LinearLayout.VERTICAL);
+  LinearLayout tabs=new LinearLayout(this);
+  Button mapButton=new Button(this);mapButton.setText("픽업 지도");mapButton.setOnClickListener(v->{if(!starting&&!sent)web.loadUrl(ORIGIN+"/map");});tabs.addView(mapButton);
+  Button boardButton=new Button(this);boardButton.setText("약속판");boardButton.setOnClickListener(v->{if(!starting&&!sent)web.loadUrl(ORIGIN+"/");});tabs.addView(boardButton);
+  layout.addView(tabs);
+  web=new WebView(this); web.setBackgroundColor(Color.WHITE);
+  web.getSettings().setJavaScriptEnabled(true); web.getSettings().setDomStorageEnabled(true);
+  web.getSettings().setAllowFileAccess(false); web.getSettings().setAllowContentAccess(false);
+  web.getSettings().setUseWideViewPort(true); web.getSettings().setLoadWithOverviewMode(true);
+  web.getSettings().setMixedContentMode(WebSettings.MIXED_CONTENT_NEVER_ALLOW);
+  web.setWebViewClient(new WebViewClient(){
+   @Override public boolean shouldOverrideUrlLoading(WebView v,WebResourceRequest r){return !local(r.getUrl());}
+   @Override public void onPageStarted(WebView v,String url,android.graphics.Bitmap icon){ generation++; displayed=null; credential=null; roomId=null; buttons(); }
+   @Override public WebResourceResponse shouldInterceptRequest(WebView v,WebResourceRequest r){
+    Uri u=r.getUrl(); boolean tile=!r.isForMainFrame()&&"https".equals(u.getScheme())&&"tile.openstreetmap.org".equals(u.getHost())&&u.getUserInfo()==null&&(u.getPort()==-1||u.getPort()==443)&&u.getPath().matches("/\\d+/\\d+/\\d+\\.png");
+    return local(u)||tile?null:new WebResourceResponse("text/plain","UTF-8",403,"Blocked",null,new ByteArrayInputStream(new byte[0]));
+   }
+  });
+  layout.addView(web,new LinearLayout.LayoutParams(-1,0,1));
+  status=new TextView(this); status.setTextSize(16); status.setPadding(16,8,16,4); layout.addView(status);
+  start=new Button(this); start.setText("확정 지점으로 현대 내비 안내 시작"); start.setTextSize(20);
+  layout.addView(start,new LinearLayout.LayoutParams(-1,64)); start.setOnClickListener(v->begin());
+  TextView notice=new TextView(this); notice.setText("에뮬레이터 시연 · 안내 시작 시 기존 내비 경로가 변경됩니다."); notice.setPadding(16,0,16,4);layout.addView(notice);
+  setContentView(layout); message("현대 내비 연결 중 · 지도에서 지점을 정하고 상대가 참여하면 안내할 수 있습니다.");
+  navi=new NaviHelper(this);
+  try { navi.initialize(()->{ main.post(()->{if(destroyed)return;connected=true;navi.addListener(listener);record("CONNECTED");buttons();});return Unit.INSTANCE;},error->{main.post(()->{connected=false;message("현대 내비 연결 실패 · 앱을 다시 열어 연결해 주세요.");buttons();});return Unit.INSTANCE;}); }
+  catch(Exception e){ message("이 환경에서는 현대 내비를 연결할 수 없습니다.");record("INITIALIZE_FAILED"); }
+  main.postDelayed(()->{if(!connected&&!destroyed)message("현대 내비 연결 시간 초과 · 내비를 연 뒤 앱을 다시 실행하세요.");},10000);
+  web.loadUrl(ORIGIN+"/"); main.post(tick);
+ }
+ private void refresh() {
+  if(reading||!home()){if(!home()){displayed=null;buttons();}return;}
+  reading=true; int gen=generation;
+  // evaluateJavascript runs in this WebView's main frame only. Nothing is exposed to subframes.
+  web.evaluateJavascript("(()=>{try{return sessionStorage.getItem('pickupSession')}catch(e){return null}})()",raw->{
+   if(destroyed||gen!=generation||!home()){reading=false;return;}
+   try {
+    Object decoded=new JSONTokener(raw).nextValue(); if(!(decoded instanceof String))throw new JSONException("No session");
+    JSONObject session=new JSONObject((String)decoded); String id=session.getString("id"), token=session.getString("token");
+    validateSession(id,token); roomId=id;credential=token;
+    io.execute(()->{try{RouteGate.Target t=readTarget(id,token);main.post(()->{
+     reading=false;if(destroyed||gen!=generation||!home()||starting||sent)return;
+     displayed=t; if(used(t))message("이 확정 지점은 이미 안내 요청했습니다. 현대 내비에서 확인하세요.");
+     else message(String.format(java.util.Locale.ROOT,"확정 픽업 지점 · %.7f, %.7f · 안내 시작을 누르세요.",t.lat(),t.lon()));buttons();
+    });}catch(Exception e){main.post(()->{reading=false;if(gen!=generation||destroyed||starting||sent)return;displayed=null;message("지도 지점·상대 참여·장소 합의를 확인하세요. 연결이 없으면 안내할 수 없습니다.");buttons();});}});
+   }catch(Exception e){reading=false;displayed=null;message("지도에서 픽업 지점을 확정하고 상대를 초대하세요.");buttons();}
+  });
+ }
+ private static void validateSession(String id,String token) {
+  if(!id.matches("[a-f0-9-]{36}")||!token.matches("[A-Za-z0-9_-]{32}"))throw new IllegalArgumentException("Invalid session");
+ }
+ private RouteGate.Target readTarget(String id,String token) throws Exception {
+  validateSession(id,token); long began=now();
+  HttpURLConnection c=(HttpURLConnection)new URL(ORIGIN+"/api/rooms/"+id).openConnection();
+  c.setConnectTimeout(2500);c.setReadTimeout(2500);c.setInstanceFollowRedirects(false);c.setRequestProperty("Authorization","Bearer "+token);c.setUseCaches(false);
+  try{
+   if(c.getResponseCode()!=200)throw new IOException("Room unavailable");
+   ByteArrayOutputStream body=new ByteArrayOutputStream();byte[] chunk=new byte[2048];int length;
+   try(InputStream stream=c.getInputStream()){while((length=stream.read(chunk))!=-1){body.write(chunk,0,length);if(body.size()>16384||now()-began>=4000)throw new IOException("Invalid response");}}
+   byte[] bytes=body.toByteArray();if(now()-began>=4000)throw new IOException("Response expired");
+   JSONObject r=new JSONObject(new String(bytes,StandardCharsets.UTF_8));JSONArray p=r.getJSONArray("mapPoint");
+   if(p.length()!=2||!(p.get(0) instanceof Number)||!(p.get(1) instanceof Number)||!id.equals(r.getString("id")))throw new IOException("Invalid point");
+   return RouteGate.validate(id,r.getString("role"),r.getString("status"),r.getBoolean("joined"),r.getString("stage"),!r.isNull("proposal"),r.getLong("version"),r.getLong("placeRevision"),p.getDouble(0),p.getDouble(1),began);
+  }finally{c.disconnect();}
+ }
+ private void begin(){
+  if(!start.isEnabled())return;
+  final RouteGate.Target expected=displayed;final String id=roomId,token=credential;final int gen=generation;
+  starting=true;buttons();message("최신 합의 상태를 확인하고 있습니다…");record("USER_START");
+  io.execute(()->{try{RouteGate.Target latest=readTarget(id,token);main.post(()->{
+   if(destroyed)return;starting=false;
+   if(gen!=generation||!resumed||!home()||!connected||!RouteGate.fresh(expected,now())||!RouteGate.fresh(latest,now())||!RouteGate.same(expected,latest)||used(latest)){
+    displayed=null;message("상태가 바뀌었거나 오래되었습니다. 최신 지점을 다시 확인한 뒤 안내 시작을 누르세요.");record("STALE_BLOCKED");buttons();return;
+   }
+   // Persist before side effect: restart, rapid taps and uncertain SDK returns must not replay.
+   if(!getPreferences(MODE_PRIVATE).edit().putBoolean(latest.key(),true).commit()){message("중복 방지 기록 실패 · 안내를 요청하지 않았습니다.");buttons();return;}
+   requested=latest;requestedAt=now();destinationMatches=false;guiding=false;sent=true;
+   try{
+    navi.requestRoute(new RouteInfo(latest.lat(),latest.lon(),null,null,"PICKGO 픽업 지점","","","",RouteOption.RECOMMENDED,"",false));
+    record("REQUEST_ROUTE_SENT");message("현대 내비에 요청했습니다. 실제 목적지와 안내 상태를 확인 중입니다.");
+    navi.requestNavigationScreen(NavigationScreenRequest.Foreground.INSTANCE);
+   }catch(Exception e){record("REQUEST_UNCERTAIN");message("내비 요청 결과를 확인하지 못했습니다. 중복 요청 없이 현대 내비에서 확인하세요.");}
+   buttons();
+  });}catch(Exception e){main.post(()->{if(destroyed)return;starting=false;displayed=null;record("REVALIDATION_FAILED");message("최신 상태 확인 실패 · 안내를 요청하지 않았습니다. 연결 후 다시 확인하세요.");buttons();});}});
+ }
+ @Override protected void onResume(){super.onResume();resumed=true;if(web!=null)web.onResume();}
+ @Override protected void onPause(){resumed=false;generation++;displayed=null;if(web!=null)web.onPause();buttons();super.onPause();}
+ @Override protected void onDestroy(){destroyed=true;generation++;main.removeCallbacksAndMessages(null);io.shutdownNow();if(navi!=null){navi.removeListener(listener);navi.release();}web.destroy();super.onDestroy();}
+}
+
+FILE experiments/pickgo-navigation/app/src/main/java/org/example/pickgonavigation/RouteGate.java
+package org.example.pickgonavigation;
+
+/** Pure policy. All times are monotonic. Coordinates are WGS84, never diagram pixels. */
+public final class RouteGate {
+ public static final long TTL = 8000;
+ public record Target(String id, long version, long revision, double lat, double lon, long observed) {
+  public String key() { return id + ":" + revision; }
+ }
+ public static Target validate(String id, String role, String status, boolean joined, String stage,
+   boolean proposal, long version, long revision, double lon, double lat, long observed) {
+  if (id == null || !id.matches("[a-f0-9-]{36}") || !"driver".equals(role) || !"active".equals(status)
+    || !joined || !"waiting".equals(stage) || proposal || version < 1 || revision < 1
+    || !Double.isFinite(lat) || !Double.isFinite(lon) || lon < 127.032 || lon > 127.050 || lat < 37.455 || lat > 37.471)
+   throw new IllegalArgumentException("확정된 지도 지점과 상대 참여를 확인하세요. 변경 제안 중에는 안내할 수 없습니다.");
+  return new Target(id, version, revision, lat, lon, observed);
+ }
+ public static boolean fresh(Target target, long now) { return target != null && now >= target.observed && now - target.observed < TTL; }
+ public static boolean same(Target a, Target b) {
+  return a != null && b != null && a.id.equals(b.id) && a.version == b.version && a.revision == b.revision
+    && a.lat == b.lat && a.lon == b.lon;
+ }
+ public static boolean matches(Target target, double lat, double lon) {
+  return target != null && Math.abs(target.lat-lat) <= 0.00002 && Math.abs(target.lon-lon) <= 0.00002;
+ }
+}
+
+FILE experiments/pickgo-navigation/RouteGateTest.java
+package org.example.pickgonavigation;
+public final class RouteGateTest {
+ static int count;
+ static void check(boolean v){count++;if(!v)throw new AssertionError("case "+count);}
+ static RouteGate.Target target(String role,String status,boolean joined,String stage,boolean proposal,double lon,double lat){return RouteGate.validate("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",role,status,joined,stage,proposal,2,1,lon,lat,1000);}
+ static void rejects(Runnable r){try{r.run();throw new AssertionError("not rejected");}catch(IllegalArgumentException ok){count++;}}
+ public static void main(String[] args){
+  var t=target("driver","active",true,"waiting",false,127.04,37.46);
+  check(RouteGate.fresh(t,8999));check(!RouteGate.fresh(t,9000));check(!RouteGate.fresh(t,999));
+  check(RouteGate.matches(t,37.46,127.04));check(!RouteGate.matches(t,127.04,37.46));check(!RouteGate.matches(t,37.4601,127.04));
+  check(RouteGate.same(t,t));check(!RouteGate.same(t,new RouteGate.Target(t.id(),3,1,t.lat(),t.lon(),1000)));
+  check(!RouteGate.same(t,new RouteGate.Target(t.id(),2,2,t.lat(),t.lon(),1000)));
+  for(String role:new String[]{"rider","",null})rejects(()->target(role,"active",true,"waiting",false,127.04,37.46));
+  rejects(()->target("driver","ended",true,"waiting",false,127.04,37.46));
+  rejects(()->target("driver","active",false,"waiting",false,127.04,37.46));
+  for(String stage:new String[]{"arrived","boarded"})rejects(()->target("driver","active",true,stage,false,127.04,37.46));
+  rejects(()->target("driver","active",true,"waiting",true,127.04,37.46));
+  for(double bad:new double[]{Double.NaN,Double.POSITIVE_INFINITY,37.46,127.1})rejects(()->target("driver","active",true,"waiting",false,bad,37.46));
+  for(double bad:new double[]{Double.NaN,Double.NEGATIVE_INFINITY,127.04,37.5})rejects(()->target("driver","active",true,"waiting",false,127.04,bad));
+  System.out.println("RouteGate: "+count+" assertions passed");
+ }
+}
+
+FILE experiments/pickgo-navigation/app/src/main/AndroidManifest.xml
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+ <uses-permission android:name="android.permission.INTERNET" />
+ <uses-permission android:name="pleos.car.permission.NAVI_ROUTE" />
+ <uses-permission android:name="pleos.car.permission.NAVI_ROUTE_SEARCH" />
+ <uses-permission android:name="pleos.car.permission.NAVI_CUSTOM_MAP" />
+ <uses-feature android:name="android.hardware.type.automotive" android:required="false" />
+ <application android:label="PICKGO 안내 시연" android:theme="@android:style/Theme.Material.Light.NoActionBar" android:allowBackup="false" android:usesCleartextTraffic="true">
+  <activity android:name=".NavigationActivity" android:exported="true">
+   <intent-filter><action android:name="android.intent.action.MAIN"/><category android:name="android.intent.category.LAUNCHER"/></intent-filter>
+  </activity>
+ </application>
+</manifest>
+
+FILE experiments/pickup-board/map/board.mjs
+import {RecommendationBoard} from '../recommendation/board.mjs';
+import {Fault} from '../domain.mjs';
+import {mapModel} from './service.mjs';
+const prefix='지도 핀';
+export function decodePoint(place){
+  if(typeof place!=='string')return null;
+  const m=place.match(/^지도 핀 \((-?\d+\.\d{7}), (-?\d+\.\d{7})\)$/);
+  return m?[Number(m[2]),Number(m[1])]:null;
+}
+export class MapBoard extends RecommendationBoard{
+  constructor(now=Date.now,mono=()=>performance.now(),provider,model=mapModel){super(now,mono,provider);this.mapModel=model;}
+  isPlaceAllowed(place){const p=decodePoint(place);return p?this.mapModel.check(p,this.now()).selectable:super.isPlaceAllowed(place);}
+  pointName(point){
+    const result=this.mapModel.check(point,this.now());
+    if(!result.selectable)throw new Fault(400,result.reasons.join(' · '));
+    const rounded=point.map(v=>Number(v.toFixed(7)));
+    const final=this.mapModel.check(rounded,this.now());
+    if(!final.selectable)throw new Fault(400,final.reasons.join(' · '));
+    return `${prefix} (${rounded[1].toFixed(7)}, ${rounded[0].toFixed(7)})`;
+  }
+  createPoint(point){return this.create(this.pointName(point));}
+  read(id,credential){const state=super.read(id,credential);return {...state,mapPoint:decodePoint(state.place),proposal:state.proposal?{...state.proposal,mapPoint:decodePoint(state.proposal.place)}:null};}
+  act(id,credential,command){
+    // Authenticate before geometry work; base still checks view/version/replay/state.
+    const r=this.room(id);this.auth(r,credential);
+    if(command?.type==='proposePoint')command={...command,type:'propose',place:this.pointName(command.point)};
+    if(command?.type==='accept'&&decodePoint(r.proposal?.place)&&!this.isPlaceAllowed(r.proposal.place))throw new Fault(409,'이 핀은 현재 선택할 수 없습니다. 지도에서 다시 확인해 주세요.');
+    return super.act(id,credential,command);
+  }
+}

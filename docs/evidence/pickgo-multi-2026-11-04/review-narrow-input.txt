@@ -1,0 +1,338 @@
+Read-only code review, NO tools. Korean. Return at most 8 concrete important defects, <=900 words. Do not repeat known limitations: local desktop web demo, no real routes/provider/native/car UX, immutable stops after invite, max6 total people. Explicit demo only; real provider missing fails. User approved implementation. Check per-rider access, state mutations, async stale recommendation, client recovery. Existing HTTP wrapper has exact Host/Origin +4KB JSON guard and passes Bearer separately, maps Fault statuses.13new tests plus246 total pass. Latest UI added serial work queue and persisted join retry before consuming invite. Review actual code below and report P1/P2 or no substantial defects, not hypothetical feature wishes.
+
+FILE board.mjs
+import { randomBytes, randomUUID } from 'node:crypto';
+import { Fault } from '../domain.mjs';
+import { mapModel } from '../map/service.mjs';
+import { bestOrder, demoMatrix } from './planner.mjs';
+
+const token = () => randomBytes(24).toString('base64url');
+const ok = (condition, status, text) => { if (!condition) throw new Fault(status, text); };
+const copy = value => structuredClone(value);
+const pending = p => !['boarded', 'cancelled'].includes(p.state);
+export class MultiBoard {
+  constructor({ now = Date.now, checkPoint = p => mapModel.check(p), provider = null, timeout = 3000 } = {}) {
+    this.now = now; this.checkPoint = checkPoint; this.provider = provider; this.timeout = timeout; this.trips = new Map();
+  }
+  prune() { for (const [id, t] of this.trips) if (this.now() - t.createdAt >= 86400000) this.trips.delete(id); }
+  point(value) {
+    ok(Array.isArray(value) && value.length === 2 && value.every(Number.isFinite), 400, '좌표를 확인하세요.');
+    const result = this.checkPoint(value);
+    ok(result?.selectable, 400, '현재 선택할 수 없는 지점입니다. 지도 조건을 확인하세요.');
+    return [...value];
+  }
+  create({ origin, destination = null, demo = false } = {}) {
+    this.prune(); ok(this.trips.size < 100, 429, '회차 한도입니다.');
+    ok(typeof demo === 'boolean', 400, '데모 설정을 확인하세요.');
+    const t = { id: randomUUID(), createdAt: this.now(), version: 1, driver: token(), origin: this.point(origin),
+      destination: destination === null ? null : this.point(destination), demo, status: 'active', participants: [], stops: [],
+      order: [], active: null, recommendation: null, views: new Map(), requests: new Set(), navigation: 'unconnected' };
+    this.trips.set(t.id, t); return { id: t.id, token: t.driver, role: 'driver' };
+  }
+  trip(id) { this.prune(); const t = this.trips.get(id); ok(t, 404, '없거나 만료된 회차입니다.'); return t; }
+  auth(t, credential) {
+    ok(typeof credential === 'string' && credential.length > 0, 401, '참여 권한이 필요합니다.');
+    if (credential === t.driver) return { role: 'driver' };
+    const p = t.participants.find(p => p.credential === credential);
+    ok(p, 403, '이 회차의 참여자가 아닙니다.'); return { role: 'rider', p };
+  }
+  touch(t) { t.version++; t.recommendation = null; }
+  normalize(t) {
+    t.order = t.order.filter(id => t.participants.some(p => p.stopId === id && pending(p)));
+    if (t.active && !t.order.includes(t.active)) {
+      const stop = t.stops.find(s => s.id === t.active);
+      if (stop.arrived) t.origin = [...stop.point];
+      t.active = null;
+    }
+  }
+  join(id, { invite, joinId } = {}) {
+    const t = this.trip(id);
+    ok(t.status === 'active', 409, '종료된 회차입니다.');
+    ok(typeof joinId === 'string' && /^[a-zA-Z0-9-]{16,80}$/.test(joinId), 400, '참여 요청 식별자가 필요합니다.');
+    const p = t.participants.find(p => typeof invite === 'string' && (p.invite === invite || p.receipt?.invite === invite));
+    ok(p && p.state !== 'cancelled', 403, '유효하지 않은 초대입니다.');
+    if (p.joined) {
+      ok(p.receipt?.joinId === joinId && this.now() - p.receipt.at < 300000, 403, '이미 사용된 초대입니다.');
+    } else {
+      this.point(t.stops.find(s => s.id === p.stopId).point);
+      p.joined = true; p.credential = token(); p.receipt = { invite, joinId, at: this.now() }; p.invite = null; this.touch(t);
+    }
+    return { id, token: p.credential, role: 'rider' };
+  }
+  preview(id, invite) {
+    const t = this.trip(id), p = t.participants.find(p => typeof invite === 'string' && p.invite === invite);
+    ok(t.status === 'active' && p && pending(p), 403, '유효하지 않거나 사용된 초대입니다.');
+    return { name: p.name, stop: copy(t.stops.find(s => s.id === p.stopId)), demo: t.demo };
+  }
+  read(id, credential) {
+    const t = this.trip(id), actor = this.auth(t, credential), view = token();
+    const views = (t.views.get(credential) || []).filter(v => this.now() - v.at < 15000).slice(-9);
+    views.push({ value: view, at: this.now() }); t.views.set(credential, views);
+    const base = { id, version: t.version, view, role: actor.role, status: t.status, demo: t.demo, navigation: t.navigation };
+    const publicPerson = p => ({ id: p.id, name: p.name, stopId: p.stopId, joined: p.joined, ready: p.ready, state: p.state });
+    if (actor.role === 'rider') {
+      const p = actor.p, stop = t.stops.find(s => s.id === p.stopId);
+      return { ...base, participant: publicPerson(p), stop: copy(stop), ordinal: t.order.indexOf(p.stopId) + 1,
+        arrived: t.active === p.stopId && stop.arrived };
+    }
+    return { ...base, origin: copy(t.origin), destination: copy(t.destination), active: t.active,
+      stops: copy(t.stops), order: [...t.order], participants: t.participants.map(publicPerson),
+      invites: t.participants.filter(p => p.invite && pending(p)).map(p => ({ id: p.id, invite: p.invite })),
+      recommendation: t.recommendation && this.now() < t.recommendation.expiresAt ? copy(t.recommendation) : null };
+  }
+  guard(t, credential, command) {
+    const actor = this.auth(t, credential);
+    ok(command && typeof command === 'object', 400, '요청이 필요합니다.');
+    ok(t.status === 'active', 409, '종료된 회차입니다.');
+    ok(command.version === t.version, 409, '상태가 바뀌었습니다. 다시 확인하세요.');
+    ok((t.views.get(credential) || []).some(v => v.value === command.view && this.now() - v.at < 15000), 409, '다시 조회한 후 진행하세요.');
+    ok(typeof command.requestId === 'string' && /^[a-zA-Z0-9-]{8,80}$/.test(command.requestId), 400, '요청 식별자가 필요합니다.');
+    ok(!t.requests.has(command.requestId), 409, '이미 처리한 요청입니다.');
+    ok(t.requests.size < 2000 || command.type === 'end', 429, '변경 한도입니다. 회차를 종료하세요.');
+    return actor;
+  }
+  act(id, credential, c) {
+    const t = this.trip(id), actor = this.guard(t, credential, c);
+    if (actor.role === 'rider') ok(['ready', 'board', 'cancel'].includes(c.type), 403, '운전자만 할 수 있습니다.');
+    const person = () => {
+      const p = actor.role === 'rider' ? actor.p : t.participants.find(p => p.id === c.participantId);
+      ok(p && (actor.role !== 'rider' || c.participantId === undefined || c.participantId === p.id), 403, '본인 상태만 바꿀 수 있습니다.');
+      ok(pending(p), 409, '이미 처리된 참가자입니다.'); return p;
+    };
+    switch (c.type) {
+      case 'add': {
+        ok(!t.active, 409, '현재 경유지 처리를 마친 뒤 추가하세요.');
+        ok(t.participants.length < 6, 409, '초기 버전은 회차당 총 6명까지 지원합니다.');
+        ok(typeof c.name === 'string' && c.name.trim().length > 0 && c.name.trim().length <= 30, 400, '이름은 1~30자로 입력하세요.');
+        let stop = t.stops.find(s => s.id === c.stopId);
+        if (c.stopId !== undefined) ok(stop && t.order.includes(stop.id), 400, '진행 중인 지점을 선택하세요.');
+        if (!stop) {
+          ok(typeof c.label === 'string' && c.label.trim().length > 0 && c.label.trim().length <= 80, 400, '지점 이름을 확인하세요.');
+          stop = { id: randomUUID(), label: c.label.trim(), point: this.point(c.point), arrived: false };
+          t.stops.push(stop); t.order.push(stop.id);
+        } else this.point(stop.point);
+        t.participants.push({ id: randomUUID(), name: c.name.trim(), stopId: stop.id, invite: token(), credential: null,
+          joined: false, ready: false, state: 'waiting' }); break;
+      }
+      case 'ready': {
+        ok(actor.role === 'rider', 403, '준비 상태는 본인이 변경합니다.'); const p = person();
+        ok(typeof c.ready === 'boolean', 400, '준비 상태를 확인하세요.'); p.ready = c.ready; break;
+      }
+      case 'order': {
+        ok(Array.isArray(c.order) && c.order.length === t.order.length && new Set(c.order).size === t.order.length && c.order.every(x => t.order.includes(x)), 400, '모든 남은 지점이 한 번씩 필요합니다.');
+        ok(!t.active || c.order[0] === t.active, 409, '진행 중인 첫 지점은 고정됩니다.'); t.order = [...c.order]; break;
+      }
+      case 'apply': {
+        const r = t.recommendation;
+        ok(r && r.id === c.recommendationId && r.version === t.version && this.now() < r.expiresAt && this.now() >= r.observedAt, 409, '추천이 만료되었습니다. 다시 계산하세요.');
+        t.order = [...r.order]; break;
+      }
+      case 'next': {
+        ok(!t.active && t.order.length, 409, '현재 지점의 탑승 또는 취소를 먼저 확인하세요.');
+        const stop = t.stops.find(s => s.id === t.order[0]); this.point(stop.point);
+        t.active = stop.id; stop.arrived = false; break;
+      }
+      case 'arrive': {
+        ok(t.active, 409, '다음 픽업을 먼저 선택하세요.');
+        const stop = t.stops.find(s => s.id === t.active); ok(!stop.arrived, 409, '이미 도착 표시되었습니다.'); stop.arrived = true; break;
+      }
+      case 'board': {
+        ok(actor.role === 'rider', 403, '탑승은 본인이 확인합니다.'); const p = person();
+        ok(t.active === p.stopId && t.stops.find(s => s.id === p.stopId).arrived, 409, '본인 지점에 도착한 뒤 확인하세요.'); p.state = 'boarded'; break;
+      }
+      case 'cancel': { const p = person(); p.state = 'cancelled'; p.invite = null; p.receipt = null; break; }
+      case 'end': {
+        ok(t.participants.length && t.participants.every(p => !pending(p)), 409, '남은 사람의 탑승 또는 취소를 확인하세요.');
+        t.status = t.participants.every(p => p.state === 'boarded') ? 'completed' : t.participants.some(p => p.state === 'boarded') ? 'partial' : 'cancelled'; break;
+      }
+      default: throw new Fault(400, '지원하지 않는 동작입니다.');
+    }
+    t.requests.add(c.requestId); this.normalize(t); this.touch(t); return this.read(id, credential);
+  }
+  async recommend(id, credential, c) {
+    const t = this.trip(id), actor = this.guard(t, credential, c);
+    ok(actor.role === 'driver', 403, '운전자만 추천을 볼 수 있습니다.');
+    ok(t.order.length > 0, 409, '남은 픽업 지점이 없습니다.');
+    ok(t.demo || this.provider, 503, '실제 경로 데이터가 연결되지 않았습니다. 수동 순서를 사용하세요.');
+    const version = t.version, generation = token(); t.recommendation = null; t.calculation = generation;
+    t.requests.add(c.requestId);
+    const input = copy({ origin: t.origin, destination: t.destination, stops: t.stops.filter(s => t.order.includes(s.id)), order: t.order, now: this.now() });
+    let timer; const controller = new AbortController();
+    try {
+      const data = await Promise.race([
+        Promise.resolve().then(() => t.demo ? demoMatrix(input) : this.provider(input, controller.signal)),
+        new Promise((_, reject) => { timer = setTimeout(() => { controller.abort(); reject(new Error('TIMEOUT')); }, this.timeout); })
+      ]);
+      ok(this.trips.get(id) === t && t.status === 'active' && this.now() - t.createdAt < 86400000 && t.version === version && t.calculation === generation, 409, '계산 중 상태가 바뀌었습니다. 다시 계산하세요.');
+      ok(data && data.mode === (t.demo ? 'demo' : 'real') && typeof data.source === 'string' && data.source.length > 0 &&
+        Number.isFinite(data.observedAt) && data.observedAt <= this.now() && Number.isFinite(data.expiresAt) && data.expiresAt > this.now() && this.now() - data.observedAt < 60000,
+      503, '경로 데이터가 오래되었거나 유효하지 않습니다.');
+      const result = bestOrder(t.order, data.matrix, { final: !!t.destination, active: t.active });
+      t.recommendation = { ...result, id: token(), version, source: data.source, mode: data.mode, observedAt: data.observedAt,
+        expiresAt: Math.min(data.expiresAt, data.observedAt + 60000) };
+      return this.read(id, credential);
+    } catch (e) { if (e instanceof Fault) throw e; throw new Fault(503, '경로 계산을 완료하지 못했습니다. 수동 순서는 유지됩니다.'); }
+    finally { clearTimeout(timer); }
+  }
+}
+
+FILE planner.mjs
+// Directed, complete matrix; exhaustive search is deliberately bounded to six stops.
+export function bestOrder(order, matrix, { final = false, active = null } = {}) {
+  if (!Array.isArray(order) || order.length > 6 || new Set(order).size !== order.length) throw new Error('INVALID_ORDER');
+  const nodes = ['origin', ...order, ...(final ? ['destination'] : [])];
+  for (const a of nodes) for (const b of nodes) if (a !== b) {
+    if (!Number.isFinite(matrix?.[a]?.[b]) || matrix[a][b] < 0) throw new Error('ROUTE_MISSING');
+  }
+  const cost = list => {
+    const route = ['origin', ...list, ...(final ? ['destination'] : [])];
+    return route.slice(1).reduce((sum, to, i) => sum + matrix[route[i]][to], 0);
+  };
+  let best = [...order], total = cost(order);
+  function visit(prefix, remaining) {
+    if (!remaining.length) { const value = cost(prefix); if (value < total) { best = prefix; total = value; } return; }
+    for (const id of remaining) visit([...prefix, id], remaining.filter(x => x !== id));
+  }
+  if (active && order[0] !== active) throw new Error('INVALID_ACTIVE');
+  visit(active ? [active] : [], active ? order.slice(1) : order);
+  return { order: best, seconds: total, currentSeconds: cost(order) };
+}
+
+export function demoMatrix({ order, now }) {
+  // Synthetic directed costs, unrelated to the real coordinates or road network.
+  const nodes = ['origin', ...order, 'destination'];
+  return { mode: 'demo', source: '합성 방향별 이동시간 · 실제 도로 아님', observedAt: now,
+    expiresAt: now + 60000, matrix: Object.fromEntries(nodes.map((a, i) => [a,
+      Object.fromEntries(nodes.map((b, j) => [b, i === j ? 0 : 60 + ((i * 7 + j * 13) % 11) * 45]))])) };
+}
+
+FILE page.mjs
+const $ = id => document.getElementById(id);
+const storage = 'pickgo-multi-session-v1';
+let session = null, state = null, busy = false, candidates = [], pendingCancel = null, invite = null, joinId = null;
+let queue = Promise.resolve(), queued = 0, recoveringJoin = false;
+try { session = JSON.parse(sessionStorage.getItem(storage) || 'null'); } catch { /* No persisted session. */ }
+const fragment = new URLSearchParams(location.hash.slice(1));
+if (fragment.has('invite')) {
+  invite = { id: fragment.get('trip'), invite: fragment.get('invite') }; session = null; joinId = crypto.randomUUID();
+  try { const saved = JSON.parse(sessionStorage.getItem('pickgo-multi-join') || 'null');
+    if (saved?.id === invite.id && saved.invite === invite.invite) { joinId = saved.joinId; recoveringJoin = true; }
+  } catch { /* A fresh invitation still works if durable retry storage can be written. */ }
+}
+function save() { try { sessionStorage.setItem(storage, JSON.stringify(session)); } catch { $('message').textContent = '이 브라우저에서 복원이 불가능합니다. 화면을 닫지 마세요.'; } }
+async function api(path, body, authenticated = true) {
+  const response = await fetch(path, { method: body === undefined ? 'GET' : 'POST', headers: {
+    ...(body === undefined ? {} : { 'Content-Type': 'application/json' }),
+    ...(authenticated && session ? { Authorization: `Bearer ${session.token}` } : {}) },
+    ...(body === undefined ? {} : { body: JSON.stringify(body) }), signal: AbortSignal.timeout(8000) });
+  const data = await response.json(); if (!response.ok) throw new Error(data.error || '요청을 완료하지 못했습니다.'); return data;
+}
+function run(fn, quiet = false) {
+  queued++; busy = true;
+  const task = queue.then(async () => {
+    if (!quiet) $('error').textContent = '';
+    try { await fn(); } catch (e) { $('error').textContent = e.message; }
+    finally { queued--; busy = queued > 0; }
+  });
+  queue = task; return task;
+}
+function command(type, extra = {}) { return { type, ...extra, requestId: crypto.randomUUID(), version: state.version, view: state.view }; }
+async function act(type, extra) { state = await api(`/api/trips/${session.id}/actions`, command(type, extra)); render(); }
+function button(text, fn, disabled = false) { const b = document.createElement('button'); b.type = 'button'; b.textContent = text; b.disabled = disabled; b.onclick = () => run(fn); return b; }
+function option(select, value, text) { const el = document.createElement('option'); el.value = value; el.textContent = text; select.append(el); }
+function stopLabel(id) { return state.stops.find(s => s.id === id)?.label || '승차 지점'; }
+function cancel(id, name) { pendingCancel = id; $('confirmText').textContent = `${name}님의 픽업만 취소합니다. 취소는 되돌릴 수 없습니다.`; $('confirm').showModal(); }
+function render() {
+  $('setup').hidden = true; $('invitation').hidden = true; $('trip').hidden = false;
+  const driver = state.role === 'driver', ended = state.status !== 'active';
+  $('driver').hidden = !driver; $('rider').hidden = driver;
+  $('mode').textContent = state.demo ? '데모 모드 · 이동시간은 합성 데이터이며 실제 도로·교통과 무관합니다.' : '수동 계획 · 실제 경로 데이터 미연결';
+  $('tripStatus').textContent = { active: '진행 중', completed: '모두 탑승 완료', partial: '종료 · 일부 탑승 / 일부 취소', cancelled: '모두 취소' }[state.status];
+  if (!driver) {
+    const p = state.participant, done = ['boarded','cancelled'].includes(p.state);
+    $('myPlace').textContent = `${p.name} · ${state.stop.label}`;
+    $('myStatus').textContent = `${done ? (p.state === 'boarded' ? '탑승 완료' : '취소됨') : `${state.ordinal}번째 픽업 · ${state.arrived ? '차량 도착' : '도착 전'}`} · ${p.ready ? '준비 완료' : '준비 중'}`;
+    for (const id of ['ready','notReady','cancelSelf']) $(id).disabled = ended || done;
+    $('board').disabled = ended || done || !state.arrived; return;
+  }
+  $('addPanel').hidden = ended;
+  $('addPerson').querySelector('button').disabled = !!state.active || state.participants.length >= 6;
+  const previous = $('pickup').value; $('pickup').replaceChildren();
+  for (const id of state.order) option($('pickup'), `stop:${id}`, `같은 지점 함께 승차 · ${stopLabel(id)}`);
+  candidates.forEach((c, i) => option($('pickup'), `point:${i}`, `${c.name} · 후보 ${i + 1}`));
+  if ([...$('pickup').options].some(o => o.value === previous)) $('pickup').value = previous;
+  $('routeSummary').textContent = `남은 지점 ${state.order.length}곳 · 최종 목적지 ${state.destination ? state.destination.map(v => v.toFixed(5)).join(', ') : '없음'}`;
+  $('stops').replaceChildren();
+  state.order.forEach((id, i) => {
+    const stop = state.stops.find(s => s.id === id), li = document.createElement('li'), title = document.createElement('strong');
+    title.textContent = `${stop.label}${state.active === id ? (stop.arrived ? ' · 도착' : ' · 현재 픽업') : ''}`; li.append(title);
+    const controls = document.createElement('div'); controls.className = 'actions';
+    const move = offset => { const order = [...state.order]; [order[i], order[i+offset]] = [order[i+offset], order[i]]; return act('order', { order }); };
+    controls.append(button('위로', () => move(-1), ended || i === 0 || (!!state.active && i === 1)), button('아래로', () => move(1), ended || i === state.order.length - 1 || state.active === id)); li.append(controls); $('stops').append(li);
+  });
+  $('people').replaceChildren();
+  for (const p of state.participants) {
+    const box = document.createElement('div'); box.className = 'person'; const title = document.createElement('strong'); title.textContent = p.name; box.append(title);
+    const text = document.createElement('p'); text.textContent = `${stopLabel(p.stopId)} · ${p.state === 'boarded' ? '탑승 완료' : p.state === 'cancelled' ? '취소' : !p.joined ? '미참여' : p.ready ? '준비 완료' : '준비 중'}`; box.append(text);
+    const invitation = state.invites.find(x => x.id === p.id);
+    if (invitation) {
+      const link = `${location.origin}/multi#trip=${session.id}&invite=${invitation.invite}`;
+      box.append(button('초대 링크 복사', async () => {
+        try { await navigator.clipboard.writeText(link); $('message').textContent = `${p.name}님의 링크를 복사했습니다. 직접 전달하세요.`; }
+        catch { const field = document.createElement('input'); field.value = link; field.readOnly = true; field.setAttribute('aria-label', `${p.name} 초대 링크`); box.append(field); field.select(); }
+      }));
+      const a = document.createElement('a'); a.href = link; a.target = '_blank'; a.rel = 'noopener noreferrer'; a.textContent = '탑승자 화면 열기'; box.append(a);
+    }
+    if (!ended && !['boarded','cancelled'].includes(p.state)) box.append(button('이 사람 픽업 취소', async () => cancel(p.id, p.name)));
+    $('people').append(box);
+  }
+  $('recommend').disabled = ended || !state.order.length;
+  $('next').disabled = ended || !!state.active || !state.order.length;
+  $('arrive').disabled = ended || !state.active || !!state.stops.find(s => s.id === state.active)?.arrived;
+  $('end').disabled = ended || !state.participants.length || state.participants.some(p => !['boarded','cancelled'].includes(p.state));
+  const r = state.recommendation;
+  $('recommendation').hidden = !r || ended;
+  if (r) {
+    $('recommendationText').textContent = `${r.order.map(stopLabel).join(' → ')} · ${Math.round(r.currentSeconds/60)}분 → ${Math.round(r.seconds/60)}분${r.mode === 'demo' ? ' (합성값)' : ''}`;
+    $('recommendationSource').textContent = `${r.source} · ${new Date(r.observedAt).toLocaleTimeString()} 기준 · 준비 중인 사람도 포함 · 적용 전 순서는 유지됩니다.`;
+    $('apply').disabled = Date.now() >= r.expiresAt;
+  }
+}
+async function refresh() {
+  if (!session) return;
+  const next = await api(`/api/trips/${session.id}`);
+  const changed = !state || state.version !== next.version || state.recommendation?.id !== next.recommendation?.id;
+  state = next; if (changed) render();
+}
+$('createTrip').onsubmit = e => { e.preventDefault(); run(async () => { session = await api('/api/trips', { origin: candidates[Number($('origin').value)].point, destination: $('destination').value === '' ? null : candidates[Number($('destination').value)].point, demo: $('demo').checked }, false); save(); await refresh(); }); };
+$('addPerson').onsubmit = e => { e.preventDefault(); run(async () => { const [kind, value] = $('pickup').value.split(':'); const c = candidates[Number(value)]; await act('add', { name: $('personName').value, ...(kind === 'stop' ? {stopId:value} : {point:c.point,label:`${c.name} · 후보 ${Number(value)+1}`}) }); $('personName').value = ''; }); };
+$('refresh').onclick = () => run(refresh);
+$('recommend').onclick = () => run(async () => { state = await api(`/api/trips/${session.id}/recommend`, command('recommend')); render(); });
+$('apply').onclick = () => run(() => act('apply', { recommendationId: state.recommendation.id }));
+for (const id of ['next','arrive','end','board']) $(id).onclick = () => run(() => act(id));
+$('ready').onclick = () => run(() => act('ready', { ready: true })); $('notReady').onclick = () => run(() => act('ready', { ready: false }));
+$('cancelSelf').onclick = () => cancel(state.participant.id, state.participant.name);
+$('keep').onclick = () => $('confirm').close();
+$('confirmCancel').onclick = () => run(async () => { await act('cancel', { participantId: pendingCancel }); $('confirm').close(); });
+$('leave').onclick = () => { session = null; save(); location.replace('/multi'); };
+$('join').onclick = () => run(async () => {
+  // Persist the retry key BEFORE consuming a one-use invite. A lost response is recoverable for five minutes.
+  sessionStorage.setItem('pickgo-multi-join', JSON.stringify({ ...invite, joinId }));
+  const joined = await api(`/api/trips/${invite.id}/join`, { invite:invite.invite, joinId }, false);
+  sessionStorage.setItem(storage, JSON.stringify(joined)); session = joined;
+  sessionStorage.removeItem('pickgo-multi-join'); history.replaceState(null, '', '/multi'); invite = null; await refresh();
+});
+await run(async () => {
+  const data = await api('/api/map', undefined, false); candidates = data.available ? data.recommendations : [];
+  candidates.forEach((c, i) => { option($('origin'), String(i), `${c.name} · 후보 ${i+1}`); option($('destination'), String(i), `${c.name} · 후보 ${i+1}`); });
+  $('createTrip').querySelector('button').disabled = !candidates.length;
+  if (!candidates.length) $('message').textContent = '사용 가능한 지도 후보가 없습니다. 새 회차 생성은 잠시 사용할 수 없습니다.';
+  if (invite) {
+    $('setup').hidden = true; $('invitation').hidden = false; $('join').disabled = true;
+    try { const p = await api(`/api/trips/${invite.id}/preview`, {invite: invite.invite}, false); $('invitationText').textContent = `${p.name} · ${p.stop.label} · ${p.stop.point.join(', ')}${p.demo ? ' · 합성 이동시간 시연' : ''}`; }
+    catch (e) { if (!recoveringJoin) throw e; $('invitationText').textContent = '이 브라우저에서 시작한 참여를 다시 확인합니다. 첫 참여 요청 후 5분 이내에 복원할 수 있습니다.'; }
+    $('join').disabled = false;
+  }
+  else if (session) await refresh();
+});
+setInterval(() => { if (!busy && session && document.visibilityState === 'visible' && !$('confirm').open) run(refresh, true); }, 5000);

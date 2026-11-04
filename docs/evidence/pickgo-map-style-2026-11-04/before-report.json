@@ -1,0 +1,1490 @@
+{
+ "url": "http://127.0.0.1:4193/map",
+ "at": "2026-11-04T12:30:36.318Z",
+ "allow": [],
+ "viewports": [
+  {
+   "width": 1440,
+   "height": 900,
+   "load": "load",
+   "screens": 1,
+   "filled": [
+    0.91
+   ],
+   "motion": {
+    "elements": 38,
+    "css": 0,
+    "transitions": 0,
+    "scripted": 38,
+    "videos": 0,
+    "playingVideos": 0
+   },
+   "metrics": {
+    "viewport": {
+     "w": 1440,
+     "h": 900
+    },
+    "page": {
+     "height": 900,
+     "screens": 1,
+     "words": 117,
+     "img": 29,
+     "video": 0,
+     "canvas": 0,
+     "svg": 2,
+     "sections": 2,
+     "horizontalOverflow": 0,
+     "overflowCulprits": [],
+     "uiFragments": 0,
+     "uiAbuse": false,
+     "realPictures": 29,
+     "videoCount": 0,
+     "uiPictures": 0,
+     "pictureSamples": [
+      "50804.png",
+      "50805.png",
+      "50804.png",
+      "50804.png",
+      "50805.png",
+      "50805.png",
+      "50803.png",
+      "50806.png"
+     ],
+     "blendText": 0,
+     "sideScrollers": 0,
+     "brokenImages": [],
+     "emoji": [],
+     "videosNoPoster": 0
+    },
+    "hero": {
+     "text": "어디서 만날까요?",
+     "words": 2,
+     "chars": 9,
+     "lines": 1,
+     "size": 27,
+     "vw": 1.9,
+     "font": "Asta",
+     "weight": 700,
+     "tracking": -0.04,
+     "leading": 1.2,
+     "top": 100,
+     "tag": "h1",
+     "kind": "heading",
+     "align": "left",
+     "position": "left"
+    },
+    "h1": {
+     "text": "어디서 만날까요?",
+     "words": 2,
+     "lines": 1,
+     "size": 27,
+     "font": "Asta"
+    },
+    "headings": [],
+    "headingSummary": {
+     "count": 0,
+     "maxLines": 0,
+     "over2Lines": 0,
+     "statements": 0,
+     "centered": 0,
+     "medianWords": null,
+     "mixedFontHeadings": 0
+    },
+    "type": {
+     "families": [
+      {
+       "family": "Asta",
+       "share": 1,
+       "mono": false
+      },
+      {
+       "family": "Lucida Console",
+       "share": 0,
+       "mono": true
+      }
+     ],
+     "familyCount": 2,
+     "sizes": [
+      11,
+      12,
+      13,
+      14,
+      15,
+      16,
+      17,
+      22,
+      25,
+      27
+     ],
+     "sizeCount": 10,
+     "notLoaded": [
+      "Lucida Console"
+     ],
+     "body": {
+      "font": "Asta",
+      "size": 12,
+      "leading": 1.65,
+      "weight": 400,
+      "tracking": 0,
+      "contrast": 13.5
+     },
+     "measureChars": 52,
+     "max": {
+      "size": 27,
+      "vw": 1.9,
+      "font": "Asta",
+      "text": "어디서 만날까요?"
+     },
+     "monoShare": 0,
+     "monoProseShare": 0,
+     "monoFamilies": [
+      "Lucida Console"
+     ],
+     "monoSamples": [
+      "+",
+      "−"
+     ],
+     "microLabels": 0,
+     "microLabelShare": 0,
+     "microSamples": [],
+     "upperShare": 0.01,
+     "centerShare": 0.03,
+     "smallText": 12
+    },
+    "eyebrows": [],
+    "numbered": [],
+    "color": {
+     "bodyBg": "#f4f3ee",
+     "bodyBgHsl": {
+      "h": 50,
+      "s": 0.21,
+      "l": 0.95
+     },
+     "dark": false,
+     "sectionBgs": [
+      {
+       "color": "#e6e9df",
+       "top": 72,
+       "hsl": {
+        "h": 78,
+        "s": 0.19,
+        "l": 0.89
+       }
+      }
+     ],
+     "textColors": [
+      {
+       "color": "#242822",
+       "share": 0.66
+      },
+      {
+       "color": "#66705f",
+       "share": 0.07
+      },
+      {
+       "color": "#697065",
+       "share": 0.06
+      },
+      {
+       "color": "#70766e",
+       "share": 0.04
+      },
+      {
+       "color": "#0078a8",
+       "share": 0.04
+      }
+     ],
+     "button": {
+      "bg": "#fafaf6",
+      "hsl": {
+       "h": 60,
+       "s": 0.29,
+       "l": 0.97
+      },
+      "fg": "#303b2e"
+     },
+     "lowContrast": []
+    },
+    "buttons": {
+     "count": 5,
+     "inHero": 5,
+     "radius": 6,
+     "height": 64,
+     "withShadow": 0,
+     "withGradient": 0,
+     "mono": 0,
+     "upper": 0,
+     "heroLabels": [
+      "사옥으로 이동",
+      "1 매헌로6길 직선 612m · 도로폭 7m 표기",
+      "2 매헌로6길 직선 640m · 도로폭 5m 표기",
+      "3 매헌로6길 직선 650m · 도로폭 7m 표기",
+      "이 핀으로 픽업 시작"
+     ]
+    },
+    "surfaces": {
+     "shadowStatic": 0,
+     "shadowOverlay": 0,
+     "shadowSamples": [],
+     "gradients": 0,
+     "scrims": 0,
+     "gradientSamples": [],
+     "gradientText": 0,
+     "hairlines": 4,
+     "hairlineSamples": [
+      "header 1440px",
+      "aside 360px",
+      "section.selection 311px",
+      "details 311px"
+     ],
+     "outlinedBoxes": 0,
+     "dashed": 0,
+     "blurred": 0,
+     "roundedBoxes": 0,
+     "boxRadius": 0,
+     "squareMedia": 29,
+     "roundedMedia": 0,
+     "mediaRadius": 0,
+     "textShadow": 0,
+     "cardRows": []
+    },
+    "heroMedia": [
+     {
+      "type": "svg",
+      "ratio": 0.83
+     }
+    ],
+    "nav": {
+     "links": 2,
+     "fixed": false,
+     "height": 72,
+     "floatingPill": false,
+     "blur": false
+    },
+    "fontsLoaded": [
+     "asta"
+    ]
+   },
+   "layout": {
+    "viewport": {
+     "w": 1440,
+     "h": 900
+    },
+    "pageH": 900,
+    "margins": {
+     "left": 24,
+     "right": 28
+    },
+    "sections": [],
+    "gaps": [],
+    "h1s": [
+     {
+      "text": "어디서 만날까요?",
+      "size": 27,
+      "top": 100,
+      "firstScreen": true
+     }
+    ],
+    "edgeText": [
+     {
+      "text": "지도 오류 제보",
+      "side": "right",
+      "px": 5
+     }
+    ],
+    "edges": [
+     {
+      "x": 24,
+      "n": 3
+     }
+    ],
+    "leftBlocks": 3,
+    "bodySize": 12,
+    "stage": false,
+    "explains": false,
+    "slivers": [],
+    "voidShare": 0,
+    "voidBox": null
+   },
+   "app": {
+    "viewport": {
+     "w": 1440,
+     "h": 900
+    },
+    "dark": false,
+    "ground": "#f4f3ee",
+    "sidebar": {
+     "w": 360,
+     "tag": "aside",
+     "links": 7,
+     "share": 0.25
+    },
+    "topbar": {
+     "h": 72
+    },
+    "canvas": {
+     "left": 26,
+     "right": -383
+    },
+    "hero": {
+     "text": "어디서 만날까요?",
+     "words": 2,
+     "chars": 9,
+     "lines": 1,
+     "size": 27,
+     "vw": 1.9,
+     "font": "Asta",
+     "weight": 700,
+     "tracking": -0.04,
+     "leading": 1.2,
+     "top": 100,
+     "tag": "h1",
+     "kind": "heading",
+     "align": "left",
+     "position": "left"
+    },
+    "charts": 1,
+    "layout": {
+     "panels": 2,
+     "firstScreen": 2,
+     "ragged": [],
+     "voids": []
+    },
+    "tiles": 0,
+    "panels": {
+     "count": 2,
+     "radii": [
+      [
+       0,
+       2
+      ]
+     ],
+     "heavyBorders": 0,
+     "borderSamples": [],
+     "heavyShadows": 0,
+     "softShadows": 0,
+     "shadowSamples": [],
+     "glass": 0
+    },
+    "chips": {
+     "count": 0,
+     "hues": 0,
+     "samples": []
+    },
+    "numbers": {
+     "cells": 0,
+     "leftAligned": 0,
+     "figures": 0,
+     "tabularShare": null,
+     "kpiMax": null
+    },
+    "rows": null,
+    "chartHues": 1,
+    "placeholders": [],
+    "type": {
+     "under13": 0.72,
+     "tiny": 0,
+     "tinySamples": [],
+     "sizes": [
+      11,
+      12,
+      13,
+      14,
+      15,
+      16,
+      17,
+      25,
+      27
+     ]
+    },
+    "title": {
+     "text": "어디서 만날까요?",
+     "size": 27,
+     "top": 100
+    },
+    "colourShare": 0.137
+   },
+   "consoleErrors": []
+  },
+  {
+   "width": 768,
+   "height": 1024,
+   "load": "load",
+   "screens": 1,
+   "filled": [
+    0.77
+   ],
+   "motion": {
+    "elements": 37,
+    "css": 0,
+    "transitions": 0,
+    "scripted": 37,
+    "videos": 0,
+    "playingVideos": 0
+   },
+   "metrics": {
+    "viewport": {
+     "w": 768,
+     "h": 1024
+    },
+    "page": {
+     "height": 1024,
+     "screens": 1,
+     "words": 117,
+     "img": 15,
+     "video": 0,
+     "canvas": 0,
+     "svg": 2,
+     "sections": 2,
+     "horizontalOverflow": 0,
+     "overflowCulprits": [],
+     "uiFragments": 0,
+     "uiAbuse": false,
+     "realPictures": 15,
+     "videoCount": 0,
+     "uiPictures": 0,
+     "pictureSamples": [
+      "12701.png",
+      "12700.png",
+      "12701.png",
+      "12701.png",
+      "12702.png",
+      "12700.png",
+      "12700.png",
+      "12702.png"
+     ],
+     "blendText": 0,
+     "sideScrollers": 0,
+     "brokenImages": [],
+     "emoji": [],
+     "videosNoPoster": 0
+    },
+    "hero": {
+     "text": "어디서 만날까요?",
+     "words": 2,
+     "chars": 9,
+     "lines": 1,
+     "size": 27,
+     "vw": 3.5,
+     "font": "Asta",
+     "weight": 700,
+     "tracking": -0.04,
+     "leading": 1.2,
+     "top": 100,
+     "tag": "h1",
+     "kind": "heading",
+     "align": "left",
+     "position": "left"
+    },
+    "h1": {
+     "text": "어디서 만날까요?",
+     "words": 2,
+     "lines": 1,
+     "size": 27,
+     "font": "Asta"
+    },
+    "headings": [
+     {
+      "text": "어디서 만날까요?",
+      "words": 2,
+      "chars": 9,
+      "lines": 1,
+      "size": 27,
+      "vw": 3.5,
+      "font": "Asta",
+      "weight": 700,
+      "tracking": -0.037,
+      "leading": 1.2,
+      "upper": false,
+      "italic": false,
+      "mono": false,
+      "align": "left",
+      "position": "left",
+      "widthRatio": 0.4,
+      "top": 100,
+      "tag": "h1",
+      "kind": "heading"
+     }
+    ],
+    "headingSummary": {
+     "count": 1,
+     "maxLines": 1,
+     "over2Lines": 0,
+     "statements": 0,
+     "centered": 0,
+     "medianWords": null,
+     "mixedFontHeadings": 0
+    },
+    "type": {
+     "families": [
+      {
+       "family": "Asta",
+       "share": 1,
+       "mono": false
+      },
+      {
+       "family": "Lucida Console",
+       "share": 0,
+       "mono": true
+      }
+     ],
+     "familyCount": 2,
+     "sizes": [
+      11,
+      12,
+      13,
+      14,
+      15,
+      16,
+      17,
+      22,
+      25,
+      27
+     ],
+     "sizeCount": 10,
+     "notLoaded": [
+      "Lucida Console"
+     ],
+     "body": {
+      "font": "Asta",
+      "size": 12,
+      "leading": 1.65,
+      "weight": 400,
+      "tracking": 0,
+      "contrast": 13.5
+     },
+     "measureChars": 52,
+     "max": {
+      "size": 27,
+      "vw": 3.5,
+      "font": "Asta",
+      "text": "어디서 만날까요?"
+     },
+     "monoShare": 0,
+     "monoProseShare": 0,
+     "monoFamilies": [
+      "Lucida Console"
+     ],
+     "monoSamples": [
+      "+",
+      "−"
+     ],
+     "microLabels": 0,
+     "microLabelShare": 0,
+     "microSamples": [],
+     "upperShare": 0.01,
+     "centerShare": 0.03,
+     "smallText": 12
+    },
+    "eyebrows": [],
+    "numbered": [],
+    "color": {
+     "bodyBg": "#f4f3ee",
+     "bodyBgHsl": {
+      "h": 50,
+      "s": 0.21,
+      "l": 0.95
+     },
+     "dark": false,
+     "sectionBgs": [
+      {
+       "color": "#e6e9df",
+       "top": 72,
+       "hsl": {
+        "h": 78,
+        "s": 0.19,
+        "l": 0.89
+       }
+      }
+     ],
+     "textColors": [
+      {
+       "color": "#242822",
+       "share": 0.66
+      },
+      {
+       "color": "#66705f",
+       "share": 0.07
+      },
+      {
+       "color": "#697065",
+       "share": 0.06
+      },
+      {
+       "color": "#70766e",
+       "share": 0.04
+      },
+      {
+       "color": "#0078a8",
+       "share": 0.04
+      }
+     ],
+     "button": {
+      "bg": "#fafaf6",
+      "hsl": {
+       "h": 60,
+       "s": 0.29,
+       "l": 0.97
+      },
+      "fg": "#303b2e"
+     },
+     "lowContrast": []
+    },
+    "buttons": {
+     "count": 5,
+     "inHero": 5,
+     "radius": 6,
+     "height": 64,
+     "withShadow": 0,
+     "withGradient": 0,
+     "mono": 0,
+     "upper": 0,
+     "heroLabels": [
+      "사옥으로 이동",
+      "1 매헌로6길 직선 612m · 도로폭 7m 표기",
+      "2 매헌로6길 직선 640m · 도로폭 5m 표기",
+      "3 매헌로6길 직선 650m · 도로폭 7m 표기",
+      "이 핀으로 픽업 시작"
+     ]
+    },
+    "surfaces": {
+     "shadowStatic": 0,
+     "shadowOverlay": 0,
+     "shadowSamples": [],
+     "gradients": 0,
+     "scrims": 0,
+     "gradientSamples": [],
+     "gradientText": 0,
+     "hairlines": 4,
+     "hairlineSamples": [
+      "header 768px",
+      "aside 360px",
+      "section.selection 311px",
+      "details 311px"
+     ],
+     "outlinedBoxes": 0,
+     "dashed": 0,
+     "blurred": 0,
+     "roundedBoxes": 0,
+     "boxRadius": 0,
+     "squareMedia": 15,
+     "roundedMedia": 0,
+     "mediaRadius": 0,
+     "textShadow": 0,
+     "cardRows": []
+    },
+    "heroMedia": [
+     {
+      "type": "svg",
+      "ratio": 0.58
+     },
+     {
+      "type": "img",
+      "ratio": 0.08
+     },
+     {
+      "type": "img",
+      "ratio": 0.08
+     },
+     {
+      "type": "img",
+      "ratio": 0.08
+     }
+    ],
+    "nav": {
+     "links": 2,
+     "fixed": false,
+     "height": 72,
+     "floatingPill": false,
+     "blur": false
+    },
+    "fontsLoaded": [
+     "asta"
+    ]
+   },
+   "layout": {
+    "viewport": {
+     "w": 768,
+     "h": 1024
+    },
+    "pageH": 1024,
+    "margins": {
+     "left": 24,
+     "right": 28
+    },
+    "sections": [],
+    "gaps": [],
+    "h1s": [
+     {
+      "text": "어디서 만날까요?",
+      "size": 27,
+      "top": 100,
+      "firstScreen": true
+     }
+    ],
+    "edgeText": [
+     {
+      "text": "지도 오류 제보",
+      "side": "right",
+      "px": 5
+     }
+    ],
+    "edges": [
+     {
+      "x": 24,
+      "n": 3
+     }
+    ],
+    "leftBlocks": 3,
+    "bodySize": 12,
+    "stage": false,
+    "explains": false,
+    "slivers": [],
+    "voidShare": 0,
+    "voidBox": null
+   },
+   "app": {
+    "viewport": {
+     "w": 768,
+     "h": 1024
+    },
+    "dark": false,
+    "ground": "#f4f3ee",
+    "sidebar": null,
+    "topbar": {
+     "h": 72
+    },
+    "canvas": {
+     "left": 24,
+     "right": -172
+    },
+    "hero": {
+     "text": "어디서 만날까요?",
+     "words": 2,
+     "chars": 9,
+     "lines": 1,
+     "size": 27,
+     "vw": 3.5,
+     "font": "Asta",
+     "weight": 700,
+     "tracking": -0.04,
+     "leading": 1.2,
+     "top": 100,
+     "tag": "h1",
+     "kind": "heading",
+     "align": "left",
+     "position": "left"
+    },
+    "charts": 1,
+    "layout": {
+     "panels": 2,
+     "firstScreen": 2,
+     "ragged": [],
+     "voids": []
+    },
+    "tiles": 0,
+    "panels": {
+     "count": 2,
+     "radii": [
+      [
+       0,
+       2
+      ]
+     ],
+     "heavyBorders": 0,
+     "borderSamples": [],
+     "heavyShadows": 0,
+     "softShadows": 0,
+     "shadowSamples": [],
+     "glass": 0
+    },
+    "chips": {
+     "count": 0,
+     "hues": 0,
+     "samples": []
+    },
+    "numbers": {
+     "cells": 0,
+     "leftAligned": 0,
+     "figures": 0,
+     "tabularShare": null,
+     "kpiMax": null
+    },
+    "rows": null,
+    "chartHues": 1,
+    "placeholders": [],
+    "type": {
+     "under13": 0.72,
+     "tiny": 0,
+     "tinySamples": [],
+     "sizes": [
+      11,
+      12,
+      13,
+      14,
+      15,
+      16,
+      17,
+      25,
+      27
+     ]
+    },
+    "title": {
+     "text": "어디서 만날까요?",
+     "size": 27,
+     "top": 100
+    },
+    "colourShare": 0.064
+   },
+   "consoleErrors": []
+  },
+  {
+   "width": 390,
+   "height": 844,
+   "load": "load",
+   "screens": 2,
+   "filled": [
+    0.7,
+    0.53
+   ],
+   "motion": {
+    "elements": 27,
+    "css": 0,
+    "transitions": 0,
+    "scripted": 27,
+    "videos": 0,
+    "playingVideos": 0
+   },
+   "metrics": {
+    "viewport": {
+     "w": 390,
+     "h": 844
+    },
+    "page": {
+     "height": 1219,
+     "screens": 1.4,
+     "words": 116,
+     "img": 9,
+     "video": 0,
+     "canvas": 0,
+     "svg": 2,
+     "sections": 2,
+     "horizontalOverflow": 0,
+     "overflowCulprits": [],
+     "uiFragments": 0,
+     "uiAbuse": false,
+     "realPictures": 9,
+     "videoCount": 0,
+     "uiPictures": 0,
+     "pictureSamples": [
+      "12701.png",
+      "12700.png",
+      "12701.png",
+      "12701.png",
+      "12702.png",
+      "12700.png",
+      "12700.png",
+      "12702.png"
+     ],
+     "blendText": 0,
+     "sideScrollers": 0,
+     "brokenImages": [],
+     "emoji": [],
+     "videosNoPoster": 0
+    },
+    "hero": {
+     "text": "어디서 만날까요?",
+     "words": 2,
+     "chars": 9,
+     "lines": 1,
+     "size": 24,
+     "vw": 6.2,
+     "font": "Asta",
+     "weight": 700,
+     "tracking": -0.04,
+     "leading": 1.2,
+     "top": 519,
+     "tag": "h1",
+     "kind": "heading",
+     "align": "left",
+     "position": "left"
+    },
+    "h1": {
+     "text": "어디서 만날까요?",
+     "words": 2,
+     "lines": 1,
+     "size": 24,
+     "font": "Asta"
+    },
+    "headings": [
+     {
+      "text": "PICKGO",
+      "words": 1,
+      "chars": 6,
+      "lines": 1,
+      "size": 25,
+      "vw": 6.4,
+      "font": "Asta",
+      "weight": 800,
+      "tracking": -0.04,
+      "leading": 1.2,
+      "upper": true,
+      "italic": false,
+      "mono": false,
+      "align": "left",
+      "position": "left",
+      "widthRatio": 0.23,
+      "top": 15,
+      "tag": "a",
+      "kind": "heading"
+     },
+     {
+      "text": "+",
+      "words": 1,
+      "chars": 1,
+      "lines": 1,
+      "size": 22,
+      "vw": 5.6,
+      "font": "Lucida Console",
+      "weight": 700,
+      "tracking": 0,
+      "leading": 1.36,
+      "upper": false,
+      "italic": false,
+      "mono": true,
+      "align": "center",
+      "position": "left",
+      "widthRatio": 0.08,
+      "top": 72,
+      "tag": "a",
+      "kind": "heading"
+     },
+     {
+      "text": "−",
+      "words": 1,
+      "chars": 1,
+      "lines": 1,
+      "size": 22,
+      "vw": 5.6,
+      "font": "Lucida Console",
+      "weight": 700,
+      "tracking": 0,
+      "leading": 1.36,
+      "upper": false,
+      "italic": false,
+      "mono": true,
+      "align": "center",
+      "position": "left",
+      "widthRatio": 0.08,
+      "top": 102,
+      "tag": "a",
+      "kind": "heading"
+     },
+     {
+      "text": "어디서 만날까요?",
+      "words": 2,
+      "chars": 9,
+      "lines": 1,
+      "size": 24,
+      "vw": 6.2,
+      "font": "Asta",
+      "weight": 700,
+      "tracking": -0.042,
+      "leading": 1.2,
+      "upper": false,
+      "italic": false,
+      "mono": false,
+      "align": "left",
+      "position": "center",
+      "widthRatio": 0.9,
+      "top": 519,
+      "tag": "h1",
+      "kind": "heading"
+     }
+    ],
+    "headingSummary": {
+     "count": 4,
+     "maxLines": 1,
+     "over2Lines": 0,
+     "statements": 0,
+     "centered": 2,
+     "medianWords": 1,
+     "mixedFontHeadings": 0
+    },
+    "type": {
+     "families": [
+      {
+       "family": "Asta",
+       "share": 1,
+       "mono": false
+      },
+      {
+       "family": "Lucida Console",
+       "share": 0,
+       "mono": true
+      }
+     ],
+     "familyCount": 2,
+     "sizes": [
+      11,
+      12,
+      13,
+      14,
+      16,
+      17,
+      22,
+      24,
+      25
+     ],
+     "sizeCount": 9,
+     "notLoaded": [
+      "Lucida Console"
+     ],
+     "body": {
+      "font": "Asta",
+      "size": 12,
+      "leading": 1.65,
+      "weight": 400,
+      "tracking": 0,
+      "contrast": 13.5
+     },
+     "measureChars": 58,
+     "max": {
+      "size": 25,
+      "vw": 6.4,
+      "font": "Asta",
+      "text": "PICKGO"
+     },
+     "monoShare": 0,
+     "monoProseShare": 0,
+     "monoFamilies": [
+      "Lucida Console"
+     ],
+     "monoSamples": [
+      "+",
+      "−"
+     ],
+     "microLabels": 0,
+     "microLabelShare": 0,
+     "microSamples": [],
+     "upperShare": 0.01,
+     "centerShare": 0.03,
+     "smallText": 12
+    },
+    "eyebrows": [
+     {
+      "text": "© contributors ·",
+      "above": "어디서 만날까요?",
+      "upper": false,
+      "tracked": false,
+      "mono": false,
+      "pill": false,
+      "size": 11,
+      "top": 483
+     }
+    ],
+    "numbered": [],
+    "color": {
+     "bodyBg": "#f4f3ee",
+     "bodyBgHsl": {
+      "h": 50,
+      "s": 0.21,
+      "l": 0.95
+     },
+     "dark": false,
+     "sectionBgs": [
+      {
+       "color": "#e6e9df",
+       "top": 60,
+       "hsl": {
+        "h": 78,
+        "s": 0.19,
+        "l": 0.89
+       }
+      }
+     ],
+     "textColors": [
+      {
+       "color": "#242822",
+       "share": 0.66
+      },
+      {
+       "color": "#66705f",
+       "share": 0.07
+      },
+      {
+       "color": "#697065",
+       "share": 0.06
+      },
+      {
+       "color": "#70766e",
+       "share": 0.04
+      },
+      {
+       "color": "#0078a8",
+       "share": 0.04
+      }
+     ],
+     "button": {
+      "bg": "#fafaf6",
+      "hsl": {
+       "h": 60,
+       "s": 0.29,
+       "l": 0.97
+      },
+      "fg": "#303b2e"
+     },
+     "lowContrast": [
+      {
+       "text": "일반도로 가장자리 추정 · 거리는 사옥 중심에서 직선거리",
+       "ratio": 4.2,
+       "need": 4.5,
+       "size": 12,
+       "fg": "#70766e",
+       "bg": "#f4f3ee"
+      }
+     ]
+    },
+    "buttons": {
+     "count": 2,
+     "inHero": 1,
+     "radius": 6,
+     "height": 42,
+     "withShadow": 0,
+     "withGradient": 0,
+     "mono": 0,
+     "upper": 0,
+     "heroLabels": [
+      "사옥으로 이동"
+     ]
+    },
+    "surfaces": {
+     "shadowStatic": 0,
+     "shadowOverlay": 0,
+     "shadowSamples": [],
+     "gradients": 0,
+     "scrims": 0,
+     "gradientSamples": [],
+     "gradientText": 0,
+     "hairlines": 3,
+     "hairlineSamples": [
+      "header 390px",
+      "section.selection 350px",
+      "details 350px"
+     ],
+     "outlinedBoxes": 0,
+     "dashed": 0,
+     "blurred": 0,
+     "roundedBoxes": 0,
+     "boxRadius": 0,
+     "squareMedia": 9,
+     "roundedMedia": 0,
+     "mediaRadius": 0,
+     "textShadow": 0,
+     "cardRows": []
+    },
+    "heroMedia": [
+     {
+      "type": "svg",
+      "ratio": 0.62
+     },
+     {
+      "type": "img",
+      "ratio": 0.2
+     },
+     {
+      "type": "img",
+      "ratio": 0.2
+     },
+     {
+      "type": "img",
+      "ratio": 0.16
+     }
+    ],
+    "nav": {
+     "links": 2,
+     "fixed": false,
+     "height": 60,
+     "floatingPill": false,
+     "blur": false
+    },
+    "fontsLoaded": [
+     "asta"
+    ]
+   },
+   "layout": {
+    "viewport": {
+     "w": 390,
+     "h": 844
+    },
+    "pageH": 1219,
+    "margins": {
+     "left": 12,
+     "right": 16
+    },
+    "sections": [
+     {
+      "sel": "aside",
+      "tag": "aside",
+      "top": 499,
+      "height": 720,
+      "words": 104,
+      "media": 0,
+      "middle": 0,
+      "heading": {
+       "text": "어디서 만날까요?",
+       "size": 24,
+       "tag": "h1"
+      },
+      "left": 20,
+      "right": 20,
+      "textLeft": 20,
+      "textRight": 24,
+      "fullBleed": false,
+      "footer": false,
+      "hero": false,
+      "continues": false,
+      "pinned": false
+     },
+     {
+      "sel": "section.maparea",
+      "tag": "section",
+      "top": 60,
+      "height": 439,
+      "words": 16,
+      "media": 3,
+      "middle": 0,
+      "heading": null,
+      "left": 0,
+      "right": 0,
+      "textLeft": 26,
+      "textRight": 5,
+      "fullBleed": false,
+      "footer": true,
+      "hero": true,
+      "continues": false,
+      "pinned": false
+     }
+    ],
+    "gaps": [],
+    "h1s": [
+     {
+      "text": "어디서 만날까요?",
+      "size": 24,
+      "top": 519,
+      "firstScreen": true
+     }
+    ],
+    "edgeText": [
+     {
+      "text": "지도 오류 제보",
+      "side": "right",
+      "px": 5
+     }
+    ],
+    "edges": [
+     {
+      "x": 20,
+      "n": 3
+     }
+    ],
+    "leftBlocks": 3,
+    "bodySize": 12,
+    "stage": false,
+    "explains": false,
+    "slivers": [],
+    "voidShare": 0,
+    "voidBox": null
+   },
+   "app": {
+    "viewport": {
+     "w": 390,
+     "h": 844
+    },
+    "dark": false,
+    "ground": "#f4f3ee",
+    "sidebar": null,
+    "topbar": {
+     "h": 60
+    },
+    "canvas": {
+     "left": 16,
+     "right": -190
+    },
+    "hero": {
+     "text": "어디서 만날까요?",
+     "words": 2,
+     "chars": 9,
+     "lines": 1,
+     "size": 24,
+     "vw": 6.2,
+     "font": "Asta",
+     "weight": 700,
+     "tracking": -0.04,
+     "leading": 1.2,
+     "top": 519,
+     "tag": "h1",
+     "kind": "heading",
+     "align": "left",
+     "position": "left"
+    },
+    "charts": 1,
+    "layout": {
+     "panels": 1,
+     "firstScreen": 0,
+     "ragged": [],
+     "voids": []
+    },
+    "tiles": 0,
+    "panels": {
+     "count": 1,
+     "radii": [
+      [
+       0,
+       1
+      ]
+     ],
+     "heavyBorders": 0,
+     "borderSamples": [],
+     "heavyShadows": 0,
+     "softShadows": 0,
+     "shadowSamples": [],
+     "glass": 0
+    },
+    "chips": {
+     "count": 0,
+     "hues": 0,
+     "samples": []
+    },
+    "numbers": {
+     "cells": 0,
+     "leftAligned": 0,
+     "figures": 0,
+     "tabularShare": null,
+     "kpiMax": null
+    },
+    "rows": null,
+    "chartHues": 1,
+    "placeholders": [],
+    "type": {
+     "under13": 0.73,
+     "tiny": 0,
+     "tinySamples": [],
+     "sizes": [
+      11,
+      12,
+      13,
+      14,
+      16,
+      17,
+      24,
+      25
+     ]
+    },
+    "title": {
+     "text": "어디서 만날까요?",
+     "size": 24,
+     "top": 519
+    },
+    "colourShare": 0.095
+   },
+   "consoleErrors": []
+  }
+ ],
+ "findings": [
+  {
+   "level": "WARN",
+   "id": "palette-cream",
+   "width": 1440,
+   "message": "Yellow-cream background (page background #f4f3ee, button #fafaf6).",
+   "fix": "Use the drawn palette. If you want warmth, take a low-chroma stone or bone, not a yellow cream.",
+   "alsoAt": [
+    768,
+    390
+   ]
+  },
+  {
+   "level": "WARN",
+   "id": "font-fallback",
+   "width": 1440,
+   "message": "Typeface(s) declared but not loaded, so a fallback is rendering: Lucida Console",
+   "fix": "Fix the font URL / family name, or the screenshots you are judging are not the design.",
+   "alsoAt": [
+    768,
+    390
+   ]
+  },
+  {
+   "level": "FAIL",
+   "id": "font-not-dealt",
+   "width": 1440,
+   "message": "The sheet dealt Inter, but the page renders Asta, Lucida Console.",
+   "fix": "Load the dealt face (the link on the sheet) and put it first in font-family. A build that falls back to a default face lands on the default look."
+  },
+  {
+   "level": "FAIL",
+   "id": "edge-text",
+   "width": 1440,
+   "message": "1 text block(s) sit within 16px of the screen edge: \"지도 오류 제보\" (5px from the right)",
+   "fix": "Keep text inside the page margin (16–32px or more). Only display type deliberately bled past the edge may touch it.",
+   "alsoAt": [
+    768,
+    390
+   ]
+  },
+  {
+   "level": "WARN",
+   "id": "colour-sprawl",
+   "width": 1440,
+   "message": "14% of the first screen is strongly coloured.",
+   "fix": "Keep the screen neutral and spend colour on data and status: the studied screens sit near 3%, and only tinted styles reach 10–15%, as pale tints rather than saturated fills."
+  },
+  {
+   "level": "WARN",
+   "id": "tiny-text",
+   "width": 1440,
+   "message": "72% of the text is under 13px.",
+   "fix": "Data and labels read at 13–14px; keep 11–12px for sublines and axis ticks.",
+   "alsoAt": [
+    768,
+    390
+   ]
+  },
+  {
+   "level": "WARN",
+   "id": "contrast",
+   "width": 390,
+   "message": "Low-contrast text: \"일반도로 가장자리 추정 · 거리는 사옥 중심에서 직선거리\" 4.2:1 needs 4.5:1",
+   "fix": "Darken or lighten the text colour."
+  }
+ ],
+ "images": [
+  {
+   "viewport": "desktop",
+   "width": 1440,
+   "fold": "C:\\Users\\dldyd\\Documents\\Codex\\2026-11-02\\shx\\HYUNDAI_AI\\work\\pickgo-map-style\\before\\desktop-fold.jpg",
+   "pages": [
+    "C:\\Users\\dldyd\\Documents\\Codex\\2026-11-02\\shx\\HYUNDAI_AI\\work\\pickgo-map-style\\before\\desktop-page-01.jpg"
+   ],
+   "film": []
+  },
+  {
+   "viewport": "tablet",
+   "width": 768,
+   "fold": "C:\\Users\\dldyd\\Documents\\Codex\\2026-11-02\\shx\\HYUNDAI_AI\\work\\pickgo-map-style\\before\\tablet-fold.jpg",
+   "pages": [
+    "C:\\Users\\dldyd\\Documents\\Codex\\2026-11-02\\shx\\HYUNDAI_AI\\work\\pickgo-map-style\\before\\tablet-page-01.jpg"
+   ],
+   "film": []
+  },
+  {
+   "viewport": "mobile",
+   "width": 390,
+   "fold": "C:\\Users\\dldyd\\Documents\\Codex\\2026-11-02\\shx\\HYUNDAI_AI\\work\\pickgo-map-style\\before\\mobile-fold.jpg",
+   "pages": [
+    "C:\\Users\\dldyd\\Documents\\Codex\\2026-11-02\\shx\\HYUNDAI_AI\\work\\pickgo-map-style\\before\\mobile-page-01.jpg"
+   ],
+   "film": []
+  }
+ ]
+}

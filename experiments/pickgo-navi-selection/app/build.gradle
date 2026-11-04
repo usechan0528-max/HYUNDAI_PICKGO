@@ -1,0 +1,18 @@
+plugins { id 'com.android.application' }
+android {
+ namespace 'org.example.pickgonaviprobe'
+ compileSdk 34
+ defaultConfig { applicationId 'org.example.pickgonaviprobe'; minSdk 28; targetSdk 34; versionCode 1; versionName '0.1-probe' }
+ compileOptions { sourceCompatibility JavaVersion.VERSION_17; targetCompatibility JavaVersion.VERSION_17 }
+ signingConfigs { debug { storeFile file('../../../work/pleos-environment/android-user/debug.keystore') } }
+}
+dependencies {
+ def cache = new File(System.getProperty('user.home'), '.gradle/caches/modules-2/files-2.1/ai.pleos.playground')
+ implementation fileTree(dir: new File(cache, 'NaviHelper/3.0.5'), include: ['**/*.aar'])
+ implementation fileTree(dir: new File(cache, 'navi-data/3.0.4'), include: ['**/*.aar'])
+ implementation fileTree(dir: new File(cache, 'navi-aidl/3.0.1'), include: ['**/*.aar'])
+ implementation 'org.jetbrains.kotlin:kotlin-stdlib:1.9.25'
+ implementation 'androidx.core:core-ktx:1.8.0'
+ implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-android:1.6.3'
+ implementation 'org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.3'
+}

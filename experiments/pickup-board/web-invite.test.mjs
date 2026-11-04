@@ -9,7 +9,7 @@ const hash=`#room=${id}&invite=${invite}`;
 async function page({fragment='',store=new Map(),denied=false,clipboard=false,finalSaveDenied=false}={}) {
   const nodes=new Map([...html.matchAll(/id="([^"]+)"/g)].map(m=>[m[1],{hidden:false,disabled:false,value:'',textContent:'',classList:{toggle(){}},setAttribute(){},focus(){},select(){}}]));
   const calls=[];
-  const state={id,version:1,status:'active',stage:'waiting',place:'가상 문화센터 정문',joined:false,view:'view',lastEvent:'시연'};
+  const state={id,version:1,status:'active',stage:'waiting',place:'하나로마트 양재점',joined:false,view:'view',lastEvent:'시연'};
   const location={hash:fragment,origin:'http://127.0.0.1:4180',assign(){}};
   const context={URLSearchParams,URL,AbortSignal,crypto:{randomUUID:()=> 'test-request-123'},performance:{now:()=>100},
     navigator:{onLine:true,clipboard:{writeText:async()=>{if(!clipboard)throw Error('denied');}}},location,

@@ -1,0 +1,26 @@
+✔ missing key and pending terms never perform external fetch (1.7104ms)
+✔ REST request encodes query and uses lat,lon; normalized coordinates stay distinct (4.1912ms)
+✔ quota/auth/malformed replies are sanitized; zero results is valid (1.7071ms)
+✔ cancel, timeout and invalid inputs fail without leaking URL/key (23.1292ms)
+✔ latest search wins even if provider ignores abort; empty and errors clear previous point (1.3776ms)
+✔ moving, expiry, blocked check, late validation and disposal prevent stale confirmation (0.8894ms)
+✔ confirmation preserves routo provenance after moving pin and cannot be repeated (0.403ms)
+✔ map adapter uses named coordinates, clears previous pins and unregisters listeners (0.4233ms)
+✔ browser SDK loader refuses unconfigured key and cancels without loading (0.3436ms)
+✔ composed picker connects REST search, result pan, map click, validation and confirmation (2.6041ms)
+✔ preparation HTTP server exposes status without credentials, rejects foreign origin, serves normalized search (54.4776ms)
+✔ oversized upstream response cancels the stream instead of retaining it (1.1796ms)
+✔ SDK loader handles success, transport failure and cancellation with cleanup (0.9151ms)
+✔ malformed map event invalidates an earlier confirmable selection (3.8051ms)
+✔ slow validation expires from request start, and missing validity cannot authorize a pin (0.758ms)
+✔ observer failure cannot consume the confirmed draft, and expiry emits without a click (0.6782ms)
+✔ loader reuses the same page SDK and refuses silently switching keys (0.2795ms)
+✔ connection preserves expected search errors and ignores pin click without a search anchor (0.5856ms)
+ℹ tests 18
+ℹ suites 0
+ℹ pass 18
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 267.4538

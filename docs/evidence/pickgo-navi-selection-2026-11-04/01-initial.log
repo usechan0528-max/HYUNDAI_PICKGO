@@ -1,0 +1,10 @@
+--------- beginning of main
+11-04 03:52:24.492 21274 21274 I PickgoNaviProbe: CREATE action=null
+11-04 03:52:24.890 21274 21274 I PickgoNaviProbe: RESUME
+11-04 03:52:25.316 21274 21274 I PickgoNaviProbe: CONNECTED
+11-04 03:52:25.316 21274 21274 I PickgoNaviProbe: COMMAND foreground
+11-04 03:52:25.406 21274 21274 I PickgoNaviProbe: POLL 1
+11-04 03:52:26.015 21274 21317 I PickgoNaviProbe: EVENT onCurrentRoadSpeedLimit [0]
+11-04 03:52:27.009 21274 21633 I PickgoNaviProbe: EVENT onCurrentRoadSpeedLimit [0]
+11-04 03:52:27.408 21274 21274 I PickgoNaviProbe: POLL 2
+11-04 03:52:28.022 21274 21633 I PickgoNaviProbe: EVENT onCurrentRoadSpeedLimit [0]

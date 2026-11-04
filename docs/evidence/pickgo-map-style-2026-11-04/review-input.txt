@@ -1,0 +1,398 @@
+PICKGO 지도 UI 통일 변경의 읽기 전용 독립 검수. 소스/도구 사용 금지. 지정 모델 Haiku5.5. 사용자 요청: 앱 디자인 통일, 지도가 붕 뜬 느낌 해결. 기존 main은 Asta/#121212/#202020/각진 2px 버튼/큰 터치영역. 범위: 지도 HTML/CSS와 메인 지도 진입 링크 배치. API/JS/좌표/차단 정책 변경 없음. 수용: 기존 ID/이벤트/출처/고지 유지, 1440/768/390 화면 가로넘침 없음, 선택 확인/버튼 접근 가능, 지도 출처 유지. 현재 node --test experiments/pickup-board/*.test.mjs 226/226 통과. Chrome 시각 검사 진행, 실제 차량 미검증. 정확한 결함만 P0~P3/파일/근거/최소수정으로 보고. 없으면 없다고. 일반 선호 지적 제외. 아래 현재 고정 소스와 이전대비 diff.
+
+FILE experiments/pickup-board/index.html
+<!doctype html>
+<html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>PICKGO</title><link rel="stylesheet" href="/style.css"><link rel="stylesheet" href="/location-links.css"></head>
+<body><div class="cockpit"><header><h1>PICKGO</h1><span class="demo"></span></header><main>
+<section id="welcome" class="welcome"><div class="welcome-copy"><p class="section-label">새 픽업</p><h2>어디서 태울까요?</h2><p>픽업할 장소를 고르면<br>주변 후보지 3곳을 추천해 드려요.</p></div>
+<form id="create" class="create-panel">
+<div id="pickupAnchor"><h3 id="anchorHeading" tabindex="-1">픽업할 장소를 고르세요</h3><p class="candidate-note">시연 장소 3곳으로 선택 흐름을 확인합니다. 실제 주변 검색은 아직 연결되지 않았습니다.</p><div class="place-options" role="group" aria-label="기준 장소 선택"><button type="button" data-anchor="하나로마트 양재점">하나로마트 양재점</button><button type="button" data-anchor="현대자동차 양재사옥">현대자동차 양재사옥</button><button type="button" data-anchor="서울도로교통공단 서울지부">서울도로교통공단 서울지부</button></div></div>
+<div id="pickupCandidates" hidden><h3 id="candidateHeading" tabindex="-1">주변 후보지 3곳</h3><p id="anchorSummary"></p><p class="candidate-note">시연 후보입니다. 실제 거리·주변 검색·정차 가능 여부는 미연동입니다.</p><input id="initialPlace" type="hidden" value=""><div class="place-options" role="group" aria-label="최종 픽업 후보지 선택"><button type="button" data-initial="하나로마트 양재점" aria-pressed="false">하나로마트 양재점</button><button type="button" data-initial="현대자동차 양재사옥" aria-pressed="false">현대자동차 양재사옥</button><button type="button" data-initial="서울도로교통공단 서울지부" aria-pressed="false">서울도로교통공단 서울지부</button></div><button id="startPickup" type="submit" class="primary create-action" disabled>후보지를 선택하세요</button></div>
+<div id="pickupManual" hidden><h3 id="manualHeading" tabindex="-1">픽업 장소 검색</h3>
+<p class="candidate-note">시연 장소 검색·도면입니다. 실제 지도와 정차 가능 여부는 아직 연결되지 않았습니다.</p>
+<input id="manualPlace" type="hidden" value="">
+<div id="manualSearch"><label for="placeQuery">장소 이름 검색</label><div class="search-row"><input id="placeQuery" type="search" maxlength="80" placeholder="예: 양재, 하나로마트" autocomplete="off"><button id="searchPlaces" type="button">검색</button></div><p id="searchStatus" role="status">장소 이름을 입력해 주세요.</p><div class="place-options" aria-label="장소 검색 결과"><button type="button" data-search-place="하나로마트 양재점" hidden>하나로마트 양재점</button><button type="button" data-search-place="현대자동차 양재사옥" hidden>현대자동차 양재사옥</button><button type="button" data-search-place="서울도로교통공단 서울지부" hidden>서울도로교통공단 서울지부</button></div></div>
+<div id="manualMapStep" hidden><h3 id="mapHeading" tabindex="-1">지도에서 픽업 지점을 고르세요</h3><p id="mapPlaceName"></p><p id="mapInstructions" class="candidate-note">시연 도면을 눌러 핀을 놓으세요. 키보드는 중앙에서 방향키로 시작하고 Shift+방향키로 크게 이동합니다. 실제 길 안내에는 사용할 수 없습니다.</p>
+<svg id="pickupMap" viewBox="0 0 1000 600" preserveAspectRatio="none" tabindex="0" role="group" aria-label="시연 도면 픽업 지점 선택" aria-describedby="mapInstructions pointStatus">
+<rect width="1000" height="600" fill="#222a2d"/><path d="M0 300H1000 M500 0V600" stroke="#626c70" stroke-width="100"/><path d="M0 300H1000 M500 0V600" stroke="#abb0b2" stroke-width="3" stroke-dasharray="18 14"/>
+<g fill="#39464a" stroke="#849195" stroke-width="2"><rect x="60" y="50" width="320" height="150"/><rect x="620" y="50" width="320" height="150"/><rect x="60" y="400" width="320" height="150"/><rect x="620" y="400" width="320" height="150"/></g>
+<g fill="#e7ebed" font-size="30" text-anchor="middle"><text x="220" y="135">시연 구역 A</text><text x="780" y="135">시연 구역 B</text><text x="220" y="485">시연 구역 C</text><text x="780" y="485">시연 구역 D</text></g>
+<g id="mapPin" visibility="hidden"><circle r="22" fill="#fff" stroke="#121212" stroke-width="6"/><circle r="6" fill="#121212"/></g></svg>
+<p id="pointStatus" role="status">아직 선택한 지점이 없습니다.</p><button id="confirmMapPoint" type="button" class="secondary create-action" disabled>이 지점으로 선택</button><button id="searchAgain" type="button" class="secondary create-action">다른 장소 검색</button></div>
+<button id="startManual" type="submit" class="primary create-action" disabled>선택한 지점으로 픽업 시작</button><button id="backCandidates" type="button" class="secondary create-action">추천 후보 보기</button></div>
+<button id="chooseManually" type="button" class="secondary create-action">직접 고르기</button><a class="button secondary create-action" href="/map">실제 지도에서 고르기 · 양재사옥</a><button id="changeAnchor" type="button" class="secondary create-action" hidden>기준 장소 다시 선택</button>
+</form>
+<div id="joinBox" class="join-panel" hidden><h2>픽업 초대가 왔습니다</h2><p>설치·가입 없이<br>바로 참여합니다.</p><p id="joinHint">위치 공유는 참여 후 선택합니다.</p><button id="join" class="primary">탑승자로 참여</button><button id="cancelJoin" class="secondary">초대 닫기</button></div></section>
+<section id="board" hidden><div class="topline"><span id="role"></span><span id="connection" role="status"></span></div><h2 id="headline" class="sr-only"></h2>
+<div class="workgrid"><div id="facts" class="facts"><div class="readiness panel"><span class="section-label">픽업 상태</span><strong id="pickupText"></strong><p id="readyText"></p><div id="readyButtons"><button data-ready="true">준비 완료</button><button data-ready="false">준비 중</button></div></div><div class="place panel"><div id="placeLabel" class="section-label">픽업 장소</div><h2 id="place"></h2><p id="selectedPoint"></p><p class="place-help">상대가 수락해야 바뀝니다.</p></div></div>
+<div class="action-area"><div id="inviteBox" class="panel invite" hidden><h2>탑승자를 초대하세요</h2><p id="inviteHelp">초대 주소 확인 중</p><button id="copyInvite" class="primary">초대 링크 복사</button><p id="inviteStatus" role="status"></p><a id="inviteLink" class="button secondary" target="_blank" rel="noopener noreferrer">탑승자 화면 미리보기</a><input id="inviteText" readonly hidden aria-label="탑승자 초대 주소"></div>
+<div id="proposal" class="panel proposal" hidden><div id="proposalLabel" class="section-label">장소 변경 제안</div><h2 id="proposedPlace"></h2><p id="proposalText"></p><button id="withdraw" hidden>제안 철회</button><div id="decisions"><button id="accept" class="primary">이 장소로 변경</button><button id="reject" class="secondary">현재 장소 유지</button></div></div>
+<div id="normalActions" class="panel normal-actions"><h2>다음 단계</h2><p id="progressHelp"></p><div class="progress-actions"><button id="arrive" class="primary">도착했어요</button><button id="boarded" class="primary">탑승했어요</button><button id="undoArrival" class="secondary">도착 표시 취소</button><button id="undoBoarding" class="secondary">탑승 확인 취소</button><button id="openPlace" class="secondary">장소 변경 제안</button></div></div></div></div>
+<nav class="location-links" aria-label="위치 기능"><a id="phoneLink" class="button secondary" href="/phone">휴대폰 위치 공유</a><a id="proximityLink" class="button secondary" href="/proximity">차량 근접 확인</a><a class="button secondary" href="/map">실제 지도 · 픽업 핀 선택</a><p>위치 공유는 선택입니다. 차량 근접은 시연 데이터입니다.</p></nav>
+<p id="lastEvent" class="event" aria-live="polite"></p><div class="bottom"><button id="end" class="secondary">픽업 종료</button><button id="new" class="primary" hidden>새 픽업 시작</button><button id="refresh" class="secondary">다시 확인</button></div></section>
+<section id="editPlace" class="edit-place" hidden><div><p class="section-label">장소 변경</p><h2>바꿀 장소를 고르세요</h2><p><a href="/map">실제 지도에서 다른 핀 제안</a></p><p id="editingCurrent"></p><p>누르면 바로 제안이 갑니다.<br>상대가 수락해야 바뀝니다.</p></div><form id="propose"><select id="nextPlace" hidden aria-label="변경할 픽업 장소"><option>하나로마트 양재점</option><option>현대자동차 양재사옥</option><option>서울도로교통공단 서울지부</option></select><div class="place-options"><button type="submit" data-place="하나로마트 양재점">하나로마트 양재점</button><button type="submit" data-place="현대자동차 양재사옥">현대자동차 양재사옥</button><button type="submit" data-place="서울도로교통공단 서울지부">서울도로교통공단 서울지부</button></div><button type="button" id="cancelPlace" class="secondary">돌아가기</button></form></section>
+<section id="endConfirm" class="end-confirm" hidden><div><p class="section-label">픽업 종료</p><h2 id="endTitle">픽업을 종료할까요?</h2><p id="endDescription"></p></div><div class="confirm-actions"><button id="cancelEnd" class="primary">계속 진행</button><button id="confirmEnd" class="secondary">종료 확정</button></div></section><p id="error" role="alert"></p><p id="notice" role="alert"></p>
+</main><footer><span>주행 중 조작 금지 · 차량 미연결 시연</span><span class="storage-note">서버를 다시 켜면 픽업 기록이 사라집니다.</span></footer></div><script type="module" src="/app.mjs"></script>
+</body></html>
+
+DIFF
+--- 
++++ 
+@@ -2,7 +2,6 @@
+ <html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>PICKGO</title><link rel="stylesheet" href="/style.css"><link rel="stylesheet" href="/location-links.css"></head>
+ <body><div class="cockpit"><header><h1>PICKGO</h1><span class="demo"></span></header><main>
+ <section id="welcome" class="welcome"><div class="welcome-copy"><p class="section-label">새 픽업</p><h2>어디서 태울까요?</h2><p>픽업할 장소를 고르면<br>주변 후보지 3곳을 추천해 드려요.</p></div>
+-<p><a class="secondary" href="/map">실제 지도에서 고르기 · 양재사옥</a></p>
+ <form id="create" class="create-panel">
+ <div id="pickupAnchor"><h3 id="anchorHeading" tabindex="-1">픽업할 장소를 고르세요</h3><p class="candidate-note">시연 장소 3곳으로 선택 흐름을 확인합니다. 실제 주변 검색은 아직 연결되지 않았습니다.</p><div class="place-options" role="group" aria-label="기준 장소 선택"><button type="button" data-anchor="하나로마트 양재점">하나로마트 양재점</button><button type="button" data-anchor="현대자동차 양재사옥">현대자동차 양재사옥</button><button type="button" data-anchor="서울도로교통공단 서울지부">서울도로교통공단 서울지부</button></div></div>
+ <div id="pickupCandidates" hidden><h3 id="candidateHeading" tabindex="-1">주변 후보지 3곳</h3><p id="anchorSummary"></p><p class="candidate-note">시연 후보입니다. 실제 거리·주변 검색·정차 가능 여부는 미연동입니다.</p><input id="initialPlace" type="hidden" value=""><div class="place-options" role="group" aria-label="최종 픽업 후보지 선택"><button type="button" data-initial="하나로마트 양재점" aria-pressed="false">하나로마트 양재점</button><button type="button" data-initial="현대자동차 양재사옥" aria-pressed="false">현대자동차 양재사옥</button><button type="button" data-initial="서울도로교통공단 서울지부" aria-pressed="false">서울도로교통공단 서울지부</button></div><button id="startPickup" type="submit" class="primary create-action" disabled>후보지를 선택하세요</button></div>
+@@ -18,7 +17,7 @@
+ <g id="mapPin" visibility="hidden"><circle r="22" fill="#fff" stroke="#121212" stroke-width="6"/><circle r="6" fill="#121212"/></g></svg>
+ <p id="pointStatus" role="status">아직 선택한 지점이 없습니다.</p><button id="confirmMapPoint" type="button" class="secondary create-action" disabled>이 지점으로 선택</button><button id="searchAgain" type="button" class="secondary create-action">다른 장소 검색</button></div>
+ <button id="startManual" type="submit" class="primary create-action" disabled>선택한 지점으로 픽업 시작</button><button id="backCandidates" type="button" class="secondary create-action">추천 후보 보기</button></div>
+-<button id="chooseManually" type="button" class="secondary create-action">직접 고르기</button><button id="changeAnchor" type="button" class="secondary create-action" hidden>기준 장소 다시 선택</button>
++<button id="chooseManually" type="button" class="secondary create-action">직접 고르기</button><a class="button secondary create-action" href="/map">실제 지도에서 고르기 · 양재사옥</a><button id="changeAnchor" type="button" class="secondary create-action" hidden>기준 장소 다시 선택</button>
+ </form>
+ <div id="joinBox" class="join-panel" hidden><h2>픽업 초대가 왔습니다</h2><p>설치·가입 없이<br>바로 참여합니다.</p><p id="joinHint">위치 공유는 참여 후 선택합니다.</p><button id="join" class="primary">탑승자로 참여</button><button id="cancelJoin" class="secondary">초대 닫기</button></div></section>
+ <section id="board" hidden><div class="topline"><span id="role"></span><span id="connection" role="status"></span></div><h2 id="headline" class="sr-only"></h2>
+
+FILE experiments/pickup-board/map/page.html
+<!doctype html>
+<html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>PICKGO · 양재 픽업 지도</title><link rel="stylesheet" href="/map/vendor/leaflet.css"><link rel="stylesheet" href="/style.css"><link rel="stylesheet" href="/map/page.css"></head>
+<body class="map-page"><div class="map-shell"><header><a href="/" class="brand">PICKGO</a><span class="map-context">픽업 장소 선택</span><a href="/" class="button secondary back-link">약속판으로</a></header>
+<main><aside><div class="map-options"><h1>어디서 만날까요?</h1><p class="intro">현대자동차 양재사옥을 기준으로<br>도로폭이 표기된 일반도로의 픽업 후보를 표시했습니다.</p>
+<div class="legend"><span class="swatch blocked"></span>차단 영역 <span class="swatch possible"></span>추천 후보</div>
+<p class="help">지도를 눌러 핀을 자유롭게 옮기세요. 빨간 영역은 선택할 수 없습니다.</p>
+<div class="controls"><button id="home">사옥으로 이동</button><label><input id="zones" type="checkbox" checked> 차단 영역 표시</label></div>
+<h2>사옥 주변 추천</h2><p class="caption">일반도로 가장자리 추정 · 거리는 사옥 중심에서 직선거리</p><div id="candidates"><p>실제 지도 데이터를 불러오는 중…</p></div>
+
+<details><summary>지도 데이터와 선택 기준</summary><p id="dataInfo"></p><p>버스정류장·횡단보도 주변, 건물 내부, 고속도로·전용 차로 등 데이터에서 판별된 영역을 차단합니다. 도로폭·교차로 범위는 추정값입니다.</p><p>미수록 금지표지·어린이보호구역·시간대/임시 통제는 누락될 수 있습니다. 선택 가능은 합법 정차 인증이 아닙니다. 현장 확인과 정차 책임은 사용자에게 있습니다.</p><a href="/map/data/yangjae.json">사용한 지도 데이터</a> · <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noreferrer">ODbL 출처</a><p>선택한 픽업 좌표는 상대와 공유되며 회차 만료 시 삭제됩니다. 현재 위치 권한은 요청하지 않습니다. 배경 지도를 보는 영역과 IP 주소가 타일 요청으로 OpenStreetMap에 전달됩니다.</p></details></div><section class="selection"><h2 id="selectionTitle">지도에서 지점을 선택하세요</h2><p id="selectionText" role="status">추천 번호를 누르거나 지도에서 직접 고를 수 있습니다.</p><p id="coordinates"></p><button id="confirm" disabled>이 핀으로 픽업 시작</button><p id="roomState"></p></section>
+</aside><section class="maparea" aria-label="픽업 지도"><div class="map-heading"><h2>양재사옥 주변</h2><span>번호를 누르거나 직접 선택</span></div><div id="map" aria-label="양재사옥 주변 실제 지도"></div><p id="mapNotice">실제 지도 기반 후보 · 현장 표지 확인 필요</p><p id="error" role="alert"></p></section></main>
+<footer><span>주행 중 조작 금지 · 차량 미연결 시연</span><span class="storage-note">선택한 지점은 상대와 공유됩니다.</span></footer></div><script src="/map/vendor/leaflet.js"></script><script type="module" src="/map/page.mjs"></script></body></html>
+
+DIFF
+--- 
++++ 
+@@ -1,12 +1,12 @@
+ <!doctype html>
+-<html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>PICKGO · 양재 픽업 지도</title><link rel="stylesheet" href="/map/vendor/leaflet.css"><link rel="stylesheet" href="/map/page.css"></head>
+-<body><header><a href="/" class="brand">PICKGO</a><span>양재사옥 픽업 지도</span><a href="/">약속판으로</a></header>
+-<main><aside><h1>어디서 만날까요?</h1><p class="intro">현대자동차 양재사옥을 기준으로<br>도로폭이 표기된 일반도로의 픽업 후보를 표시했습니다.</p>
++<html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>PICKGO · 양재 픽업 지도</title><link rel="stylesheet" href="/map/vendor/leaflet.css"><link rel="stylesheet" href="/style.css"><link rel="stylesheet" href="/map/page.css"></head>
++<body class="map-page"><div class="map-shell"><header><a href="/" class="brand">PICKGO</a><span class="map-context">픽업 장소 선택</span><a href="/" class="button secondary back-link">약속판으로</a></header>
++<main><aside><div class="map-options"><h1>어디서 만날까요?</h1><p class="intro">현대자동차 양재사옥을 기준으로<br>도로폭이 표기된 일반도로의 픽업 후보를 표시했습니다.</p>
+ <div class="legend"><span class="swatch blocked"></span>차단 영역 <span class="swatch possible"></span>추천 후보</div>
+ <p class="help">지도를 눌러 핀을 자유롭게 옮기세요. 빨간 영역은 선택할 수 없습니다.</p>
+ <div class="controls"><button id="home">사옥으로 이동</button><label><input id="zones" type="checkbox" checked> 차단 영역 표시</label></div>
+ <h2>사옥 주변 추천</h2><p class="caption">일반도로 가장자리 추정 · 거리는 사옥 중심에서 직선거리</p><div id="candidates"><p>실제 지도 데이터를 불러오는 중…</p></div>
+-<section class="selection"><h2 id="selectionTitle">지도에서 지점을 선택하세요</h2><p id="selectionText" role="status">추천 번호를 누르거나 지도에서 직접 고를 수 있습니다.</p><p id="coordinates"></p><button id="confirm" disabled>이 핀으로 픽업 시작</button><p id="roomState"></p></section>
+-<details><summary>지도 데이터와 선택 기준</summary><p id="dataInfo"></p><p>버스정류장·횡단보도 주변, 건물 내부, 고속도로·전용 차로 등 데이터에서 판별된 영역을 차단합니다. 도로폭·교차로 범위는 추정값입니다.</p><p>미수록 금지표지·어린이보호구역·시간대/임시 통제는 누락될 수 있습니다. 선택 가능은 합법 정차 인증이 아닙니다. 현장 확인과 정차 책임은 사용자에게 있습니다.</p><a href="/map/data/yangjae.json">사용한 지도 데이터</a> · <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noreferrer">ODbL 출처</a><p>선택한 픽업 좌표는 상대와 공유되며 회차 만료 시 삭제됩니다. 현재 위치 권한은 요청하지 않습니다. 배경 지도를 보는 영역과 IP 주소가 타일 요청으로 OpenStreetMap에 전달됩니다.</p></details>
+-</aside><section class="maparea"><div id="map" aria-label="양재사옥 주변 실제 지도"></div><p id="mapNotice">실제 지도 기반 후보 · 현장 표지 확인 필요</p><p id="error" role="alert"></p></section></main>
+-<script src="/map/vendor/leaflet.js"></script><script type="module" src="/map/page.mjs"></script></body></html>
++
++<details><summary>지도 데이터와 선택 기준</summary><p id="dataInfo"></p><p>버스정류장·횡단보도 주변, 건물 내부, 고속도로·전용 차로 등 데이터에서 판별된 영역을 차단합니다. 도로폭·교차로 범위는 추정값입니다.</p><p>미수록 금지표지·어린이보호구역·시간대/임시 통제는 누락될 수 있습니다. 선택 가능은 합법 정차 인증이 아닙니다. 현장 확인과 정차 책임은 사용자에게 있습니다.</p><a href="/map/data/yangjae.json">사용한 지도 데이터</a> · <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noreferrer">ODbL 출처</a><p>선택한 픽업 좌표는 상대와 공유되며 회차 만료 시 삭제됩니다. 현재 위치 권한은 요청하지 않습니다. 배경 지도를 보는 영역과 IP 주소가 타일 요청으로 OpenStreetMap에 전달됩니다.</p></details></div><section class="selection"><h2 id="selectionTitle">지도에서 지점을 선택하세요</h2><p id="selectionText" role="status">추천 번호를 누르거나 지도에서 직접 고를 수 있습니다.</p><p id="coordinates"></p><button id="confirm" disabled>이 핀으로 픽업 시작</button><p id="roomState"></p></section>
++</aside><section class="maparea" aria-label="픽업 지도"><div class="map-heading"><h2>양재사옥 주변</h2><span>번호를 누르거나 직접 선택</span></div><div id="map" aria-label="양재사옥 주변 실제 지도"></div><p id="mapNotice">실제 지도 기반 후보 · 현장 표지 확인 필요</p><p id="error" role="alert"></p></section></main>
++<footer><span>주행 중 조작 금지 · 차량 미연결 시연</span><span class="storage-note">선택한 지점은 상대와 공유됩니다.</span></footer></div><script src="/map/vendor/leaflet.js"></script><script type="module" src="/map/page.mjs"></script></body></html>
+
+FILE experiments/pickup-board/map/page.css
+/* PICKGO uses /style.css for Asta, neutral surfaces and square touch controls.
+   1440 = 2 × 40 outer gutters + 400 sidebar + 24 gap + 936 map. */
+.map-shell{height:100dvh;max-width:1920px;margin:auto;padding:0 40px;display:grid;grid-template-rows:76px minmax(0,1fr) 52px}
+.map-page header{justify-content:flex-start}
+.map-page a{color:inherit}
+.brand{font-size:26px;font-weight:650;text-decoration:none}
+.map-context{font-size:20px;color:var(--muted)}
+.map-page .back-link{margin-left:auto;min-height:52px;font-size:20px;padding:10px 20px}
+.map-page main{display:grid;grid-template-columns:400px minmax(0,1fr);gap:24px;padding:12px 0 8px;min-height:0}
+.map-page aside{min-width:0;overflow:hidden;background:var(--surface);display:flex;flex-direction:column}
+.map-page h1{font-size:30px;line-height:1.3;margin-bottom:12px;letter-spacing:-.5px}
+.map-page h2{font-size:22px;line-height:1.4;letter-spacing:0;margin:24px 0 8px}
+.map-page p{font-size:18px;line-height:1.5}
+.intro{margin-bottom:20px}.intro br{display:none}
+.legend{display:flex;align-items:center;flex-wrap:wrap;gap:8px;font-size:16px}
+.swatch{display:inline-block;width:14px;height:14px;border-radius:50%}
+.swatch.blocked{background:#ba5147}.swatch.possible{background:#345e42;margin-left:12px;border:1px solid #91b09c}
+.map-page .help{margin:12px 0 16px}
+.controls{display:flex;flex-wrap:wrap;gap:12px;align-items:center;font-size:16px}
+.map-page .controls button{min-height:64px;font-size:18px;padding:12px 16px}
+.controls label{display:flex;gap:8px;align-items:center;min-height:48px;cursor:pointer}
+.controls input{width:22px;height:22px;margin:0;accent-color:#e7e7e7}
+.map-page .caption{font-size:16px;margin-bottom:12px}
+#candidates{display:grid;gap:12px}
+.map-page .candidate{width:100%;display:grid;grid-template-columns:32px minmax(0,1fr);gap:12px;text-align:left;justify-content:stretch;min-height:88px;padding:14px 16px;margin:0}
+.number{width:32px;height:32px;display:grid;place-items:center;background:#345e42;color:#fff;border:1px solid #91b09c;border-radius:50%;font-size:18px;font-weight:650}
+.candidate strong{font-size:20px;font-weight:600}.candidate small{display:block;font-size:16px;color:var(--muted);font-weight:400;margin-top:4px}
+.selection{border-top:1px solid #464646;margin-top:24px;padding-top:20px}
+.selection h2{margin-top:0}.selection p{margin-top:8px}
+.map-page #confirm{width:100%;background:#e7e7e7;color:#161616;margin-top:16px;font-size:22px;min-height:76px}
+.map-page #confirm:disabled{background:#303030;color:#a5a5a5}
+.map-page #confirm:hover:not(:disabled){background:#fff}
+.selection.bad #selectionTitle{color:#f0a39d}
+#coordinates{font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
+.map-page #coordinates,.map-page #roomState{font-size:16px}
+.map-page details{font-size:16px;line-height:1.6;border-top:1px solid #464646;margin-top:24px;padding-top:16px}
+.map-page details p{font-size:16px;margin:12px 0}
+.map-page summary{cursor:pointer;min-height:48px;padding:10px 0}
+.map-page details a{text-underline-offset:3px}
+.maparea{min-width:0;min-height:0;background:var(--surface);display:grid;grid-template-rows:auto minmax(0,1fr) auto auto;overflow:hidden}
+.map-heading{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;padding:16px 20px}
+.map-heading h2{margin:0}.map-heading span{font-size:16px;color:var(--muted)}
+#map{width:100%;height:100%;min-height:0;background:#dce0db;isolation:isolate}
+.leaflet-container{font-family:Asta,'Malgun Gothic',sans-serif;color:#242822}
+.map-page .leaflet-control-attribution{font-size:12px!important;background:#fff;color:#333;padding:4px 8px;max-width:100%;line-height:1.4}
+.map-page .leaflet-control-attribution a{color:#265d76}
+.map-page .leaflet-bar{border:1px solid #626262;border-radius:2px;box-shadow:none}
+.map-page .leaflet-bar a{width:48px;height:48px;line-height:48px;background:#202020;color:#fff;border-color:#626262;border-radius:0;font-family:Asta,sans-serif}
+.map-page .leaflet-bar a:hover{background:#363636}
+.map-page .leaflet-bar a.leaflet-disabled{color:#a5a5a5;background:#272727}
+.map-pin{background:transparent;border:0}
+.pin-content{width:30px;height:30px;background:#345e42;color:#fff;border:3px solid #fff;border-radius:50%;display:grid;place-items:center;font-weight:800;font-size:14px}
+.pin-anchor{display:block;width:18px;height:18px;background:#333c35;border:3px solid #fff;border-radius:2px}
+.pin-selected{background:#235c91}.pin-blocked{background:#b3453a}
+.map-page #mapNotice{position:static;padding:12px 20px;font-size:16px;margin:0;background:var(--surface);color:var(--muted)}
+.map-page #error{position:static;margin:0;padding:12px 20px;font-size:18px;color:#f0c580;background:#29251f}
+.map-page :focus-visible{outline:3px solid #fff;outline-offset:-3px}
+.map-page #map:focus-visible{outline-color:#161616}
+@media(min-width:1600px){.map-shell{padding:0 48px}}
+@media(max-height:650px) and (min-width:900px){.map-shell{grid-template-rows:64px minmax(0,1fr) 42px;padding:0 32px}.map-page main{grid-template-columns:360px minmax(0,1fr);gap:16px}.map-page aside{padding:20px}}
+@media(max-width:1050px) and (min-width:900px){.map-page main{grid-template-columns:340px minmax(0,1fr)}}
+@media(max-width:899px){
+ .map-shell{height:auto;min-height:100dvh;padding:0 24px;grid-template-rows:auto 1fr auto}
+ .map-page header{min-height:72px;gap:12px;flex-wrap:wrap;padding:8px 0}.brand{font-size:24px}.map-context{font-size:18px}
+ .map-page main{display:flex;flex-direction:column;gap:16px;padding:8px 0 16px}
+ .maparea{order:0;flex:none;grid-template-rows:auto minmax(0,1fr) auto auto;height:54dvh;min-height:360px}
+ .map-page aside{order:1;overflow:visible;padding:24px}
+ .map-page footer{min-height:48px;padding:12px 0;font-size:16px}
+ .map-page h1{font-size:28px}
+}
+@media(max-width:479px){
+ .map-shell{padding:0 16px}.map-context{display:none}.brand{font-size:22px}.map-page .back-link{font-size:18px}
+ .map-page aside{padding:20px 16px}.map-heading{padding:12px 16px}.map-heading h2{font-size:20px}.map-heading span{font-size:14px}
+ .map-page #mapNotice,.map-page #error{padding:12px 16px}.map-page h1{font-size:26px}
+ .map-page .candidate{padding:14px 12px}.map-page .leaflet-control-attribution{font-size:11px!important}
+}
+
+/* Keep the selected point and its action visible while browsing nearby candidates. */
+.map-options{min-height:0;overflow:auto;overscroll-behavior:contain;padding:24px;scrollbar-width:thin;scrollbar-color:#737373 var(--surface)}
+.map-page .selection{flex:none;margin:0;padding:20px 24px;background:var(--surface);max-height:55%;overflow:auto;scrollbar-width:thin}
+.map-page .selection h2{font-size:22px}
+@media(max-width:899px){.map-page aside{padding:0;overflow:visible}.map-options{overflow:visible;padding:24px}.map-page .selection{max-height:none;overflow:visible;padding:24px}}
+@media(max-width:479px){.map-options,.map-page .selection{padding:20px 16px}}
+
+DIFF
+--- 
++++ 
+@@ -1 +1,83 @@
+-@font-face{font-family:Asta;src:url('/fonts/AstaSans.ttf')}*{box-sizing:border-box}body{margin:0;color:#242822;background:#f4f3ee;font-family:Asta,system-ui,sans-serif}header{height:72px;display:flex;align-items:center;gap:24px;padding:0 28px;border-bottom:1px solid #d7d9d2;background:#fafaf6}header a{color:inherit;text-decoration:none}header a:last-child{margin-left:auto;font-size:14px}.brand{font-size:25px;font-weight:800;letter-spacing:-1px}header span{font-size:14px;color:#64705f}main{display:grid;grid-template-columns:360px minmax(0,1fr);height:calc(100dvh - 72px)}aside{padding:28px 24px;overflow:auto;border-right:1px solid #d7d9d2}h1{font-size:27px;margin:0 0 12px;letter-spacing:-1px}h2{font-size:17px;margin:22px 0 8px}.intro,.help{line-height:1.6;font-size:14px}.intro{color:#697065;margin-bottom:22px}.caption{font-size:12px;color:#70766e;margin:6px 0 12px}.legend{display:flex;align-items:center;gap:7px;font-size:12px}.swatch{display:inline-block;width:12px;height:12px;border-radius:50%}.swatch.blocked{background:#bd5145}.swatch.possible{background:#345e42;margin-left:12px}button{font:inherit;cursor:pointer;min-height:42px;border:1px solid #cdd2c9;border-radius:6px;background:#fafaf6;color:#303b2e;padding:9px 13px}button:hover{background:#e9eee5}button:disabled{opacity:.5;cursor:not-allowed}.controls{display:flex;align-items:center;gap:12px;font-size:12px}.controls button{font-size:12px}input{accent-color:#345e42}.candidate{width:100%;display:grid;grid-template-columns:30px 1fr;text-align:left;gap:8px;margin:7px 0;padding:12px}.number{width:26px;height:26px;display:grid;place-items:center;background:#345e42;color:white;border-radius:50%;font-weight:700}.candidate strong{font-size:15px}.candidate small{display:block;font-size:12px;color:#66705f;margin-top:5px}.selection{border-top:1px solid #d7d9d2;margin-top:24px;padding-top:1px}.selection p{font-size:13px;line-height:1.6}.selection #confirm{width:100%;background:#345e42;color:#fff;border-color:#345e42;min-height:48px}.selection.bad #selectionTitle{color:#9f322c}#coordinates{font-variant-numeric:tabular-nums;color:#64705f}#roomState{color:#646e60}details{font-size:12px;line-height:1.65;border-top:1px solid #d7d9d2;margin-top:22px;padding-top:16px}summary{cursor:pointer}details a{color:#345e42}.maparea{position:relative;min-width:0}#map{width:100%;height:100%;background:#e6e9df}.leaflet-container{font-family:Asta,system-ui,sans-serif}.leaflet-control-attribution{font-size:11px!important}.map-pin{background:transparent;border:0}.pin-content{width:30px;height:30px;background:#345e42;color:white;border:3px solid white;border-radius:50%;display:grid;place-items:center;box-shadow:0 1px 4px #0005;font-weight:800}.pin-anchor{width:18px;height:18px;background:#333c35;border:3px solid white;border-radius:3px}.pin-selected{background:#235c91}.pin-blocked{background:#b3453a}#mapNotice{position:absolute;z-index:700;bottom:28px;left:14px;max-width:calc(100% - 28px);background:#fffffff0;padding:9px 12px;border-radius:5px;font-size:12px;pointer-events:none}#error{position:absolute;top:12px;left:56px;right:12px;z-index:700;background:#fff4eb;color:#7e3826;padding:10px;font-size:13px;border-radius:5px}#error:empty{display:none}:focus-visible{outline:3px solid #547b52;outline-offset:2px}@media(max-width:760px){header{padding:0 16px;height:60px;gap:15px}header span{font-size:12px}main{display:flex;flex-direction:column;height:auto}aside{order:2;width:100%;padding:20px;border-right:0}.maparea{order:1;height:52dvh;min-height:320px}h1{font-size:24px}.intro br{display:none}#candidates{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}.candidate{display:block;padding:10px}.candidate .number{margin-bottom:7px}.candidate strong{font-size:13px}.candidate small{font-size:11px}.selection{margin-top:15px}#mapNotice{font-size:11px}}
++/* PICKGO uses /style.css for Asta, neutral surfaces and square touch controls.
++   1440 = 2 × 40 outer gutters + 400 sidebar + 24 gap + 936 map. */
++.map-shell{height:100dvh;max-width:1920px;margin:auto;padding:0 40px;display:grid;grid-template-rows:76px minmax(0,1fr) 52px}
++.map-page header{justify-content:flex-start}
++.map-page a{color:inherit}
++.brand{font-size:26px;font-weight:650;text-decoration:none}
++.map-context{font-size:20px;color:var(--muted)}
++.map-page .back-link{margin-left:auto;min-height:52px;font-size:20px;padding:10px 20px}
++.map-page main{display:grid;grid-template-columns:400px minmax(0,1fr);gap:24px;padding:12px 0 8px;min-height:0}
++.map-page aside{min-width:0;overflow:hidden;background:var(--surface);display:flex;flex-direction:column}
++.map-page h1{font-size:30px;line-height:1.3;margin-bottom:12px;letter-spacing:-.5px}
++.map-page h2{font-size:22px;line-height:1.4;letter-spacing:0;margin:24px 0 8px}
++.map-page p{font-size:18px;line-height:1.5}
++.intro{margin-bottom:20px}.intro br{display:none}
++.legend{display:flex;align-items:center;flex-wrap:wrap;gap:8px;font-size:16px}
++.swatch{display:inline-block;width:14px;height:14px;border-radius:50%}
++.swatch.blocked{background:#ba5147}.swatch.possible{background:#345e42;margin-left:12px;border:1px solid #91b09c}
++.map-page .help{margin:12px 0 16px}
++.controls{display:flex;flex-wrap:wrap;gap:12px;align-items:center;font-size:16px}
++.map-page .controls button{min-height:64px;font-size:18px;padding:12px 16px}
++.controls label{display:flex;gap:8px;align-items:center;min-height:48px;cursor:pointer}
++.controls input{width:22px;height:22px;margin:0;accent-color:#e7e7e7}
++.map-page .caption{font-size:16px;margin-bottom:12px}
++#candidates{display:grid;gap:12px}
++.map-page .candidate{width:100%;display:grid;grid-template-columns:32px minmax(0,1fr);gap:12px;text-align:left;justify-content:stretch;min-height:88px;padding:14px 16px;margin:0}
++.number{width:32px;height:32px;display:grid;place-items:center;background:#345e42;color:#fff;border:1px solid #91b09c;border-radius:50%;font-size:18px;font-weight:650}
++.candidate strong{font-size:20px;font-weight:600}.candidate small{display:block;font-size:16px;color:var(--muted);font-weight:400;margin-top:4px}
++.selection{border-top:1px solid #464646;margin-top:24px;padding-top:20px}
++.selection h2{margin-top:0}.selection p{margin-top:8px}
++.map-page #confirm{width:100%;background:#e7e7e7;color:#161616;margin-top:16px;font-size:22px;min-height:76px}
++.map-page #confirm:disabled{background:#303030;color:#a5a5a5}
++.map-page #confirm:hover:not(:disabled){background:#fff}
++.selection.bad #selectionTitle{color:#f0a39d}
++#coordinates{font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
++.map-page #coordinates,.map-page #roomState{font-size:16px}
++.map-page details{font-size:16px;line-height:1.6;border-top:1px solid #464646;margin-top:24px;padding-top:16px}
++.map-page details p{font-size:16px;margin:12px 0}
++.map-page summary{cursor:pointer;min-height:48px;padding:10px 0}
++.map-page details a{text-underline-offset:3px}
++.maparea{min-width:0;min-height:0;background:var(--surface);display:grid;grid-template-rows:auto minmax(0,1fr) auto auto;overflow:hidden}
++.map-heading{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;padding:16px 20px}
++.map-heading h2{margin:0}.map-heading span{font-size:16px;color:var(--muted)}
++#map{width:100%;height:100%;min-height:0;background:#dce0db;isolation:isolate}
++.leaflet-container{font-family:Asta,'Malgun Gothic',sans-serif;color:#242822}
++.map-page .leaflet-control-attribution{font-size:12px!important;background:#fff;color:#333;padding:4px 8px;max-width:100%;line-height:1.4}
++.map-page .leaflet-control-attribution a{color:#265d76}
++.map-page .leaflet-bar{border:1px solid #626262;border-radius:2px;box-shadow:none}
++.map-page .leaflet-bar a{width:48px;height:48px;line-height:48px;background:#202020;color:#fff;border-color:#626262;border-radius:0;font-family:Asta,sans-serif}
++.map-page .leaflet-bar a:hover{background:#363636}
++.map-page .leaflet-bar a.leaflet-disabled{color:#a5a5a5;background:#272727}
++.map-pin{background:transparent;border:0}
++.pin-content{width:30px;height:30px;background:#345e42;color:#fff;border:3px solid #fff;border-radius:50%;display:grid;place-items:center;font-weight:800;font-size:14px}
++.pin-anchor{display:block;width:18px;height:18px;background:#333c35;border:3px solid #fff;border-radius:2px}
++.pin-selected{background:#235c91}.pin-blocked{background:#b3453a}
++.map-page #mapNotice{position:static;padding:12px 20px;font-size:16px;margin:0;background:var(--surface);color:var(--muted)}
++.map-page #error{position:static;margin:0;padding:12px 20px;font-size:18px;color:#f0c580;background:#29251f}
++.map-page :focus-visible{outline:3px solid #fff;outline-offset:-3px}
++.map-page #map:focus-visible{outline-color:#161616}
++@media(min-width:1600px){.map-shell{padding:0 48px}}
++@media(max-height:650px) and (min-width:900px){.map-shell{grid-template-rows:64px minmax(0,1fr) 42px;padding:0 32px}.map-page main{grid-template-columns:360px minmax(0,1fr);gap:16px}.map-page aside{padding:20px}}
++@media(max-width:1050px) and (min-width:900px){.map-page main{grid-template-columns:340px minmax(0,1fr)}}
++@media(max-width:899px){
++ .map-shell{height:auto;min-height:100dvh;padding:0 24px;grid-template-rows:auto 1fr auto}
++ .map-page header{min-height:72px;gap:12px;flex-wrap:wrap;padding:8px 0}.brand{font-size:24px}.map-context{font-size:18px}
++ .map-page main{display:flex;flex-direction:column;gap:16px;padding:8px 0 16px}
++ .maparea{order:0;flex:none;grid-template-rows:auto minmax(0,1fr) auto auto;height:54dvh;min-height:360px}
++ .map-page aside{order:1;overflow:visible;padding:24px}
++ .map-page footer{min-height:48px;padding:12px 0;font-size:16px}
++ .map-page h1{font-size:28px}
++}
++@media(max-width:479px){
++ .map-shell{padding:0 16px}.map-context{display:none}.brand{font-size:22px}.map-page .back-link{font-size:18px}
++ .map-page aside{padding:20px 16px}.map-heading{padding:12px 16px}.map-heading h2{font-size:20px}.map-heading span{font-size:14px}
++ .map-page #mapNotice,.map-page #error{padding:12px 16px}.map-page h1{font-size:26px}
++ .map-page .candidate{padding:14px 12px}.map-page .leaflet-control-attribution{font-size:11px!important}
++}
++
++/* Keep the selected point and its action visible while browsing nearby candidates. */
++.map-options{min-height:0;overflow:auto;overscroll-behavior:contain;padding:24px;scrollbar-width:thin;scrollbar-color:#737373 var(--surface)}
++.map-page .selection{flex:none;margin:0;padding:20px 24px;background:var(--surface);max-height:55%;overflow:auto;scrollbar-width:thin}
++.map-page .selection h2{font-size:22px}
++@media(max-width:899px){.map-page aside{padding:0;overflow:visible}.map-options{overflow:visible;padding:24px}.map-page .selection{max-height:none;overflow:visible;padding:24px}}
++@media(max-width:479px){.map-options,.map-page .selection{padding:20px 16px}}
+
+SHARED CSS
+@font-face{font-family:Asta;src:url('/fonts/AstaSans.ttf') format('truetype');font-weight:100 900;font-display:swap}
+:root{font-family:Asta,'Malgun Gothic',sans-serif;color-scheme:dark;color:#f4f4f4;background:#121212;font-synthesis:none;--surface:#202020;--raised:#363636;--muted:#bdbdbd;--gap:24px;--button:88px}*{box-sizing:border-box}body{margin:0}h1,h2,h3,p{margin:0}h1{font-size:26px;font-weight:650}h2{font-size:34px;line-height:1.3;font-weight:650;word-break:keep-all;letter-spacing:-.5px}h3{font-size:22px;font-weight:500}p{line-height:1.5;color:var(--muted);font-size:20px}button,.button{font:inherit;font-size:24px;font-weight:600;min-height:var(--button);padding:16px 24px;border:2px solid transparent;border-radius:2px;background:var(--raised);color:#f4f4f4;cursor:pointer;touch-action:manipulation;display:flex;align-items:center;justify-content:center;text-align:center;text-decoration:none;line-height:1.3;word-break:keep-all}@media(hover:hover) and (pointer:fine){button:hover:not(:disabled),.button:hover{background:#474747}}button:active:not(:disabled),.button:active{background:#555}button:focus-visible,a:focus-visible{outline:3px solid #fff;outline-offset:4px}button:disabled{background:#272727;color:#a5a5a5;cursor:default}.primary{background:#e7e7e7;color:#161616}@media(hover:hover) and (pointer:fine){.primary:hover:not(:disabled){background:#fff}}.secondary{background:transparent;border-color:#626262}@media(hover:hover) and (pointer:fine){.secondary:hover:not(:disabled){background:#303030}}.place-options [aria-pressed=true]{border-color:#e7e7e7;background:#383838}.place-options [aria-pressed=true]:after{content:'✓';margin-left:auto;padding-left:16px}.cockpit{height:100dvh;min-height:0;display:grid;grid-template-rows:76px minmax(0,1fr) 52px;padding:0 40px;max-width:1920px;margin:auto}header{display:flex;justify-content:space-between;align-items:center;gap:24px}.demo,.section-label{font-size:20px;color:var(--muted)}main{position:relative;min-height:0;padding:12px 0 8px;display:flex;flex-direction:column}footer{display:flex;align-items:center;justify-content:space-between;gap:24px;font-size:18px;color:var(--muted)}.storage-note{font-size:18px}.welcome,.edit-place,.end-confirm{display:grid;grid-template-columns:minmax(0,1fr) minmax(360px,1fr);gap:48px;height:100%;align-items:center}.welcome-copy h2,.edit-place h2,.end-confirm h2{font-size:42px;margin:16px 0 24px}.welcome-copy p:not(.section-label),.edit-place p,.end-confirm p{font-size:22px}.create-panel,.join-panel{max-width:650px;width:100%;justify-self:end}.create-panel h3{margin-bottom:16px}.place-options{display:grid;gap:16px}.place-options button{width:100%;text-align:left;justify-content:flex-start}.create-action{width:100%;margin-top:24px}.join-panel{background:var(--surface);padding:32px;border-radius:0}.join-panel p{margin:24px 0}.join-panel button{width:100%}
+/* 1280: 80px outer gutters + 24px gap + two fluid columns = 1280. */
+#board{display:flex;flex-direction:column;flex:1;min-height:0}.topline{display:flex;justify-content:space-between;gap:16px;font-size:20px;margin-bottom:20px;color:var(--muted)}#connection.stale{color:#f0c580}.workgrid{display:grid;grid-template-columns:minmax(0,1.65fr) minmax(330px,1fr);gap:var(--gap);flex:1;min-height:0}.panel{border-radius:0;background:var(--surface);padding:28px}.facts{display:flex;flex-direction:column;gap:var(--gap);min-width:0}.readiness{display:flex;flex-direction:column;justify-content:center;gap:12px;flex:1}.readiness strong{font-size:44px;line-height:1.2;font-weight:600}.place{flex:1;display:flex;flex-direction:column;justify-content:center}.place h2{margin-top:12px;font-size:36px}.place-help{margin-top:12px;font-size:18px}#readyButtons{display:flex;gap:16px;margin-top:8px}#readyButtons button{flex:1;font-size:22px;min-height:76px}#readyButtons [aria-pressed=true]{background:#e7e7e7;color:#161616}.action-area{min-width:0;display:flex}.action-area>.panel{width:100%;display:flex;flex-direction:column}.action-area h2{font-size:28px}.normal-actions p,.invite p{margin-top:20px}.normal-actions button,.invite a,#withdraw{margin-top:auto}.proposal h2{margin-top:12px}.proposal p{font-size:18px;margin-top:12px}#decisions{display:flex;flex-direction:column;gap:24px;margin-top:auto;padding-top:20px}#decisions button{width:100%}.bottom{display:flex;gap:24px;margin-top:12px;flex-shrink:0}.bottom button{min-width:200px}#refresh{margin-left:auto}.event{font-size:18px;margin-top:16px;min-height:27px}.facts.stale .place{color:#bdbdbd}.facts.stale .readiness strong{color:#f0c580}.edit-place form{display:grid;gap:24px;max-width:650px;width:100%;justify-self:end}.edit-place #editingCurrent{margin:16px 0}.confirm-actions{display:grid;gap:24px}.end-confirm{position:absolute;inset:0;background:#121212;z-index:2}#error:empty{display:none}#error{font-size:18px;color:#f0c580;padding:8px 0;line-height:1.35;flex-shrink:0}#error:not(:empty){position:relative;z-index:3}.sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}[hidden]{display:none!important}
+@media(min-width:1600px){.workgrid{grid-template-columns:minmax(0,1fr) 520px}.cockpit{padding:0 48px}.readiness strong{font-size:48px}}
+@media(max-height:650px) and (min-width:900px){:root{--gap:16px;--button:76px}.cockpit{grid-template-rows:64px minmax(0,1fr) 42px;padding:0 32px}.panel{padding:20px}.readiness strong{font-size:36px}.place h2{font-size:30px}.place-help{display:none}.event{margin-top:8px}.topline{margin-bottom:12px}#decisions{gap:16px;padding-top:12px}.create-panel h3{margin-bottom:12px}.place-options{gap:12px}.create-action{margin-top:16px}.storage-note{display:none}}
+@media(max-width:899px){:root{--gap:16px;--button:88px}.cockpit{padding:0 24px;grid-template-rows:64px minmax(0,1fr) 48px}header{gap:12px}h1{font-size:24px}.demo{font-size:18px;max-width:135px;text-align:right}.storage-note{display:none}footer{font-size:18px}.welcome,.edit-place,.end-confirm{display:flex;flex-direction:column;justify-content:center;align-items:stretch;gap:24px}.welcome-copy h2,.edit-place h2,.end-confirm h2{font-size:32px;margin:8px 0 12px}.welcome-copy p:not(.section-label){display:none}.welcome-copy .section-label{font-size:18px}.create-panel{max-width:none}.create-panel h3{font-size:20px;margin-bottom:12px}.place-options{gap:16px}.create-action{margin-top:20px}.topline{font-size:18px;margin-bottom:12px}.workgrid{display:flex;flex-direction:column;gap:16px}.facts{gap:12px;flex:none}.panel{padding:18px 20px}.readiness{flex-direction:row;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px}.readiness strong{font-size:30px}.section-label{font-size:18px}.place{padding:16px 20px}.place h2{font-size:28px;margin-top:8px}.place-help{display:none}.action-area{flex:1;min-height:0}.action-area h2{font-size:24px}.proposal{padding:16px 20px}.proposal h2{margin-top:8px}.proposal p{font-size:18px;margin-top:8px}#decisions{gap:16px;padding-top:12px}#decisions button{min-height:76px;font-size:23px}.normal-actions p{margin:8px 0}.normal-actions h2{display:none}.normal-actions button{margin-top:16px}.bottom{gap:16px;margin-top:12px}.bottom button{min-width:0;flex:1;min-height:76px;font-size:22px}.event{font-size:18px;margin-top:8px;min-height:0;line-height:1.3}.confirm-actions{width:100%;gap:24px}.edit-place form{gap:20px}.edit-place p{font-size:18px}#readyButtons{width:100%;margin-top:8px}#readyButtons button{min-height:76px;font-size:22px}.join-panel{padding:24px}.invite p{margin:12px 0}.invite a{min-height:76px}.end-confirm{padding:24px 0}.end-confirm h2{font-size:30px}.end-confirm p{font-size:20px}}
+@media(max-width:899px) and (max-height:780px){.event{display:none}.proposal p{display:none}.readiness strong{font-size:28px}.place h2{font-size:26px}#readyButtons{margin-top:4px}#readyButtons button{min-height:76px;font-size:20px}.normal-actions p{font-size:18px}.normal-actions button{margin-top:8px}.topline{font-size:18px}.readiness{padding:14px 20px}.invite p{font-size:18px}.edit-place{gap:16px}.edit-place p:not(.section-label):not(#editingCurrent){display:none}}
+@media(max-width:479px){.cockpit{padding:0 16px}.demo{font-size:16px}h1{font-size:22px}.readiness strong{font-size:26px}.panel{padding-left:16px;padding-right:16px}.place h2{font-size:24px}.topline{font-size:16px}.welcome-copy .section-label{font-size:16px}.place-options button{font-size:22px;padding-left:18px}.bottom button{font-size:20px}footer{font-size:16px}}
+.demo{word-break:keep-all}
+@media(max-height:650px) and (min-width:900px){.proposal p{display:none}} @media(max-width:899px) and (min-height:800px){.facts{flex:1}.action-area{flex:none}.readiness strong{font-size:38px}#decisions button{min-height:88px}}
+/* Compact split-screen keeps the error line outside all action hit areas. */
+@media(max-width:899px) and (max-height:780px){.workgrid{gap:12px}.proposal{padding-top:12px;padding-bottom:12px}#decisions{gap:12px;padding-top:8px}}
+/* Preserve the three stale labels; give the failure message its own readable row. */
+.cockpit:has(#error:not(:empty)) .proposal p,.cockpit:has(#error:not(:empty)) .event{display:none}
+/* Manual pickup stages retain the existing square panels and 2px buttons. */
+.progress-actions{display:grid;gap:16px;margin-top:auto;padding-top:20px}.normal-actions .progress-actions button{margin-top:0;width:100%}.readiness #readyText{font-size:20px}.readiness #pickupText{font-size:38px}.normal-actions p{margin-bottom:16px}
+/* Content may scroll on short windows; actions never overlap the footer. */
+#board{overflow-y:auto;overflow-x:hidden}.workgrid{flex-shrink:0;min-height:min-content}.readiness{flex-shrink:0}
+@media(max-width:899px){.readiness #pickupText{font-size:28px}.readiness #readyText{width:100%;font-size:18px}.progress-actions{gap:12px;padding-top:12px}.normal-actions .progress-actions button{min-height:76px;font-size:22px}.action-area{flex-shrink:0}.normal-actions p{margin-bottom:8px}}
+@media(max-height:650px) and (min-width:900px){.readiness #pickupText{font-size:30px}.progress-actions{gap:12px;padding-top:12px}}
+/* Retain stale disclosures at all sizes; the board scrolls when space is tight. */
+.cockpit:has(#connection.stale) .proposal p,.cockpit:has(#connection.stale) .event{display:block}
+
+/* Touch-first interaction: native vertical panning, no drag-to-confirm gestures. */
+html,body{height:100%;overscroll-behavior-y:none}
+button,.button{user-select:none;-webkit-user-select:none;-webkit-tap-highlight-color:transparent;transition:background-color 120ms ease,border-color 120ms ease,color 120ms ease,transform 100ms ease}
+button:active:not(:disabled),.button:active{transform:scale(.985)}
+button:disabled{transform:none}
+#readyButtons button:disabled{background:#272727;color:#a5a5a5}
+#board,.welcome,.edit-place,.end-confirm{overflow-y:auto;overflow-x:hidden;overscroll-behavior-y:contain;touch-action:pan-y pinch-zoom;-webkit-overflow-scrolling:touch;scrollbar-width:thin;scrollbar-color:#737373 #202020;scroll-padding-block:20px 120px}
+#board::-webkit-scrollbar,.welcome::-webkit-scrollbar,.edit-place::-webkit-scrollbar,.end-confirm::-webkit-scrollbar{width:8px}
+#board::-webkit-scrollbar-thumb,.welcome::-webkit-scrollbar-thumb,.edit-place::-webkit-scrollbar-thumb,.end-confirm::-webkit-scrollbar-thumb{background:#737373}
+.welcome,.edit-place,.end-confirm{min-height:0;flex:1;align-items:safe center}
+.end-confirm{position:relative;inset:auto}
+.bottom{position:sticky;bottom:0;background:#121212;padding:12px 0 4px;z-index:1}
+main>section:not([hidden]){animation:pickup-screen-in 180ms cubic-bezier(.2,.7,.3,1)}
+@keyframes pickup-screen-in{from{opacity:.65;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+/* Short split windows retain every action through finger scrolling. */
+@media(max-height:760px){.welcome,.edit-place,.end-confirm{align-items:start}.welcome-copy,.edit-place>div,.end-confirm>div{padding-top:16px}}
+@media(max-width:899px){.welcome,.edit-place,.end-confirm{justify-content:flex-start;align-items:stretch}.welcome>*,.edit-place>*,.end-confirm>*{flex-shrink:0}.bottom{gap:12px}.bottom button{padding-inline:12px}}
+@media(prefers-reduced-motion:reduce){main>section:not([hidden]){animation:none}button,.button{transition:none}button:active:not(:disabled),.button:active{transform:none}}
+
+/* Keep focus inside clipped scroll edges, and retain a muted previous selection. */
+button:focus-visible,a:focus-visible{outline-offset:-5px}
+#readyButtons button[aria-pressed=true]:disabled{border-color:#929292}
+/* Main pickup selection keeps the existing touch targets and scroll container. */
+.candidate-note{font-size:18px;margin:12px 0 20px}
+#anchorSummary{font-size:20px;margin-bottom:8px}
+#manualPlace{display:block;width:100%;min-height:76px;font:inherit;font-size:22px;color:#f4f4f4;background:#303030;border:2px solid #626262;padding:16px;margin-top:12px}
+#manualPlace:focus-visible{outline:3px solid #fff;outline-offset:-5px}
+#candidateHeading:focus,#manualHeading:focus{outline:none}
+.search-row{display:flex;gap:12px;margin:12px 0}.search-row input{min-width:0;flex:1;background:#303030;border:2px solid #626262;color:#fff;font:inherit;font-size:22px;padding:16px}.search-row button{flex-shrink:0}
+#searchStatus{font-size:18px;margin:12px 0}#pickupMap{display:block;width:100%;height:300px;border:0;outline:2px solid #849195;cursor:crosshair;touch-action:manipulation}#pickupMap:focus-visible{outline:3px solid white;outline-offset:3px}#pointStatus,#selectedPoint{font-size:18px;margin-top:12px}#selectedPoint:empty{display:none}
+@media(max-width:479px){.search-row{flex-wrap:wrap}.search-row input{width:100%}.search-row button{width:100%}#pickupMap{height:240px}}
+
+MAP JS
+const $=id=>document.getElementById(id),L=window.L;
+let map,selected,selectionGeneration=0,marker,session,state,busy=false,data,tilesReady=false;
+let currentMarker,proposalMarker;const candidateMarkers=[];
+try{session=JSON.parse(sessionStorage.getItem('pickupSession'));}catch{}
+const latlng=p=>[p[1],p[0]];
+async function api(path,body,auth=false){const r=await fetch(path,{method:body?'POST':'GET',cache:'no-store',signal:AbortSignal.timeout(8000),headers:{...(body?{'Content-Type':'application/json'}:{}),...(auth&&session?{Authorization:`Bearer ${session.token}`}:{})},...(body?{body:JSON.stringify(body)}:{})});const out=await r.json();if(!r.ok)throw Error(out.error||'요청 실패');return out;}
+function updateAction(){
+  $('confirm').textContent=session?'이 핀을 상대에게 제안':'이 핀으로 픽업 시작';
+  $('confirm').disabled=busy||!tilesReady||!data?.available||!selected?.selectable||!navigator.onLine||document.hidden||!!session&&(!state||state.status!=='active'||!state.joined||state.stage==='boarded'||!!state.proposal);
+  $('roomState').textContent=!session?'확정 좌표는 초대한 상대에게 공유됩니다.':!state?'현재 약속을 확인하지 못했습니다. 약속판에서 다시 확인해 주세요.':!state.joined?'상대가 초대에 참여한 뒤 위치를 제안할 수 있습니다.':state.proposal?'기존 장소 제안을 처리한 뒤 다시 선택하세요.':'상대 수락 전까지 기존 픽업 지점을 유지합니다.';
+}
+function icon(label,cls=''){const el=document.createElement('span');el.className=`pin-content ${cls}`;el.textContent=label;return L.divIcon({className:'map-pin',html:el,iconSize:[30,30],iconAnchor:[15,15]});}
+async function choose(point){
+  if(busy)return;const gen=++selectionGeneration;selected=null;updateAction();$('selectionTitle').textContent='선택 지점 확인 중';$('selectionText').textContent='금지·접근 제한 영역을 검사하고 있습니다.';
+  if(marker)marker.remove();marker=L.marker(latlng(point),{icon:icon('·','pin-selected')}).addTo(map);
+  try{const result=await api('/api/map/check',{point});if(gen!==selectionGeneration)return;selected=result;marker.setIcon(icon(result.selectable?'핀':'×',result.selectable?'pin-selected':'pin-blocked'));
+    $('selectionTitle').textContent=result.selectable?'지도 기준 차단 없음':'선택할 수 없는 지점';$('selectionTitle').closest('section').classList.toggle('bad',!result.selectable);
+    $('selectionText').textContent=result.selectable?`${result.road} · ${result.advisories.join(' ')}`:result.reasons.join(' · ');
+    $('coordinates').textContent=`위도 ${point[1].toFixed(7)} · 경도 ${point[0].toFixed(7)}`;
+  }catch(e){if(gen!==selectionGeneration)return;$('selectionTitle').textContent='확인하지 못했습니다';$('selectionText').textContent=e.message;selected=null;}
+  updateAction();
+}
+async function refreshRoom(){
+  if(data&&Date.now()>=Date.parse(data.retrievedAt)+7*86400000){data.available=false;selected=null;$('candidates').textContent='지도 판정 데이터 갱신 필요';for(const marker of candidateMarkers)marker.remove();}
+  if(session&&!busy){try{state=await api(`/api/rooms/${session.id}`,null,true);}catch{state=null;}}
+  if(map){
+    currentMarker?.remove();proposalMarker?.remove();currentMarker=proposalMarker=null;
+    if(state?.mapPoint)currentMarker=L.marker(latlng(state.mapPoint),{icon:icon('약','pin-selected')}).addTo(map).bindTooltip('현재 합의된 픽업 지점');
+    if(state?.proposal?.mapPoint)proposalMarker=L.marker(latlng(state.proposal.mapPoint),{icon:icon('제','pin-proposal')}).addTo(map).bindTooltip('미확정 변경 제안 · 약속판에서 수락/거절');
+  }
+  updateAction();
+}
+async function start(){
+  try{
+    data=await api('/api/map');
+    map=L.map('map',{minZoom:15,maxZoom:19,maxBounds:[[data.bounds[1],data.bounds[0]],[data.bounds[3],data.bounds[2]]],maxBoundsViscosity:1}).setView(latlng(data.anchor.coordinates),17);
+    L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors · <a href="https://www.openstreetmap.org/fixthemap">지도 오류 제보</a>'}).on('load',function(){tilesReady=[...this.getContainer().querySelectorAll('img.leaflet-tile')].every(i=>i.complete&&i.naturalWidth>0);if(tilesReady)$('error').textContent='';updateAction();}).on('tileerror',()=>{tilesReady=false;$('error').textContent='배경 지도 연결 실패 · 도형만으로 위치를 판단하지 말고 연결 후 다시 확인하세요.';selected=null;updateAction();}).addTo(map);
+    const layer=L.layerGroup().addTo(map),lines=[];
+    for(const z of data.zones){
+      if(z.type==='LineString'){
+        const line=L.polyline(z.coordinates.map(latlng),{color:'#ba5147',opacity:.28,interactive:false,lineCap:'round',lineJoin:'round'}).addTo(layer);lines.push([line,z.radius]);
+      }else L.geoJSON(z.displayGeometry,{style:{color:'#b94f46',weight:1,fillColor:'#c56354',fillOpacity:z.reason==='건물 내부'?.16:.28},interactive:false}).addTo(layer);
+    }
+    const widths=()=>{const mpp=40075016.686*Math.cos(map.getCenter().lat*Math.PI/180)/Math.pow(2,map.getZoom()+8);for(const [l,r] of lines)l.setStyle({weight:Math.max(1,2*r/mpp)});};map.on('zoomend',widths);widths();
+    $('zones').onchange=()=>{$('zones').checked?layer.addTo(map):layer.remove();};
+    L.marker(latlng(data.anchor.coordinates),{title:'현대자동차 양재사옥 건물',alt:'현대자동차 양재사옥 건물',icon:L.divIcon({className:'map-pin',html:'<span class="pin-anchor"></span>',iconSize:[18,18],iconAnchor:[9,9]})}).addTo(map).bindTooltip(data.anchor.name,{direction:'top'}).on('click',()=>choose(data.anchor.coordinates));
+    $('candidates').replaceChildren();
+    data.recommendations.forEach((c,i)=>{
+      const direction=c.name;
+      candidateMarkers.push(L.marker(latlng(c.point),{icon:icon(i+1)}).addTo(map).bindTooltip(`${i+1}. ${direction}`).on('click',()=>choose(c.point)));
+      const b=document.createElement('button');b.className='candidate';const number=document.createElement('span');number.className='number';number.textContent=i+1;
+      const text=document.createElement('span'),strong=document.createElement('strong'),small=document.createElement('small');strong.textContent=direction;small.textContent=`직선 ${c.distanceM}m · 도로폭 ${c.roadWidthM}m 표기`;text.append(strong,small);b.append(number,text);b.onclick=()=>{map.panTo(latlng(c.point));void choose(c.point);};$('candidates').append(b);
+    });
+    if(!data.recommendations.length)$('candidates').textContent=data.available?'조건에 맞는 추천 후보가 없습니다.':'지도 판정 데이터가 만료되었습니다. 갱신이 필요합니다.';
+    $('dataInfo').textContent=`지도 데이터 수집: ${new Date(data.retrievedAt).toLocaleString('ko-KR')} · 양재사옥 주변 한정 · OpenStreetMap contributors`;
+    const overview=()=>map.fitBounds([latlng(data.anchor.coordinates),...data.recommendations.map(c=>latlng(c.point))],{padding:[50,50],maxZoom:17});overview();$('home').onclick=overview;
+    map.on('click',e=>choose([e.latlng.lng,e.latlng.lat]));await refreshRoom();
+  }catch(e){$('error').textContent=`지도를 준비하지 못했습니다. ${e.message}`;$('candidates').textContent='새로고침하여 다시 연결해 주세요.';}
+}
+$('confirm').onclick=async()=>{
+  if($('confirm').disabled)return;busy=true;updateAction();
+  try{
+    if(session){state=await api(`/api/rooms/${session.id}`,null,true);await api(`/api/rooms/${session.id}/actions`,{type:'proposePoint',point:selected.point,version:state.version,view:state.view,requestId:crypto.randomUUID()},true);}
+    else{sessionStorage.setItem('pickupStorageProbe','1');sessionStorage.removeItem('pickupStorageProbe');const next=await api('/api/rooms',{point:selected.point});session=next;sessionStorage.setItem('pickupSession',JSON.stringify(next));}
+    location.assign('/');
+  }catch(e){$('selectionText').textContent=e.message;busy=false;await refreshRoom();updateAction();}
+};
+for(const event of ['offline','pagehide'])addEventListener(event,()=>{selectionGeneration++;selected=null;updateAction();});
+document.addEventListener('visibilitychange',()=>{if(document.hidden){selectionGeneration++;selected=null;updateAction();}else void refreshRoom();});
+setInterval(refreshRoom,4000);void start();updateAction();

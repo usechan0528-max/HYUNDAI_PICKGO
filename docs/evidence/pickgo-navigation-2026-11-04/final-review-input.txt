@@ -1,0 +1,202 @@
+읽기전용 최종 제한검수. 이전 Haiku 후속 R1:45초관찰종료 outcome저장 후 refresh의 세션/HTTP실패가 문구를덮음. 수정:unavailable()가requested.key:outcome을읽고 이전요청결과+현재미확인을표시, 두실패분기에서사용. 이전세건중 나머지발신후회차확인/성공래치보완은검수확인됨. 이번은 R1수정과직접회귀만 확인, 새광범위검토 금지. 아래 실제고정소스에서 해당경로 검사, 최대300단어로 해결/남은 P1과근거를보고. 도구/수정없음. 최종APK build/lint통과, 사용자승인에따라새실기시험예정.
+package org.example.pickgonavigation;
+
+import android.annotation.SuppressLint;
+import android.app.Activity;
+import android.net.Uri;
+import android.os.*;
+import android.util.Log;
+import android.webkit.*;
+import android.widget.*;
+import android.graphics.Color;
+import java.io.*;
+import java.net.*;
+import java.nio.charset.StandardCharsets;
+import java.util.concurrent.*;
+import org.json.*;
+import ai.pleos.playground.navi.helper.NaviHelper;
+import ai.pleos.playground.navi.helper.listener.NaviHelperEventListener;
+import ai.pleos.playground.navi.data.*;
+import ai.pleos.playground.navi.constants.*;
+import kotlin.Unit;
+
+/** Local emulator demonstration. No JavaScript-callable native interface and no Intent commands.
+ * Only the native button can request a route. This is not a driving-enabled production shell. */
+public final class NavigationActivity extends Activity {
+ private static final String ORIGIN = "http://127.0.0.1:4194";
+ private final Handler main = new Handler(Looper.getMainLooper());
+ private final ExecutorService io = Executors.newSingleThreadExecutor();
+ private final ScheduledExecutorService deadlines = Executors.newSingleThreadScheduledExecutor();
+ private volatile HttpURLConnection activeConnection;
+ private WebView web;
+ private TextView status;
+ private Button start;
+ private NaviHelper navi;
+ private boolean connected, destroyed, resumed, reading, starting, sent, guiding, destinationMatches;
+ private boolean roundIntact, checkingRound;
+ private int generation;
+ private long requestedAt, destinationAt, modeAt;
+ private long roomChecked;
+ private RouteGate.Target displayed, requested;
+ private String credential, roomId;
+ private String requestCredential, outcome;
+ private static long now() { return SystemClock.elapsedRealtime(); }
+ private void message(String value) { if (!destroyed) status.setText(value); }
+ private void record(String value) { Log.i("PickgoNavigation", value); }
+ private void unavailable(String fallback){
+  // Preserve the completed request result even when the current room/session cannot be read.
+  String previous=requested==null?null:getPreferences(MODE_PRIVATE).getString(requested.key()+":outcome",null);
+  message(previous==null?fallback:"이전 안내 요청 결과: "+previous+" / 현재 픽업 상태는 확인할 수 없습니다.");
+ }
+ private static boolean local(Uri uri) {
+  return uri != null && "http".equals(uri.getScheme()) && "127.0.0.1".equals(uri.getHost())
+   && uri.getPort()==4194 && uri.getUserInfo()==null;
+ }
+ private boolean home() { return web != null && local(Uri.parse(web.getUrl()==null?"":web.getUrl())) && "/".equals(Uri.parse(web.getUrl()).getPath()); }
+ private boolean used(RouteGate.Target t) { return t != null && getPreferences(MODE_PRIVATE).getBoolean(t.key(),false); }
+ private void buttons() { start.setEnabled(resumed && home() && connected && !starting && !sent && RouteGate.fresh(displayed,now()) && !used(displayed)); }
+ private final NaviHelperEventListener listener = new NaviHelperEventListener() {
+  @Override public void onDestinationInfo(DestinationInfo info) { main.post(() -> {
+   if (!sent || destroyed) return;
+   destinationMatches=RouteGate.matches(requested,info.getLatitude(),info.getLongitude()); destinationAt=now();
+   record("DESTINATION_MATCH="+destinationMatches); verified();
+  }); }
+  @Override public void onRouteStateInfo(RouteStateInfo info) { main.post(() -> {
+   if (!sent || destroyed) return;
+   guiding=info.getNaviMode()==NaviMode.ROUTE_GUIDING; modeAt=now();
+   record("MODE="+info.getNaviMode()); verified();
+  }); }
+  @Override public void onError(NaviErrorCode error) { main.post(() -> {
+   if(destroyed)return; record("SDK_ERROR="+error); message("내비 응답 오류 · 안내 여부는 현대 내비에서 확인하세요.");
+  }); }
+ };
+ private void verified() {
+  if(!sent)return;
+  outcome=observationMessage(false);
+  message(outcome);
+ }
+ private String observationMessage(boolean finished){
+  switch(RouteGate.observation(roundIntact,roomChecked,destinationMatches,guiding,now(),destinationAt,modeAt,finished)){
+   case ROUND_UNAVAILABLE:return "회차가 변경됐거나 확인할 수 없습니다. 현대 내비 경로는 자동 취소하지 않았으니 확인하세요.";
+   case GUIDING:record("GUIDANCE_CONFIRMED");return "현재 현대 내비가 확정 지점으로 안내 중입니다. 목적지 일치를 확인했습니다.";
+   case LAST_GUIDING:return "45초 관찰 종료 시점: 현대 내비 목적지 일치·안내 중. 이후 상태는 현대 내비에서 확인하세요.";
+   case TIMEOUT:return "안내 확인 시간 초과 · 재전송하지 않았습니다. 현대 내비에서 확인하세요.";
+   default:return "현대 내비 상태 확인 중 · 아직 목적지 일치와 안내를 함께 확인하지 못했습니다.";
+  }
+ }
+ private void checkRound(){
+  if(checkingRound||requested==null)return;checkingRound=true;
+  final RouteGate.Target target=requested;final String token=requestCredential;
+  io.execute(()->{try{RouteGate.Target latest=readTarget(target.id(),token);main.post(()->{
+   checkingRound=false;if(destroyed||!sent||requested!=target)return;
+   roundIntact=RouteGate.samePlace(target,latest);roomChecked=latest.observed();verified();
+  });}catch(Exception e){main.post(()->{checkingRound=false;if(destroyed||!sent||requested!=target)return;roundIntact=false;record("ROUND_UNAVAILABLE");verified();});}});
+ }
+ private final Runnable tick = new Runnable() { public void run() {
+  if(destroyed)return;
+  if(sent && now()-requestedAt<45000) {
+   if(now()-roomChecked>=3000)checkRound();
+   try { navi.getDestinationInfo(); navi.getRouteStateInfo(); }
+   catch(Exception e) { connected=false;guiding=false; message("내비 연결이 끊겼습니다. 안내 상태를 확인한 뒤 PICKGO 앱을 다시 실행하세요."); }
+   verified();
+  } else if(sent) {
+   outcome=observationMessage(true);
+   getPreferences(MODE_PRIVATE).edit().putString(requested.key()+":outcome",outcome).apply();message(outcome);
+   sent=false; record("OBSERVATION_FINISHED");
+  }
+  if(resumed && !starting && !sent) refresh();
+  buttons(); main.postDelayed(this,1500);
+ }};
+ @SuppressLint("SetJavaScriptEnabled") @Override public void onCreate(Bundle saved) {
+  super.onCreate(saved);
+  WebView.setWebContentsDebuggingEnabled((getApplicationInfo().flags & android.content.pm.ApplicationInfo.FLAG_DEBUGGABLE)!=0);
+  LinearLayout layout=new LinearLayout(this); layout.setOrientation(LinearLayout.VERTICAL);
+  LinearLayout tabs=new LinearLayout(this);
+  Button mapButton=new Button(this);mapButton.setText("픽업 지도");mapButton.setOnClickListener(v->{if(!starting&&!sent)web.loadUrl(ORIGIN+"/map");});tabs.addView(mapButton);
+  Button boardButton=new Button(this);boardButton.setText("약속판");boardButton.setOnClickListener(v->{if(!starting&&!sent)web.loadUrl(ORIGIN+"/");});tabs.addView(boardButton);
+  layout.addView(tabs);
+  web=new WebView(this); web.setBackgroundColor(Color.WHITE);
+  web.getSettings().setJavaScriptEnabled(true); web.getSettings().setDomStorageEnabled(true);
+  web.getSettings().setAllowFileAccess(false); web.getSettings().setAllowContentAccess(false);
+  web.getSettings().setUseWideViewPort(true); web.getSettings().setLoadWithOverviewMode(true);
+  web.getSettings().setMixedContentMode(WebSettings.MIXED_CONTENT_NEVER_ALLOW);
+  web.setWebViewClient(new WebViewClient(){
+   @Override public boolean shouldOverrideUrlLoading(WebView v,WebResourceRequest r){return !local(r.getUrl());}
+   @Override public void onPageStarted(WebView v,String url,android.graphics.Bitmap icon){ generation++; displayed=null; credential=null; roomId=null; buttons(); }
+   @Override public WebResourceResponse shouldInterceptRequest(WebView v,WebResourceRequest r){
+    Uri u=r.getUrl(); boolean tile=!r.isForMainFrame()&&"https".equals(u.getScheme())&&"tile.openstreetmap.org".equals(u.getHost())&&u.getUserInfo()==null&&(u.getPort()==-1||u.getPort()==443)&&u.getPath().matches("/\\d+/\\d+/\\d+\\.png");
+    return local(u)||tile?null:new WebResourceResponse("text/plain","UTF-8",403,"Blocked",null,new ByteArrayInputStream(new byte[0]));
+   }
+  });
+  layout.addView(web,new LinearLayout.LayoutParams(-1,0,1));
+  status=new TextView(this); status.setTextSize(16); status.setPadding(16,8,16,4); layout.addView(status);
+  start=new Button(this); start.setText("확정 지점으로 현대 내비 안내 시작"); start.setTextSize(20);
+  layout.addView(start,new LinearLayout.LayoutParams(-1,64)); start.setOnClickListener(v->begin());
+  TextView notice=new TextView(this); notice.setText("에뮬레이터 시연 · 안내 시작 시 기존 내비 경로가 변경됩니다."); notice.setPadding(16,0,16,4);layout.addView(notice);
+  setContentView(layout); message("현대 내비 연결 중 · 지도에서 지점을 정하고 상대가 참여하면 안내할 수 있습니다.");
+  try { navi=new NaviHelper(this);navi.initialize(()->{ main.post(()->{if(destroyed)return;connected=true;navi.addListener(listener);record("CONNECTED");buttons();});return Unit.INSTANCE;},error->{main.post(()->{connected=false;message("현대 내비 연결 실패 · 앱을 다시 열어 연결해 주세요.");buttons();});return Unit.INSTANCE;}); }
+  catch(Exception e){ message("이 환경에서는 현대 내비를 연결할 수 없습니다.");record("INITIALIZE_FAILED"); }
+  main.postDelayed(()->{if(!connected&&!destroyed)message("현대 내비 연결 시간 초과 · 내비를 연 뒤 앱을 다시 실행하세요.");},10000);
+  web.loadUrl(ORIGIN+"/"); main.post(tick);
+ }
+ private void refresh() {
+  if(reading||!home()){if(!home()){displayed=null;buttons();}return;}
+  reading=true; int gen=generation;
+  // evaluateJavascript runs in this WebView's main frame only. Nothing is exposed to subframes.
+  web.evaluateJavascript("(()=>{try{return sessionStorage.getItem('pickupSession')}catch(e){return null}})()",raw->{
+   if(destroyed||gen!=generation||!home()){reading=false;return;}
+   try {
+    Object decoded=new JSONTokener(raw).nextValue(); if(!(decoded instanceof String))throw new JSONException("No session");
+    JSONObject session=new JSONObject((String)decoded); String id=session.getString("id"), token=session.getString("token");
+    validateSession(id,token); roomId=id;credential=token;
+    io.execute(()->{try{RouteGate.Target t=readTarget(id,token);main.post(()->{
+     reading=false;if(destroyed||gen!=generation||!home()||starting||sent)return;
+     displayed=t; if(used(t))message(getPreferences(MODE_PRIVATE).getString(t.key()+":outcome","이미 안내를 요청한 지점입니다. 재실행으로 관찰이 끝났을 수 있습니다. 현대 내비에서 확인하세요."));
+     else message(String.format(java.util.Locale.ROOT,"확정 픽업 지점 · %.7f, %.7f · 안내 시작을 누르세요.",t.lat(),t.lon()));buttons();
+    });}catch(Exception e){main.post(()->{reading=false;if(gen!=generation||destroyed||starting||sent)return;displayed=null;unavailable("지도 지점·상대 참여·장소 합의를 확인하세요. 연결이 없으면 안내할 수 없습니다.");buttons();});}});
+   }catch(Exception e){reading=false;displayed=null;unavailable("지도에서 픽업 지점을 확정하고 상대를 초대하세요.");buttons();}
+  });
+ }
+ private static void validateSession(String id,String token) {
+  if(!id.matches("[a-f0-9-]{36}")||!token.matches("[A-Za-z0-9_-]{32}"))throw new IllegalArgumentException("Invalid session");
+ }
+ private RouteGate.Target readTarget(String id,String token) throws Exception {
+  validateSession(id,token); long began=now();
+  HttpURLConnection c=(HttpURLConnection)new URL(ORIGIN+"/api/rooms/"+id).openConnection();
+  activeConnection=c;
+  ScheduledFuture<?> deadline=deadlines.schedule(c::disconnect,4000,TimeUnit.MILLISECONDS);
+  c.setConnectTimeout(2500);c.setReadTimeout(2500);c.setInstanceFollowRedirects(false);c.setRequestProperty("Authorization","Bearer "+token);c.setUseCaches(false);
+  try{
+   if(c.getResponseCode()!=200)throw new IOException("Room unavailable");
+   ByteArrayOutputStream body=new ByteArrayOutputStream();byte[] chunk=new byte[2048];int length;
+   try(InputStream stream=c.getInputStream()){while((length=stream.read(chunk))!=-1){body.write(chunk,0,length);if(body.size()>16384||now()-began>=4000)throw new IOException("Invalid response");}}
+   byte[] bytes=body.toByteArray();if(now()-began>=4000)throw new IOException("Response expired");
+   JSONObject r=new JSONObject(new String(bytes,StandardCharsets.UTF_8));JSONArray p=r.getJSONArray("mapPoint");
+   if(p.length()!=2||!(p.get(0) instanceof Number)||!(p.get(1) instanceof Number)||!id.equals(r.getString("id")))throw new IOException("Invalid point");
+   return RouteGate.validate(id,r.getString("role"),r.getString("status"),r.getBoolean("joined"),r.getString("stage"),!r.has("proposal")||!r.isNull("proposal"),r.getLong("version"),r.getLong("placeRevision"),p.getDouble(0),p.getDouble(1),began);
+  }finally{deadline.cancel(false);c.disconnect();activeConnection=null;}
+ }
+ private void begin(){
+  if(!start.isEnabled())return;
+  final RouteGate.Target expected=displayed;final String id=roomId,token=credential;final int gen=generation;
+  starting=true;buttons();message("최신 합의 상태를 확인하고 있습니다…");record("USER_START");
+  io.execute(()->{try{RouteGate.Target latest=readTarget(id,token);main.post(()->{
+   if(destroyed)return;starting=false;
+   if(gen!=generation||!resumed||!home()||!connected||!RouteGate.fresh(expected,now())||!RouteGate.fresh(latest,now())||!RouteGate.same(expected,latest)||used(latest)){
+    displayed=null;message("상태가 바뀌었거나 오래되었습니다. 최신 지점을 다시 확인한 뒤 안내 시작을 누르세요.");record("STALE_BLOCKED");buttons();return;
+   }
+   // Persist before side effect: restart, rapid taps and uncertain SDK returns must not replay.
+   if(!getPreferences(MODE_PRIVATE).edit().putBoolean(latest.key(),true).commit()){message("중복 방지 기록 실패 · 안내를 요청하지 않았습니다.");buttons();return;}
+   requested=latest;requestCredential=token;requestedAt=now();roomChecked=latest.observed();roundIntact=true;outcome=null;destinationMatches=false;guiding=false;sent=true;
+   try{
+    navi.requestRoute(new RouteInfo(latest.lat(),latest.lon(),null,null,"PICKGO 픽업 지점","","","",RouteOption.RECOMMENDED,"",false));
+    record("REQUEST_ROUTE_SENT");message("현대 내비에 요청했습니다. 실제 목적지와 안내 상태를 확인 중입니다.");
+    navi.requestNavigationScreen(NavigationScreenRequest.Foreground.INSTANCE);
+   }catch(Exception e){record("REQUEST_UNCERTAIN");message("내비 요청 결과를 확인하지 못했습니다. 중복 요청 없이 현대 내비에서 확인하세요.");}
+   buttons();
+  });}catch(Exception e){main.post(()->{if(destroyed)return;starting=false;displayed=null;record("REVALIDATION_FAILED");message("최신 상태 확인 실패 · 안내를 요청하지 않았습니다. 연결 후 다시 확인하세요.");buttons();});}});
+ }
+ @Override protected void onResume(){super.onResume();resumed=true;if(web!=null)web.onResume();}
+ @Override protected void onPause(){resumed=false;generation++;displayed=null;if(web!=null)web.onPause();buttons();super.onPause();}
+ @Override protected void onDestroy(){destroyed=true;generation++;main.removeCallbacksAndMessages(null);if(activeConnection!=null)activeConnection.disconnect();io.shutdownNow();deadlines.shutdownNow();if(navi!=null){navi.removeListener(listener);navi.release();}web.destroy();super.onDestroy();}
+}

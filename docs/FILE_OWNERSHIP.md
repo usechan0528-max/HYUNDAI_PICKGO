@@ -167,3 +167,80 @@ Codex 채팅01a19d16-3daf-7462-861d-b07471c2e3d9: recommendation/**·recommendat
 
 
 2026-11-04 사용자 승인 분리: 이 저장소는 픽업 프로젝트이며 J-1 전용 파일은 형제 J1_ARCHIVE 및 https://github.com/usechan0528-max/J1_ARCHIVE 로 이관한다. 과거 혼합 기록과 Git 이력은 보존한다. J-1 잠정 폐기는 유지하며 분리는 재개 승인이 아니다. docs/PROJECT_SEPARATION_2026-11-04.md 참조.
+
+## 2026-11-04 · PICKGO 공동 설계·가능성 조사
+Codex 현재 채팅: docs/PICKGO_USER_FLOW_2026-11-04.md, docs/PICKGO_DETAILED_DESIGN_2026-11-04.md, docs/evidence/pickgo-design-2026-11-04-*, work/pickgo-design/** 담당. API_EVIDENCE/TEST_EVIDENCE/WORK_LOG에는 이번 기록만 추가. 다른 작업자의 앱/README/DECISIONS 수정 제외·보존. 실제 Claude Opus5.5는 읽기 검토만. 현재 편집 종료, 실제연동 미완료.
+
+
+2026-11-04 현재 채팅 Codex: recommendation/**·recommendation*.test.mjs 및 양재 보고 담당. main의 다른 PICKGO 공통 소스/디자인 미커밋 보존. Claude 고정소스 읽기 검수, Dot R009 공식 조사 종료. commit/push 제외.
+
+## 2026-11-04 · 메인 장소 선택 UI 담당
+현재 메인 화면 요청 Codex: experiments/pickup-board/app.mjs, index.html, style.css, main-selection.test.mjs 및 work/pickup-main-flow, docs/evidence/pickup-main-flow-* 담당. 기존 미커밋 보존. domain/server/recommendation 모듈은 이번 수정 제외. Claude Haiku5.5 고정 diff 읽기 검수. Dot 새 공식조사 질문 없음, 기존 종료 상태 유지.
+
+## 2026-11-04 · 직접 고르기 검색·시연 도면 후속
+현재 채팅 01a1a65c-13e2-7fd3-8058-b2f50d63add6: app/index/style, main-selection.test, manual-point.test, domain의 optional pickupPoint(create/read/accept clear), server POST /api/rooms 인자 연결 및 전용 work/pickup-manual-map 담당. 194시험 통과 후 domain/server 소스 수정 종료·소유 반환. 이후 지도 담당 01a1a630은 현재 변경을 보존하고 사용 가능. app/index/style는 이 채팅 브라우저 검수 중이며 신규 /map 링크 연결 전 재확인. 이 채팅 사용자 방향: 현대 내비 우선, 카카오 조건 확인 후 대안 적용. 현재 UI는 실제 지도 아닌 synthetic-diagram(mode,x[0..1000],y[0..600]); 실제 좌표 변환·정차 검증으로 간주 금지. 실제 지도 담당의 별도 승인 범위는 이 기록으로 확장하지 않음.
+
+직접 선택 후속 최종: app/index/style/main-selection 및 domain/server/manual-point 편집 종료·소유 반환. 195시험, Chrome AX 흐름, Claude 검수 및 보완 반영. 후속 지도 담당은 synthetic-diagram 계약을 실제 좌표로 재해석하지 않고 기존 미커밋 보존. 이번 시연 서버4191은 별도 node 프로세스이며 기존4180 변경/재시작 없음.
+
+2026-11-04 지도 담당 01a1a630의 /map 진입 연결 조율 수신에 따른 재확인: 이 채팅 01a1a65c는 app.mjs/index.html/style.css/main-selection.test.mjs 및 domain/server 편집을 종료했고 현재 소유하지 않음. 지도 담당은 기존 미커밋과 시연 선택 계약을 보존하며 자신의 승인 범위에서 index 메인/장소변경 /map 링크 연결·검증 가능. 본 채팅은 공통 UI 동시 편집 없음. 이는 파일 충돌 방지 기록이며 OSM 지도 검증을 현대 내비 연동 성공이나 사용자의 현대 우선 방침 변경으로 취급하지 않음.
+
+
+## 2026-11-04 · PICKGO 내비 선택 실험
+이 채팅 Codex: experiments/pickgo-navi-selection/**, docs/PICKGO_NAVI_SELECTION_TEST_2026-11-04.md, docs/evidence/pickgo-navi-selection-2026-11-04/** 담당. 기존 앱/문서 미커밋 보존. Claude 고정자료 읽기검수. 별도 조사채팅01a1a664와 기기소유 조율. 현재 시험·편집 종료; emulator-5556 소유 반환. 상세 PICKGO_NAVI_SELECTION_TEST_2026-11-04.md 및 evidence/pickgo-navi-selection-2026-11-04/ 참조.
+
+## 2026-11-04 · PICKGO 확정 지점 안내 연결
+현재 안내 연결 채팅은 experiments/pickgo-navigation/** 및 work/pickgo-navigation/**, 전용 보고서·증거 담당. 지도 담당01a1a630이 map/domain/server/index를 검수 중이므로 읽기만. 새 Android 전용 파일에서 진행, 기존 미커밋 보존. emulator-5556 사용 조율 통보. Claude Haiku5.5 고정 읽기검수 예정. 공개/push/키·계정 변경 제외.
+
+## 2026-11-04 · routo 검색·지도 연결 준비 담당
+사용자 키 발급 전 연동 구조 준비 요청. 이 채팅01a1a65c: 신규 experiments/pickup-board/routo/** 및 routo.test.mjs, work/pickup-routo/**, 전용 문서/증거만 담당. 기존 map/**, server/domain/app/index, Android 안내 소스는 동시 작업 보존을 위해 수정하지 않음. 별도 loopback 준비 서버와 삽입 가능한 검색 핸들러·지도 어댑터/컨트롤러 제공. 실제 키·외부 API 호출 없이 주입 fake로 계약·실패·취소 검증, 실제 SDK/키 호출은 미실행으로 구분. Claude 고정 읽기검수 수행 예정.
+
+
+## 2026-11-04 실제 양재 지도
+지도 채팅01a1a630: map/**, map.test.mjs 및 domain/server/index 편집·검수 종료, 소유 반환. 기존 다른 작업자 변경 보존. 4193 실제지도 서버 실행 유지. 후속 내비 연결은 확정 mapPoint만 사용, proposal.mapPoint 제외.
+
+## 2026-11-04 · 지도 화면 디자인 통일
+현재 Codex: map/page.html, map/page.css, index.html, style.css의 시각 통합 담당. 지도 담당 소유 반환 확인. 동작/API/좌표 판정 변경 제외. 기존 미커밋 스냅샷 보존, Claude 고정 자료 읽기검수.
+
+routo 준비 담당 종료: routo/** 및 routo.test.mjs 구현·18신규시험·전체226시험·Claude 독립검수/보완 완료. 기존 app/index/server/domain/map/** 편집 없음. 후속 통합자는 routo/README.md의 createRoutoRoutes/connectRoutoPicker 삽입 계약, REST키/브라우저지도키 분리, 서버최종재검증/출처보존 요구를 확인한다. 실제 발급·CSP자원·지도 렌더링 확인 전에는 활성화 완료로 취급하지 않는다. 편집 소유 반환.
+
+
+## 2026-11-04 · 지도 화면 디자인 통일 완료
+지도 디자인 담당 편집 종료·소유 반환: index.html, map/page.html, map/page.css, map/page.mjs(모바일 결과 노출만). style.css 실제 수정 없음. 기존 API/도메인/지도 판정 변경 없음. 검수·증거는 PICKGO_MAP_DESIGN_2026-11-04.md.
+
+## 2026-11-04 · 앱 보조 화면 일관성
+Codex 01a1a690: phone.html/css, proximity-page.html/css, recommendation/page.html/css, work/pickgo-consistency 및 전용 보고 담당. 지도 담당 01a1a688 소유 반환·기준 확인. 메인/지도/API/도메인 미수정, 기존 미커밋 보존. Claude 읽기 검수 예정.
+
+
+PICKGO 안내 연결 후속: experiments/pickgo-navigation/** 및전용보고/증거 편집·빌드·검수보완 정리. 공통웹소스미수정. 지도담당01a1a630이map/domain/server/index소유반환보고수신. 이담당기기조작은외부화면변경관찰뒤중단,현재기기상태를소유반환목적으로변경하지않음. 최종실기추가회귀는미완료로유지하며 같은채팅에서기기단독사용확인후진행. 서버4194유지. 공유문서는이번기록추가만,기존미커밋보존.
+
+## 2026-11-04 · 다인 픽업 범위 기록
+Codex: PICKGO_MULTI_PICKUP_2026-11-04.md 신규 및 DECISIONS/WORK_LOG 이번 항목 추가만 수행. 앱/기기/다른 담당 소스 편집 없음. 문서 편집 종료. 구현 파일 소유는 아직 확보하지 않음.
+
+
+## 2026-11-04 · 메인 검색 전용 화면
+현재 Codex: app.mjs/index.html/style.css/main-selection.test.mjs 메인 검색 전용 후속 정리 완료·편집 소유 반환. 기존 미커밋 보존. 서버/도메인/map/routo/Android 수정 없음.
+`n메인 검색 후 후보 연결 담당: 검색 전용 후속 담당의 소유 반환을 확인. 현재 app/index/main-selection 시험의 검색 결과→양재 후보3→직접지도 연결 범위 편집 중. 검색만 보이는 첫 화면 유지. 다른 소스 보존.
+
+## 2026-11-04 · 다인 픽업 구현 담당
+현재 Codex(01a1a696): 신규 multi/**, multi*.test.mjs, server.mjs 다인 라우트 삽입, index.html 진입 링크 및 전용 문서/증거 담당. 기존 domain/app/map/phone/Android 소스는 보존. 서버/index 기존 담당 소유 반환 확인. main 미커밋 변경 위에 최소 삽입. 실제 내비/기기 조작은 다른 담당 미완료 작업과 분리하고 경유 검증 미완료를 유지.
+
+
+## 2026-11-04 · 앱 화면 일관성 완료
+Codex 01a1a690: phone.html/css, proximity-page.html/css, recommendation/page.html/css 편집·검증·Claude지적처리 완료 및 소유 반환. 기존 미커밋 보존. 상세 PICKGO_APP_CONSISTENCY_2026-11-04.md.
+
+메인 후보 연결 담당 편집 종료·소유 반환: app.mjs/index.html/main-selection.test.mjs. OSM 실제검색 담당01a1a697에 후보3/직접지도 흐름 계약과226시험/브라우저 증거 전달. 이후 앱소스 편집 없음.
+
+다인 담당 공통파일 삽입 완료·소유 반환: server.mjs MultiBoard import/생성, /multi 정적파일 및 /api/trips 라우트·prune 삽입, index.html /multi 링크 추가. 이후 multi/** 및 multi*.test.mjs만 편집하며 server/index는 검색 담당에 반환. 기존 단일 API 계약 변경 없음.
+
+
+2026-11-04 최종 재검수·재시연: singleTask/늦은JS콜백가드 보완, 실제 Haiku 추가2회(R1해결/P0P1회귀없음). 최종 APK 434a9fb0efb3aa57b91103706fe6e4f2246cce32eea641dcc0989c1c3b356d84 설치파일일치, build/lint종료0. 새회차 최초OSM선택부터native버튼1회/내비무터치자동안내/정확목적지·ROUTE_GUIDING/45초결과유지/반복런처1인스턴스 통과. reviewed-demo.mp4 94.42초. 최종native실기9회귀재통과,조회실패·세션소실결과유지2경로추가확인. 이전final-05는실패증거, reviewed-*가최종통과증거. probe종료·PICKGO결과화면복귀·4194회차유지,추가SDK단절/실차/물리폰은미검증. 상세 PICKGO_NAVIGATION_2026-11-04.md 최신절.
+
+
+## 2026-11-04 · 공동작업자 환경 도구
+Codex 환경설정 담당: package.json, tools/team-setup/**, DESKTOP_SETUP 안내, README 안내 한 문단, TEAM_SETUP 문서/증거. 구현·시험·Claude Haiku5.5 지적 처리 완료 및 소유 반환. 앱/Android/기존 스킬·개인 설정 미수정. 기존 다른 담당 미커밋 보존.
+
+
+## 2026-11-04 · OSM 실제 지도 데이터 검색
+01a1a697 OSM검색 담당: app/index/style/server/map/page.mjs/map/page.html/main-selection 및 신규 map/search.mjs/map-search.test.mjs 구현·검수 종료 소유 반환. 다른 담당 미커밋 보존. 4195 PID17452 검색 서버 유지,4180/4194 미조작. 상세 PICKGO_OSM_SEARCH_2026-11-04.md.
+
+다인 담당 로컬 구현 편집 종료: multi/** 및 multi*.test.mjs 소유 반환. server/index는 이미 검색담당에게 반환. 전용보고·증거 완료, 실제내비원안미완료 유지. 4196은 이 담당이 만든 로컬다인시연서버이며 다른 포트/기기 조작 없음.

@@ -249,3 +249,64 @@ Node 전체165/165(해당시점추천동시시험포함), 이번고정web-*16/16
 
 ## 2026-11-03 · 픽업 추천 최종
 `python work/pickup-recommendation/verify.py --all`: 종료0,176/176(기존위치115+추천45+탑승자웹16). 실제loopbackHTTP·합성engine·fakeDOM/controller, 기본실제수집차단/유휴삭제/위치만료/철회/경쟁조건/timeout-abort/수락후양측재동의/end상한예외 포함. Chrome양측 합성 후보→제안→근거표시→수락변경 확인,최종서버보강은HTTP·단위검증만. viewport요청480 실제640이므로640가로넘침없음만기록. 실제폰/SDK/경로/강남역추천/실차미실행·차단. Claude3회중요지적처리,마지막수정Codex재시험. docs/evidence/pickup-recommendation-tests-all.txt 및 final-manifest.json,전용보고서참조.
+
+## 2026-11-04 · PICKGO SDK 정적 가능성 확인
+JDK17 javap -public으로 확보된 NaviHelper3.0.5/navi-data3.0.4 공개선언 확인. javac --release 17, 실제 Android34/NaviHelper/navi-data/Kotlin classpath로 work/pickgo-design/ApiCompileProbe.java 컴파일 종료0. 실제 앱 빌드·SDK실행 아님. adb devices -l 정상 실행, 기기0; 앱 설치·내비검색·Gleo·실폰·실차 미실행. 제품 코드 미변경으로 전체 회귀시험 재실행 없음. evidence/pickgo-design-2026-11-04-compile.txt 및 sdk-declarations.txt/sdk-hashes.json. 세부설계 문서의 검증 게이트 참조.
+
+## 2026-11-04 · 메인 장소 선택
+node --test "experiments/pickup-board/*.test.mjs": 최종189/189 통과, 실패0. 새 main-selection.test.mjs 3개: 기준 장소→3후보/명시선택/재선택 초기화, 직접선택 진입·복귀, 생성 payload/중복요청 차단·오류 후 복구. 전체집합은 타담당 동시변경 포함. 증거 evidence/pickup-main-flow-tests.txt. Claude Haiku5.5 검수 지적 처리 WORK_LOG 참조. 실제 브라우저·차량·주변검색 공급자 검증 미실행.
+
+
+2026-11-04 픽업 정차 기준 변경: 추천 시험56/56, 작업트리 전체190/190 통과. Claude Haiku5.5 독립검수2회/주요지적 수정·검증. 정차 자체 금지/불가능 차단, 미확인 일반 후보 선택 허용, 수동 우회·선택 재검증·금지 정보 누락·입구 교체 회귀 포함. 실지도 임의핀/실제 금지영역 연동 미완료. docs/PICKUP_YANGJAE_2026-11-04.md 및 evidence/pickup-curb-* 참조. 별도 PICKGO 작업 보존, J1 제외, push 미실행.
+
+## 2026-11-04 · 검색·시연 도면 선택 후속
+최종 node --test "experiments/pickup-board/*.test.mjs" 195/195 통과. 검색 빈값/무결과/필터, 핀 명시확인/이동재확인, 모드이탈 초기화, 키보드 중앙/큰이동, 서버 payload 경계·복사·공유·장소수락 초기화·실제HTTP 왕복. Chrome4191 실제 검색→키보드 핀→생성→새로고침 복원 확인. 캡처 실패로 픽셀 레이아웃 검증 미완료. 증거 evidence/pickup-manual-map-tests.txt, Claude 검수 evidence/pickup-manual-map-review.json.
+
+
+## 2026-11-04 · PICKGO 내비 선택 실험
+pickgo-navi-selection assembleDebug/lintDebug 종료0, lint0오류4경고. 실제 emulator-5556/user10 SDK연결·조회·검색선택2건 수행. 상세선택 좌표수신 수용조건 미충족. 기존 목적지/안내상태 유지 관찰. 시험 종료 후 무경로 복구/probe종료. Haiku5.5 검수3지적 범위한정/SDK선언대조/증거순서보완. 상세 PICKGO_NAVI_SELECTION_TEST_2026-11-04.md 및 evidence/pickgo-navi-selection-2026-11-04/ 참조.
+
+
+## 2026-11-04 · 공개 API 조사 검증
+공식 웹 본문·Chrome 렌더링·기존 SDK 선언 및 내비 선택 시험 로그 대조. 실제 Claude Haiku5.5 고정문서 검수 exit0, 중요 지적 처리 기록. python work/pickgo-public-nav/review.py 실행 증거 evidence/pickgo-public-nav-2026-11-04/. 제품 코드 수정 없음/앱 회귀시험 재실행 없음. routo 키 호출·지도 SDK 실행 미실행. 상세 PICKGO_PUBLIC_NAV_API_2026-11-04.md.
+
+
+## 2026-11-04 실제 양재 지도
+실제 지도: node --test experiments/pickup-board/*.test.mjs →219/219 exit0 (동시 routo 포함). evidence/pickup-map-tests.txt, pickup-map-review*.json, pickup-map-yangjae-desktop.png. Chrome 추천 활성·건물 비활성 및 양측 제안수락 확인. 실차/현장 미실행.
+
+## 2026-11-04 · routo 연결 준비
+신규 routo.test.mjs 15/15 및 현 작업트리 pickup-board 전체223/223 통과. 키없음/이용조건미확인 fetch0, 검색어인코딩/좌표구분, auth/quota/malformed/timeout/cancel/응답크기, stale검색·stale핀·만료·폐기, 검색출처보존, fake SDK 좌표이벤트/리스너해제/로더취소, 연결컨트롤러 전체흐름, 실제loopbackHTTP/Origin차단. 무키 실행 status200/search503 확인. evidence/pickup-routo-{tests,all-tests,no-key-smoke}.txt. 실제 routo API·SDK/브라우저지도·실차는 미실행.
+
+routo 최종 보완 검증: 신규18/18, pickup-board 전체226/226, 전 신규 .mjs 문법검사 종료0. 독립검수 후 렌더예외·수동클릭전 앵커·자동만료·SDK중복로드·오류코드 보존·출처분리 회귀 포함. 증거 pickup-routo-tests.txt/all-tests.txt 및 review.json. 실제공급자 미실행 유지.
+
+
+## 2026-11-04 · 지도 화면 디자인 통일 완료
+node --test experiments/pickup-board/*.test.mjs: 226/226 exit0. map/page.mjs 문법 exit0. Chrome1440/1280/768/390 선택·차단·회차생성·저장 검증. inspect 1440/768/390 0FAIL/0WARN(Asta 보존 font-not-dealt 허용). 상세 PICKGO_MAP_DESIGN_2026-11-04.md 및 evidence/pickgo-map-style-2026-11-04/.
+
+
+## 2026-11-04 · OSM→현대 내비 안내
+pickgo-navigation 최종 assembleDebug/lintDebug 종료0, lint0오류3경고. Java정책43 assertions/기존웹226시험 통과. 첫 OSM실제UI확정→native안내→SDK목적지좌표일치/ROUTE_GUIDING, 두번째 native버튼1회후 내비무터치자동시작 로그/영상 확보. 초기실기회귀9항목 통과(제안·취소·역할·invalid token·중복revision·origin 등), 이후Claude P1보완의 전체실기회귀로 확대하지 않음. Haiku5.5 실제2회검수 및지적처리. 기기화면외부변경 뒤 조작중단으로 최종연결단절/45초미응답/발신후취소실기는유보. 11/12단절캡처와15파일명은 성공증거로사용금지. 상세 PICKGO_NAVIGATION_2026-11-04.md 및 evidence/pickgo-navigation-2026-11-04/.
+
+
+## 2026-11-04 · 메인 검색 전용 화면
+node --test experiments/pickup-board/*.test.mjs: 224 pass, 0 fail. 증거 work/pickgo-search-home-tests.txt. 폐기된 시연 장소 선택 UI 시험5개를 검색 전용 흐름 시험3개로 교체; 기존 도메인/HTTP/초대 회귀 유지. fake DOM 검증이며 실제 브라우저 시각 검증·실제 검색 API 미실행.
+
+
+## 2026-11-04 · 앱 화면 일관성 완료
+node --test experiments/pickup-board/*.test.mjs 최종226/226 exit0. lint0FAIL/0WARN. inspect 보조3화면 각1440/768/390 0FAIL, phone 미참여빈상태 여백1WARN 근거유지. Chrome 실제 동의거절/근접·원거리·거부시연/추천3후보·제안철회/복귀 및 포커스/live region 확인. evidence/pickgo-consistency-2026-11-04 참조. 실차/실기기/화면낭독기 미실행.
+
+2026-11-04 메인 후보 연결 검증: 전체226/226 PASS (docs/evidence/pickup-home-map-tests.txt), Chromium1440 검색→3후보→좌표회차 생성 및390 검색→3후보→실제지도 전환 PASS. Claude 읽기검수 pickup-home-map-review.json, 관련 지적 반영 후226회귀 PASS. 실제 routo/실차 미실행. 상세 WORK_LOG 최신 항목.
+
+
+2026-11-04 최종 재검수·재시연: singleTask/늦은JS콜백가드 보완, 실제 Haiku 추가2회(R1해결/P0P1회귀없음). 최종 APK 434a9fb0efb3aa57b91103706fe6e4f2246cce32eea641dcc0989c1c3b356d84 설치파일일치, build/lint종료0. 새회차 최초OSM선택부터native버튼1회/내비무터치자동안내/정확목적지·ROUTE_GUIDING/45초결과유지/반복런처1인스턴스 통과. reviewed-demo.mp4 94.42초. 최종native실기9회귀재통과,조회실패·세션소실결과유지2경로추가확인. 이전final-05는실패증거, reviewed-*가최종통과증거. probe종료·PICKGO결과화면복귀·4194회차유지,추가SDK단절/실차/물리폰은미검증. 상세 PICKGO_NAVIGATION_2026-11-04.md 최신절.
+
+
+## 2026-11-04 · 공동작업자 npm 설치 도구
+Windows Node24.19.0/npm11.6.2: npm run test:setup 최종14/14 exit0, npm run setup -- --profile web 및 doctor web 실제 반복 exit0, npm test 당시 웹243/243 exit0. WinGet 9종+Node ID show 성공, 없는 ID list 비0 확인. full 설치/SDK/개인 인증 미실행. docs/evidence/team-setup-2026-11-04 및 TEAM_SETUP_2026-11-04.md 참조.
+
+
+## 2026-11-04 · OSM 실제 지도 데이터 검색
+OSM검색 전체246/246 + 시험시간고정 보완후 집중12/12, 최종 Chrome1440/390 검색→후보→회차생성/지도이동 통과. evidence work/pickgo-osm-search/{tests.txt,final-focused.txt,browser.txt,live-4195.json}; Claude2회 지적처리 상세 PICKGO_OSM_SEARCH_2026-11-04.md.
+
+## 2026-11-04 · 다인 픽업 검증
+node --test experiments/pickup-board/*.test.mjs: 현재작업트리254/254, exit0. 신규21(도메인12/HTTP1/fakeDOM8), 기존단일및동시검색담당시험포함. node --check 신규mjs3개/git diff --check exit0. 실제Chrome3인2지점공동승차/순서추천/모두탑승종료·새로고침복원확인. 마지막409/저장실패보완은fakeDOM검증. 캡처2회실패,실차/실제경로/내비다중경유/물리폰HTTPS미실행. ClaudeOpus설계1회/Haiku초기timeout후읽기검수와후속2회성공·지적수정. docs/evidence/pickgo-multi-2026-11-04/ 및전용보고참조.

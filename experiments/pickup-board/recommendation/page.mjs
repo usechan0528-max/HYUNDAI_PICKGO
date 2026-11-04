@@ -21,7 +21,7 @@ function render(){
  if(state?.proposal){$('proposed').textContent=state.proposal.place;const e=result?.proposalEvidence;$('proposalEvidence').textContent=e?`제안 당시 근거${e.stale?' · 현재 재확인 필요':''}: ${e.reason} · ${e.source} (${e.reference}) · 확인 ${new Date(e.checkedAt).toLocaleTimeString()} · 유효 ${new Date(e.validUntil).toLocaleTimeString()}. 수락 시 최신 위치·경로·정차 근거를 다시 확인합니다.`:'추천 근거가 없거나 현재 미확인입니다. 추천 화면 수락은 검증된 추천 제안에만 적용됩니다.';const own=state.proposal.by===session.role;$('accept').hidden=$('reject').hidden=own;$('withdraw').hidden=!own;for(const id of ['accept','reject','withdraw'])$(id).disabled=!can;}
  if(share.current&&(!allowed()||performance.now()>=share.current.until))void share.stop('위치 공유 조건이 끝나 중지했습니다.');
 }
-const statuses={'provider-unavailable':'실제 위치·경로·정차 데이터가 연결되지 않았습니다. 수동 장소 합의를 이용해 주세요.','no-eligible-candidate':'정차·접근 근거를 만족하는 후보가 없습니다.','location-unavailable':'양측의 새 위치가 필요합니다.','route-unavailable':'현재 위치에 맞는 경로가 없습니다.','catalog-unavailable':'검증된 장소 대장이 연결되지 않았습니다.'};
+const statuses={'provider-invalid':'장소와 진입로 정보가 일치하지 않습니다. 다시 확인해 주세요.','provider-unavailable':'실제 위치·경로·정차 데이터가 연결되지 않았습니다. 수동 장소 합의를 이용해 주세요.','no-eligible-candidate':'정차·접근 근거를 만족하는 후보가 없습니다.','location-unavailable':'양측의 새 위치가 필요합니다.','route-unavailable':'현재 위치에 맞는 경로가 없습니다.','catalog-unavailable':'검증된 장소 대장이 연결되지 않았습니다.'};
 function show(data,began){
  result=data;until=began+(data.snapshot?.remainingMs||0);$('mode').textContent=data.mode==='synthetic'?'합성 위치·경로·정차 근거 시연':'실제 연동 준비 · 추천 비활성';
  if(statuses[data.status])$('message').textContent=statuses[data.status];
@@ -32,7 +32,7 @@ function show(data,began){
   const b=document.createElement('button');b.className='candidate';b.disabled=!!state.proposal||c.name===state.place;
   const title=document.createElement('strong');title.textContent=`${i+1}. ${c.name}`;
   const reason=document.createElement('span');reason.textContent=c.reason;
-  const evidence=document.createElement('small');evidence.textContent=`${c.approach} · ${c.source} (${c.reference}) · 확인 ${new Date(c.checkedAt).toLocaleTimeString()} · 유효 ${new Date(c.validUntil).toLocaleTimeString()} · 정차 한도 ${c.maxDwellSeconds}초 · 위치 정확도는 합성 5m`;
+  const evidence=document.createElement('small');evidence.textContent=`${c.approach} · ${c.source} (${c.reference}) · 확인 ${new Date(c.checkedAt).toLocaleTimeString()} · 유효 ${new Date(c.validUntil).toLocaleTimeString()} · ${c.maxDwellSeconds == null ? '정차 시간 제한 미확인' : `확인된 정차 한도 ${c.maxDwellSeconds}초`} · ${(c.advisories||[]).join(' · ')} · 위치 정확도는 합성 5m`;
   b.append(title,reason,evidence);b.onclick=()=>run('select',{snapshotId:data.snapshot.id,candidateId:c.id});$('candidates').append(b);
  }
 }

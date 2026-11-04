@@ -108,3 +108,35 @@ Android플랫폼WebView/loadUrl/JavaScript/DOMStorage/새창거부,loopback전�
 
 ## 2026-11-03 · 픽업 추천 내부 계약
 외부 경로 API/SDK 신규실행 없음. 자체 recommendation GET/POST, 역할capability/동의ID/sequence/revision/version/view검사 및후보선택/수락재계산 구현·실제HTTP시험. 기본모든non-synthetic grant/publish차단. TMAP 자동차/보행자 제공 및공개약관(일경로1000건/저장후24시간제한)문서확인,실계정조건/endpointadapter미구현. 강남역 정차대장/실입구0적격. 출처/정확한범위 PICKUP_GANGNAM_DATA_2026-11-03.md,내부계약 PICKUP_RECOMMENDATION_2026-11-03.md.
+
+## 2026-11-04 · PICKGO 새 흐름 내비·Gleo 가능성 확인
+공식 NaviHelper3.0.5 문서 및 실제 SDK 선언 대조. requestNavigationScreen(SearchPlace(String)), requestRoute(RouteInfo), getDestinationInfo/onDestinationInfo의 compile-only Java 검사 종료0. NAVI_CUSTOM_MAP/NAVI_ROUTE_SEARCH/NAVI_ROUTE 문서 확인; 권한 부여·서비스 실행 확인 아님. 일반 POI 검색 결과 반환·지도 임베딩/핀 반환·모바일 차량연결·초대 전송은 미확인. Gleo 최대3action·7초·schema검토승인 재확인, 실제extras/발신자신뢰 계약 미해소. adb 연결0, 실내비/Gleo 호출 미실행. 상세 URL·권한·설계·미확인은 PICKGO_DETAILED_DESIGN_2026-11-04.md, 선언/컴파일/해시는 evidence/pickgo-design-2026-11-04-*.
+
+## 2026-11-04 · 직접 선택 시연 지점
+자체 POST /api/rooms의 optional pickupPoint(mode='synthetic-diagram', 정수 x 0..1000/y 0..600, 다른 필드 거부), 인증 read 복사 반환, 장소변경 수락 시 null. 실제 지리좌표/지도API/정차증거가 아닌 시연 도면 입력. default RecommendationBoard의 기존 create 정책 검증을 유지하고 super 인자를 전달함. 실제 HTTP 검증 manual-point.test.mjs.
+
+
+## 2026-11-04 · PICKGO 내비 선택 실험
+실제 NaviHelper3.0.5/에뮬레이터 API34/내비3.3.2-rc5-hotfix.3: SearchPlace 검색→현대자동차AVP본부·하나로마트성남농협대왕지점 상세 선택2건에서 기존42dot 목적지/ROUTE_GUIDING 유지, 상세 선택좌표 미수신. 목적지/경유지 확정 단계 미시험. 독립probe이며 제품 PICKGO 연결 아님. 전체 경로 동일성 미검증. 상세 PICKGO_NAVI_SELECTION_TEST_2026-11-04.md 및 evidence/pickgo-navi-selection-2026-11-04/ 참조.
+
+
+## 2026-11-04 · 현대/Pleos 공개 API 확대 조사
+NaviHelper 공개 계약과 별도 실행 보고를 대조. 현대오토에버 routo REST 장소검색/차량·보행·다중경로 및 WEB JS 지도/좌표 이벤트 공식 문서 확보. 키 신청·이용조건 미확보로 실제 routo 호출 없음. Vehicle Data 유럽 제한/Fleet 계약 경로는 국내 에뮬레이터 지도 대안으로 채택하지 않음. PICKGO_PUBLIC_NAV_API_2026-11-04.md 참조.
+
+
+## 2026-11-04 실제 양재 지도
+실제 지도: OSM v0.6 bounded export + relation/full 수집 성공; Leaflet1.9.4 타일 로드 Chrome 확인. GET /api/map, POST /api/map/check, point 생성/proposePoint 및 mapPoint 응답 구현. 정부 정차금지 GIS·현대지도 SDK 연동 증거 아님. 상세 PICKUP_REAL_MAP_2026-11-04.md.
+
+## 2026-11-04 · routo 준비 계약
+REST 공식 https://api.routo.com/docs/index.html (1.4.2.RELEASE) 재확인: GET /v1/places/findplacefromtext, query key/input/location(lat,lon)/size/from, status/total/result와 center/guide/walkingGuide(lat,lon). WEB JS 공식 start.html/document.html 재확인: /v2/maps/map?key=, routo.maps.Map/LatLng/Marker, Map.addListener('click'), EventResponse.latLng, LatLng.lat()/lng(), setCenter/setPosition/setMap 및 MapsEventListener.remove. 구현 experiments/pickup-board/routo/**. 주입 fake 및 loopback HTTP 검증만, 실제 발급키/실응답/SDK지도렌더링 미실행. 문서의 일부 좌표 속성 한글 설명 불일치는 예제 기준 구현/실제지점 왕복 확인 필요로 유지. 검색결과를 정차허용 근거로 취급하지 않음.
+
+
+## 2026-11-04 · 확정 OSM 지점 안내 연결
+실제 NaviHelper3.0.5 requestRoute(RouteInfo(lat,lon,null,null,name,"","","",RECOMMENDED,"",false))·Foreground를 native 명시버튼에서 호출. NAVI_ROUTE/NAVI_ROUTE_SEARCH/NAVI_CUSTOM_MAP 실제 normal granted 관찰. 첫확정[127.0358465,37.4661039]가 DestinationInfo에 정확히 일치, ROUTE_GUIDING 및 내비UI 확인. 후속무터치시험에서 경로화면 카운트다운 뒤 자동안내 확인; 최종 내비버튼 필수라는 초기설명 정정. SDK반환값만 성공판정하지 않음. emulator5556/API34/user10/내비3.3.2-rc5-hotfix.3 한정. 보고 PICKGO_NAVIGATION_2026-11-04.md, evidence/pickgo-navigation-2026-11-04/.
+
+
+## 2026-11-04 · OSM 실제 지도 데이터 검색
+로컬 POST /api/map/search {query}: 현재 OSM 양재 snapshot 이름/주소 검색; GET /api/map?place=sourceId: 해당장소 기준 후보, unknown404/검색입력400/데이터만료503. 외부API호출 아님. localhost4195 하나로마트5결과 실응답. PICKGO_OSM_SEARCH_2026-11-04.md.
+
+## 2026-11-04 · 다인 픽업 로컬 API
+POST /api/trips, GET /api/trips/:id, POST preview/join/actions/recommend 구현. Bearer·version·15초view·일회requestId; rider는본인정보만, invite는driver만. 실제도로시간공급자없음503/명시demo만합성행렬. navigation=unconnected, next는내부진행선택. 기존SDK수정/신규권한없음. HTTP통합/실제Chrome로컬확인; 현대내비다중경유미검증. multi/README와전용보고참조.

@@ -1,0 +1,2 @@
+200 {"provider":"routo","ready":false,"reason":"KEY_MISSING"}
+503 {"code":"KEY_MISSING","error":"routo 검색 키가 아직 설정되지 않았습니다."}

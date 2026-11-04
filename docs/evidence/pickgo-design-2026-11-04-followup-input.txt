@@ -1,0 +1,8 @@
+읽기 전용 후속 검토. 이전 회신의 중요 지적을 Codex가 검증했다. 추가 근거: javap로 실제 NaviHelper3.0.5/navi-data3.0.4에서 requestNavigationScreen(NavigationScreenRequest), SearchPlace(String)/getKeyword(), requestRoute(RouteInfo), getDestinationInfo, onDestinationInfo 확인. 일반 POI 검색결과 listener·MapView·핀선택 반환은 공개 선언에서 못 찾음. 공식 Maps/Navigation 가이드에 단일경로·사용자명시전환·주행중전체화면팝업금지 명시. 현재 adb devices 연결0, runtime시험 없음.
+반론과 통합안:
+1. 사용자가 Gleo 검색을 명시했으므로 이번 3번째 action은 OPEN_PICKUP_SEARCH(query)로 유지한다. 음성 수락은 새 필수요구가 아니므로 미지원으로 명시하고, 차량요청은 플랫폼이 허용하는 짧은 알림과 수락/거절 UI로 설계. 음성 수락을 추가할 땐 도착 action 교체 등 사용자 결정이 필요. enum 만능 action으로 최대3 제한을 우회하지 않는다.
+2. 내비에서 먼저 목적지 설정→읽기 방식은 후보 선정 전에 경로를 바꾸는 부작용이 있어 무조건 대체하지 않는다. 기존 목적지를 사용자가 명시적으로 검색 기준으로 가져오는 선택 흐름만 별도 대안으로 두고 원래 요구 충족으로 표시하지 않는다.
+3. Search 화면 열기도 늦은 콜백·사용자전환·화면탈취가 있으므로 취소가 필요없다는 표현은 철회해야 한다. navigation 호출 성공만으로 화면이 표시되었다고 success하지 않는다. PICKGO 자체 검색 진입 화면이 resume됐으면 '검색 준비 화면 열림'까지만 응답, 실패·timeout 늦은 작업은 session generation으로 폐기. 실제 Gleo 전송 인증 미구현을 유지.
+4. 합의 좌표와 내비 확인 좌표 불일치는 둘 다 표시. 내비 이전목적지도 실제 조회없으면 '확인불가'라 표시. 하나의 요청만 진행하고 오래된 completion만으로 confirmed 금지, 목적지 조회와 target revision 대조. 명시 재시도만.
+5. 회차 밖 요청 상태·revision검증·위치별도동의 채택. 후보 미확인은 확정불가로 기본설계; 확인가능한 후보없으면 범위확장/다른장소. GPS로 합의좌표 자동변경 금지. 운전자미참여출발은 명시허용 제안, 기존 arrive의 joined 필수 유지(미참여 도착상태는 별도 대기표시, 탑승완료 아님).
+이 반론 중 동의/잔여이견, 반드시 보완할 조건을 1000자 내로 답하라. 소스수정·새조사 금지. 사용자 결정으로 가장하지 말고 공동설계 제안으로 마감.

@@ -1,0 +1,9 @@
+{
+  "experiments/pickgo-navigation/app/src/main/java/org/example/pickgonavigation/NavigationActivity.java": "60ef4a24612d1265abdc99153dbdbec2d9b2195992211ac91454c481eefa3ddd",
+  "experiments/pickgo-navigation/app/src/main/java/org/example/pickgonavigation/RouteGate.java": "50f7d307d758bc41df5ad2845cd65084166124d1e13c91ab045c18b4af9f9b72",
+  "experiments/pickgo-navigation/app/src/main/AndroidManifest.xml": "63c0431482d6d0c34c81af240e610dd4452dba9e2df33dc775517a5678a740df",
+  "experiments/pickgo-navigation/app/src/main/res/xml/network_security_config.xml": "82d773f68654bf032d6712f07c429ac559d6015de0087806e69c94936cb0ac41",
+  "experiments/pickgo-navigation/RouteGateTest.java": "a3fc7d45ef915b064c09a02c25e49effb17f45ba82fb75f0cbaa1e301e7aee4e",
+  "experiments/pickgo-navigation/app/build.gradle": "0eb3a5d57c93d53483d67be656d19fc0974dd3dd880b9bd5e1a1c9ab4e51cd5d",
+  "experiments/pickgo-navigation/app/build/outputs/apk/debug/app-debug.apk": "434a9fb0efb3aa57b91103706fe6e4f2246cce32eea641dcc0989c1c3b356d84"
+}

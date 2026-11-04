@@ -1,3 +1,4 @@
+import { assessPickup } from './eligibility.mjs';
 import { randomUUID } from 'node:crypto';
 import { PhoneBoard } from '../phone-domain.mjs';
 import { Fault, VIEW_TTL, PLACES } from '../domain.mjs';
@@ -7,8 +8,14 @@ const check=(ok,status,message)=>{if(!ok)throw new Fault(status,message);};
 const uuid=x=>typeof x==='string'&&/^[a-f0-9-]{36}$/.test(x);
 export class RecommendationBoard extends PhoneBoard {
   constructor(now=Date.now,mono=()=>performance.now(),provider=unavailableProvider) {
-    super(now,mono); this.provider=provider; this.recommendations=new Map(); this.recLastMono=mono();
+    super(now,mono); this.provider=provider; this.recommendations=new Map(); this.recLastMono=mono(); this.placeEvidence=new Map(); this.placeEntrances=new Map();
   }
+  assertSelectable(place) {
+    // A provider may supply current server-owned evidence even for manual choices.
+    const current=this.provider.selectionEvidence?.(place) ?? {};
+    check(assessPickup(current).selectable && assessPickup(this.placeEvidence.get(place)).selectable,409,'정차 금지 또는 차량 접근 불가 지점은 선택할 수 없습니다.');
+  }
+  create(place, ...args) { this.assertSelectable(place); return super.create(place,...args); }
   sweep() {
     super.sweep(); if(!this.recommendations)return;
     const at=this.mono(), invalid=!Number.isFinite(at)||at<this.recLastMono; this.recLastMono=at;
@@ -61,8 +68,15 @@ export class RecommendationBoard extends PhoneBoard {
       // Native authenticated SDK publisher is not connected. Browser cannot impersonate it.
       check(this.provider.mode==='synthetic'||role==='rider',409,'실제 차량 위치 연결이 준비되지 않았습니다.');
       p.grant.sequence=input.sequence;p.fix=fix;e.snapshot=null;e.revision++;
-    }else if(input.type==='calculate'||input.type==='accept'){
-      const accepting=input.type==='accept';
+    }else if(input.type==='calculate'||input.type==='accept'||input.type==='select'){
+      const accepting=input.type==='accept',selecting=input.type==='select';
+      let selected;
+      if(selecting){
+        this.context(r,credential,input);
+        const s=e.snapshot;
+        check(s&&s.id===input.snapshotId&&s.version===r.version&&s.revision===e.revision,409,'추천이 만료되었습니다. 다시 계산해 주세요.');
+        selected=s.candidates.find(c=>c.id===input.candidateId);check(selected,400,'추천 후보를 선택해 주세요.');
+      }
       if(accepting){this.context(r,credential,input);check(r.proposal?.origin==='recommendation'&&e.proposal&&e.proposal.proposalId===r.proposal.id&&input.proposalId===r.proposal.id&&r.proposal.by!==role,409,'상대의 현재 추천 제안을 확인해 주세요.');}
       if(this.provider===unavailableProvider)return {...this.status(e,role),status:'provider-unavailable'};
       check(!e.busy,429,'추천 계산 중이거나 공급자 응답이 중단됐습니다. 계속 실패하면 새 회차에서 다시 시도해 주세요.');
@@ -74,29 +88,46 @@ export class RecommendationBoard extends PhoneBoard {
         const data=await Promise.race([work,new Promise((_,reject)=>{timer=setTimeout(()=>{abort.abort();reject(new Error('timeout'));},3000);})]);
         this.sweep();this.active(r);
         check(rev===e.revision&&version===r.version&&e.driver.grant&&e.rider.grant&&freshFix(e.driver.fix,this.mono())&&freshFix(e.rider.fix,this.mono()),409,'위치나 약속이 변경되었습니다. 다시 계산해 주세요.');
-        const ranked=rankCandidates({...data,driver:e.driver.fix,rider:e.rider.fix,mode:this.provider.mode},this.mono(),this.now());
+        // This prototype selects names, so a name must bind to one stable entrance.
+        // Reject ambiguous/rebound entrances before any restriction can be overwritten.
+        const entrances=new Map(this.placeEntrances);
+        for(const c of data?.candidates??[])if(PLACES.includes(c?.name)){
+          if(entrances.has(c.name)&&entrances.get(c.name)!==c.entranceId)return {...this.status(e,role),status:'provider-invalid'};
+          entrances.set(c.name,c.entranceId);
+        }
+        this.placeEntrances=entrances;
+        // Store only normalized restriction facts, not raw locations, for manual-path guards.
+        for(const c of data?.candidates??[])if(PLACES.includes(c?.name)&&c.mode===this.provider.mode&&c.evidence?.entranceId===c.entranceId&&c.evidence.mode===this.provider.mode&&
+            Number.isFinite(c.evidence.checkedAt)&&c.evidence.checkedAt<=this.now()&&this.now()-c.evidence.checkedAt<POLICY.evidenceMaxAgeMs&&
+            c.evidence.validFrom<=this.now()&&c.evidence.validUntil>this.now()){
+          const {stopProhibited,prohibited,pickupAllowed,vehicleAllowed,closed,publicTransportOnly,taxiOnly,physicallyAccessible,positionType,maxDwellSeconds}=c.evidence;
+          const facts={stopProhibited,prohibited,pickupAllowed,vehicleAllowed,closed,publicTransportOnly,taxiOnly,physicallyAccessible,positionType,maxDwellSeconds};
+          this.placeEvidence.set(c.name,{...this.placeEvidence.get(c.name),...Object.fromEntries(Object.entries(facts).filter(([,v])=>v!==undefined))});
+        }
+        const ranked=rankCandidates({...data,candidates:Array.isArray(data?.candidates)?data.candidates.filter(c=>PLACES.includes(c?.name)):data?.candidates,driver:e.driver.fix,rider:e.rider.fix,mode:this.provider.mode},this.mono(),this.now());
         // Current Board only supports the named synthetic destinations. Live catalog binding remains gated.
-        ranked.candidates=ranked.candidates.filter(c=>this.provider.mode==='synthetic'&&PLACES.includes(c.name));
+        ranked.candidates=ranked.candidates.filter(c=>this.provider.mode==='synthetic'&&PLACES.includes(c.name)&&assessPickup(this.placeEvidence.get(c.name)).selectable&&assessPickup(this.provider.selectionEvidence?.(c.name)??{}).selectable);
         if(ranked.status==='ready'&&!ranked.candidates.length)ranked.status='catalog-unavailable';
         if(accepting){
+          this.assertSelectable(r.proposal?.place);
           check(ranked.candidates.some(c=>c.id===e.proposal?.candidateId&&c.name===r.proposal?.place),409,'현재 위치와 근거로 제안 지점을 추천할 수 없습니다. 제안을 거절하거나 철회해 주세요.');
           this.context(r,credential,input);
           super.act(id,credential,{...input,type:'accept'});this.clearConsent(e);e.proposal=null;
           return {...this.status(e,role),accepted:true};
         }
+        if(selecting){
+          const c=ranked.candidates.find(c=>c.id===selected.id&&c.name===selected.name);
+          check(c,409,'지점 조건이 변경되었습니다. 다시 추천해 주세요.');
+          this.assertSelectable(c.name);this.context(r,credential,input);
+          const result=super.act(id,credential,{...input,type:'propose',place:c.name});
+          r.proposal.origin='recommendation';
+          e.proposal={proposalId:result.proposal.id,candidateId:c.id,summary:{...c},summaryUntil:this.mono()+ranked.remainingMs};
+          return {...this.status(e,role),proposed:true};
+        }
         if(ranked.candidates.length)e.snapshot={...ranked,id:randomUUID(),until:this.mono()+ranked.remainingMs,revision:rev,version};
         return {...this.status(e,role),status:ranked.status};
       }catch(err){if(err instanceof Fault)throw err;return {...this.status(e,role),status:'provider-unavailable'};}
       finally{clearTimeout(timer);abort.abort();if(settled)e.busy=false;}
-    }else if(input.type==='select'){
-      this.context(r,credential,input);
-      const s=e.snapshot;
-      check(s&&s.id===input.snapshotId&&s.version===r.version&&s.revision===e.revision,409,'추천이 만료되었습니다. 다시 계산해 주세요.');
-      const c=s.candidates.find(c=>c.id===input.candidateId);check(c,400,'추천 후보를 선택해 주세요.');
-      const result=super.act(id,credential,{...input,type:'propose',place:c.name});
-      r.proposal.origin='recommendation';
-      e.proposal={proposalId:result.proposal.id,candidateId:c.id,summary:{...c},summaryUntil:s.until};e.snapshot=null;
-      return {...this.status(e,role),proposed:true};
     }else throw new Fault(400,'알 수 없는 추천 요청입니다.');
     return this.status(e,role);
   }
@@ -106,6 +137,8 @@ export class RecommendationBoard extends PhoneBoard {
     if(command?.type==='accept'&&r.proposal?.origin==='recommendation'){
       throw new Fault(409,'추천 화면에서 최신 경로와 정차 근거를 다시 확인하고 수락해 주세요.');
     }
+    if(command?.type==='propose')this.assertSelectable(command.place);
+    if(command?.type==='accept')this.assertSelectable(r.proposal?.place);
     const result=super.act(id,credential,command);
     if(e){e.snapshot=null;if(command.type==='accept')this.clearConsent(e);if(['accept','reject','withdraw','end'].includes(command.type))e.proposal=null;}
     this.sweep();return result;

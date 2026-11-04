@@ -1,1 +1,16 @@
-@font-face{font-family:Asta;src:url('/fonts/AstaSans.ttf')}*{box-sizing:border-box}body{margin:0;background:#eeefeb;color:#202824;font:18px Asta,sans-serif}main{max-width:1100px;margin:auto;padding:28px}header,.row{display:flex;gap:14px;align-items:center;justify-content:space-between;flex-wrap:wrap}a{color:inherit}h1{font-size:clamp(30px,5vw,48px);margin:12px 0}h2{font-size:24px}.eyebrow{letter-spacing:.18em;font-size:14px}section{background:#fafbf8;padding:24px;margin:20px 0;border-top:1px solid #c8ccc5}p{line-height:1.6}button{font:inherit;min-height:64px;padding:16px 22px;border:1px solid #526357;border-radius:2px;background:#e4e9e1;color:#202824;cursor:pointer;touch-action:manipulation}button:disabled{opacity:.45;cursor:default}#candidates{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:14px}.candidate{text-align:left;display:flex;flex-direction:column;gap:12px;min-width:0;overflow-wrap:anywhere;transition:background .2s ease}.candidate strong{font-size:23px}.candidate small{font-size:15px;line-height:1.5}footer{padding:15px 0;line-height:1.6}[hidden]{display:none!important}@media(max-width:520px){main{padding:16px}section{padding:18px}.row button{width:100%}#mode{font-size:14px}}
+/* PICKGO shell, surfaces and touch controls are shared with the other screens. */
+.recommendation-page .row { display:flex;gap:12px;align-items:center;justify-content:space-between;flex-wrap:wrap; }
+.recommendation-page .row button { flex:1; }
+.recommendation-page .section-heading button { flex:0 1 auto; }
+.recommendation-page #mode { font-size:16px;color:var(--muted); }
+.recommendation-page #candidates { display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px; }
+.recommendation-page #candidates:empty { display:none; }
+.recommendation-page .candidate { text-align:left;display:flex;flex-direction:column;align-items:stretch;justify-content:flex-start;gap:12px;min-width:0;overflow-wrap:anywhere; }
+.recommendation-page .candidate strong { font-size:22px; }
+.recommendation-page .candidate small { font-size:16px;line-height:1.5;color:var(--muted);font-weight:400; }
+.recommendation-page .candidate:disabled small { color:inherit; }
+/* Keep empty live status regions in the accessibility tree. */
+@media(max-width:1099px) { .recommendation-page #candidates { grid-template-columns:1fr; } }
+@media(max-width:479px) { .recommendation-page .row { align-items:stretch;flex-direction:column; } .recommendation-page .row button { width:100%; } }
+
+.recommendation-page .candidate:active:not(:disabled) small { color:#f4f4f4; }

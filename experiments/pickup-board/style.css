@@ -44,3 +44,25 @@ main>section:not([hidden]){animation:pickup-screen-in 180ms cubic-bezier(.2,.7,.
 /* Keep focus inside clipped scroll edges, and retain a muted previous selection. */
 button:focus-visible,a:focus-visible{outline-offset:-5px}
 #readyButtons button[aria-pressed=true]:disabled{border-color:#929292}
+/* Main pickup selection keeps the existing touch targets and scroll container. */
+.candidate-note{font-size:18px;margin:12px 0 20px}
+#anchorSummary{font-size:20px;margin-bottom:8px}
+#manualPlace{display:block;width:100%;min-height:76px;font:inherit;font-size:22px;color:#f4f4f4;background:#303030;border:2px solid #626262;padding:16px;margin-top:12px}
+#manualPlace:focus-visible{outline:3px solid #fff;outline-offset:-5px}
+#candidateHeading:focus,#manualHeading:focus{outline:none}
+.search-row{display:flex;gap:12px;margin:12px 0}.search-row input{min-width:0;flex:1;background:#303030;border:2px solid #626262;color:#fff;font:inherit;font-size:22px;padding:16px}.search-row button{flex-shrink:0}
+#searchStatus{font-size:18px;margin:12px 0}#pickupMap{display:block;width:100%;height:300px;border:0;outline:2px solid #849195;cursor:crosshair;touch-action:manipulation}#pickupMap:focus-visible{outline:3px solid white;outline-offset:3px}#pointStatus,#selectedPoint{font-size:18px;margin-top:12px}#selectedPoint:empty{display:none}
+@media(max-width:479px){.search-row{flex-wrap:wrap}.search-row input{width:100%}.search-row button{width:100%}#pickupMap{height:240px}}
+
+/* Search-only home; invitation and existing pickup screens keep their own flow. */
+.welcome.search-home{display:flex;flex-direction:column;justify-content:center;align-items:center;gap:24px}
+.search-home .welcome-copy,.search-home .create-panel{width:100%;max-width:760px;padding-top:0}
+.search-home .welcome-copy h2{margin:0;text-align:center}
+.search-home .search-row{position:relative;margin:0}
+.search-home .search-row input{width:100%;min-height:88px;padding:20px 88px 20px 24px;border-radius:2px}
+.search-home .search-row button{position:absolute;right:2px;top:2px;bottom:2px;min-height:0;width:80px;padding:20px;background:transparent}
+.search-home #searchStatus:empty{display:none}
+.search-home:has(#create[hidden]) .welcome-copy{display:none}
+@media(max-width:479px){.search-home .welcome-copy h2{font-size:30px}.search-home .search-row input{font-size:20px}}
+
+.search-result{flex-direction:column;align-items:flex-start;gap:6px}.search-result span,.search-attribution{font-size:16px;color:var(--muted)}.search-attribution{margin-top:12px}.search-attribution a{color:inherit}.search-home:has(#homeResults:not([hidden])){justify-content:flex-start;padding-block:24px}

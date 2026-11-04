@@ -73,7 +73,7 @@ test('withdraw belongs to proposer; foreign read leases and cross-room writes fa
   const other=b.create(PLACES[2]); assert.throws(()=>b.act(d.id,other.token,{...read(d),type:'end',requestId:randomUUID()}),/참여자/);
   cmd(d,'withdraw',{proposalId}); assert.equal(read().place,PLACES[0]); assert.equal(read().proposal,null);
   cmd(r,'propose',{place:PLACES[2]}); cmd(d,'accept',{proposalId:read().proposal.id});
-  assert.equal(read().lastEvent,'변경이 수락되어 승차지점을 변경했습니다.');
+  assert.equal(read().lastEvent,'변경을 수락해 픽업 장소를 바꿨습니다.');
 });
 test('HTTP integration: create/join/read/write, isolation, input and origin defenses', async t => {
   const server=createServer(); await new Promise(r=>server.listen(0,'127.0.0.1',r));

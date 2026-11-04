@@ -323,3 +323,114 @@ D-017 인계 및 사용자 강남역 첫 실증 지정. 위치통합 담당 소�
 
 
 2026-11-04 사용자 승인 분리: 이 저장소는 픽업 프로젝트이며 J-1 전용 파일은 형제 J1_ARCHIVE 및 https://github.com/usechan0528-max/J1_ARCHIVE 로 이관한다. 과거 혼합 기록과 Git 이력은 보존한다. J-1 잠정 폐기는 유지하며 분리는 재개 승인이 아니다. docs/PROJECT_SEPARATION_2026-11-04.md 참조.
+
+## 2026-11-04 · 앱 이름·화면 문구 변경
+- 사용자가 index.html에서 앱 이름(PICKGO), 첫 화면 안내문, 후보지 3곳을 직접 수정했다. Claude Code가 사용자 요청으로 연관 파일을 맞췄다.
+- 맞춘 파일: index.html(탭 제목, 숨김 select 2개, 변경 제안 버튼), domain.mjs(`PLACES`), phone.html, proximity-page.html, server.mjs(시작 로그), client.test.mjs·web-invite.test.mjs(장소 리터럴), README 2개. 오타 "알려해주세요"→"알려주세요" 수정.
+- 사용자 수정 직후에는 버튼 이름과 서버 `PLACES`가 달라서, 첫 후보 외 장소로 약속을 만들면 400이 났다. 위 정합 작업으로 해소했다.
+- 검증: `node --test experiments/pickup-board/*.test.mjs` 176/176 통과(Node 24.19.0). 재시작한 로컬 서버에서 새 장소명 생성 201, 예전 장소명 400 확인. 브라우저 화면 전체 흐름은 다시 검증하지 않았다.
+- 남은 사항: 상단 "로컬 시연 · 합성 장소" 표시를 사용자가 비웠다. 실제 장소 이름에 합성 데이터를 쓰므로 시연 표시를 어디에 둘지 사용자 결정이 필요하다. 날짜별 과거 보고서의 옛 이름은 이력이라 고치지 않았다. Codex 통합·commit 전이다.
+- 문구 간결화(사용자 지시: 어디에나 들어맞는 문장 제거, 앱에 맞는 확고한 문장): index.html, app.mjs의 메인 화면 문구와 domain.mjs의 화면 표시 기록·오류 문구를 다시 썼다. 용어는 "약속"에서 "픽업"으로 통일했다. 미확인·이전 기록·시연·주행 중 조작 금지 고지는 의미를 유지했다. 문구를 직접 비교하는 테스트 4곳(client 2, web-http 1, board 1)을 새 문구로 맞췄다. 176/176 통과. phone, proximity, recommendation 하위 화면 문구는 아직 손대지 않았다.
+
+## 2026-11-04 · 사용자 픽업 지점 선정 기준 수정
+
+공식 지정 구역만 찾지 않고 일반 승용차의 짧은 승하차 후보를 조사하도록 결정/강남역 조사/추천 설계 문서에 반영. 대중교통 전용·주정차 금지·단속 구역 제외, 미확인과 확인된 적합성 구분 유지. 기존 추천 엔진은 읽어 현 대장 계약과 차이를 명시했으며 수정하지 않았다. 사용자 결정의 문서화로 Claude 재검수·앱 시험·새 조사·commit/push 미실행. 다른 작업의 client.test/domain/index/phone/proximity-page/server/web-invite 변경을 보존했다.
+
+## 2026-11-04 · PICKGO 두 진입 흐름 공동 세부 설계
+사용자 Claude 공동검토·현대내비/Gleo 가능성 확인 요청. main 기존 미커밋 보존, 제품코드 수정 없음. 사용자흐름 문서에 후속 링크, PICKGO_DETAILED_DESIGN_2026-11-04.md 및 전용 증거/compile-only probe 작성. 실제 Claude Opus5.5 세션83664888-c27c-488e-a312-f6278fe67169 최초/후속 모두 종료0·is_error=false. 요청/회차/합의/내비/위치 분리 채택, Gleo검색 슬롯 유지에 합의, 목적지선설정·화면취소불필요 제안 반론 수용. 내비 검색화면 전달·경로요청 정적컴파일 통과, 검색결과반환/지도핀 계약 미확인; adb기기0으로 runtime미실행. 실연동 완료로 표시하지 않음. 다음 기술검증은 현대 내비 검색 선택결과 회수와 기존경로 영향 확인. 공개·push·외부문의·실제메시지발송 없음. 전용파일 편집 종료.
+
+## 2026-11-04 · 메인 장소 선택 흐름
+사용자 요청: 메인에서 픽업할 장소 선택 후 주변 후보 3개를 제시하고 직접 고르기 버튼 제공. main 기존 미커밋 보존. 이번 Codex 변경은 app.mjs/index.html/style.css, 신규 main-selection.test.mjs 및 전용 증거. 기준 장소 → 후보 3개 → 명시 선택 → 생성, 첫 화면/후보 화면의 직접 선택, 기준 재선택 때 이전 후보 초기화, 생성 중 조작 잠금 구현. 기존 허용 장소 3개를 사용하는 시연이며 기준 장소를 먼저 배치할 뿐 실제 주변 검색/거리순 추천/정차 적격성 판단은 미구현. 직접 선택도 현재는 기존 장소 목록 범위이며 지도 좌표 선택 아님.
+실행: node --test "experiments/pickup-board/*.test.mjs" → 188 통과/0 실패. 타 채팅의 동시 추천 모듈 변경도 포함된 현재 전체 집합이며 이번 신규 시험은 3개. node --check experiments/pickup-board/app.mjs 및 변경 소스 git diff --check 통과. fake DOM 검증이며 이번 실제 브라우저/차량 시험 미실행. 증거 docs/evidence/pickup-main-flow-tests.txt. 공개/push/계정 변경 없음. Claude 고정 diff 읽기 검수 요청, 결과는 별도 아래 기록.
+
+메인 선택 후속 검수: 실제 Claude claude-haiku-5-5, session eaab57f7-6e6c-4ef8-b506-ae2f1e9e5254, 종료0/is_error=false. 증거 pickup-main-flow-review.json/input.txt. 확정 P1 없음. P2 포커스 복귀·초기 시연 안내와 P3 뒤로가기 문구 반영. 초대 화면 생성 폼 노출 추론은 기존 app의 create.hidden=true 및 초대 회귀시험으로 해당 없음; hidden 충돌 추론은 기존 [hidden]{display:none!important} 확인; 서버 검증 누락 추론은 Board.create의 PLACES.includes 확인; 저장/refresh 추론은 refresh 자체 오류 처리와 render의 세션 화면 전환 확인. 전체 소스 대신 diff 입력에 따른 미확인과 실제 결함을 구분함. 후속 node 전체 189/189 통과(다른 담당 신규 시험이 추가된 현재 집합), 이번 신규 main-selection 3/3. 실브라우저 시각/키보드 검증 미실행. 이번 소스 편집 종료, 실제 주변 추천 연결은 미완료 유지.
+
+## 2026-11-04 · 카카오 조건부 대안 규정 확인
+공모전 참가규정/개발환경/FAQ/심사기준/유의사항, Pleos Maps 정책, Kakao 기능/약관/운영정책/공식답변149943·151176·152212·151398 재확인. 외부지도 금지미발견과 허가를 구분. 152212의 검색결과 재선택 좌표 저장·회원공유 제한으로 PICKGO 원안 적용 미해소, 카카오맵과내비/AAOS와AndroidAuto 분리. 상세 PICKGO_KAKAO_FALLBACK_2026-11-04.md. 본연동·실행·외부문의 미실행, 현대 내비 우선/조건충족전 전환보류 유지.
+
+
+2026-11-04 픽업 정차 기준 변경: 추천 시험56/56, 작업트리 전체190/190 통과. Claude Haiku5.5 독립검수2회/주요지적 수정·검증. 정차 자체 금지/불가능 차단, 미확인 일반 후보 선택 허용, 수동 우회·선택 재검증·금지 정보 누락·입구 교체 회귀 포함. 실지도 임의핀/실제 금지영역 연동 미완료. docs/PICKUP_YANGJAE_2026-11-04.md 및 evidence/pickup-curb-* 참조. 별도 PICKGO 작업 보존, J1 제외, push 미실행.
+
+## 2026-11-04 · 직접 선택 검색→시연 도면
+사용자 요청: 직접 고르기에서 검색한 뒤 지도에서 직접 선택. 추가 사용자 답변: 현대 내비 우선, 카카오 조건 확인 후 대안 적용. 구현: 기존 드롭다운을 로컬 3장소 검색(공백·검색없음 처리)→검색결과 선택→시연 SVG 도면 탭/방향키/Shift 방향키→명시 핀 확인→생성으로 변경. 실제 지도 공급자는 미연동이며 화면에 시연 도면과 실제 좌표 아님 표시. 기존 후보와 실제좌표를 혼동하지 않도록 optional pickupPoint={mode:'synthetic-diagram',x,y}를 따로 전달·서버 검증/복사 저장·양측 read에 반환. 장소 변경 수락 때만 이전 핀 제거. 외부 검색·좌표·정차 적격 판단으로 승격하지 않음.
+변경 파일: experiments/pickup-board/app.mjs/index.html/style.css/domain.mjs/server.mjs/main-selection.test.mjs 및 신규 manual-point.test.mjs. 다른 담당의 recommendation 변경 보존. main 유지, commit/push/공개 없음.
+검증: node --test "experiments/pickup-board/*.test.mjs" 195/195, 종료0. node --check app.mjs와 해당 변경 git diff --check 종료0. 증거 docs/evidence/pickup-manual-map-tests.txt. Chrome 4191 최신 별도 로컬서버에서 양재 검색 2결과→양재사옥→키보드 지점(510,310)→확인→회차생성→새로고침 복원 AX 확인. 화면 캡처는 CDP screenshot timeout으로 실패; 픽셀 레이아웃/물리폰 터치/실차 검증 완료로 표시하지 않음.
+Claude Haiku5.5 실제 session 84cf2729-0a48-485c-8eca-da42f59849c2, exit0/is_error=false. evidence/pickup-manual-map-review.json 및 input.txt. 검수: 상태/검증 핵심 정상, mode 전환 시 내부 pin 잔존 지적은 reset 추가 및 회귀시험 반영(기존도 재진입 reset이라 실제 제출 누수는 없음). Shift 큰 이동·중앙시작 안내 추가. SVG 경계선 좌표 오차 가능성은 border를 outline으로 바꿔 해결. touch-action manipulation 기존 적용 확인. role application 제안은 키보드 탐색을 과도하게 가두지 않도록 group 유지. 같은 query를 재검색에 보존하는 동작은 의도적. 최종 보완은 Codex 재검증.
+남은 범위: 실제 현대 검색 결과·지도 핀 반환 계약, 조건 확인 후 카카오 대안. 지도 담당 01a1a630의 별도 실제지도 작업은 이 시연 검수에 포함되지 않음.
+
+## 2026-11-04 · 메인 직접 선택의 현대 내비 연결 착수 점검
+사용자 요청: 시연 도면 대신 실제 지도 검색·위치 선택, 현대 내비 연동부터 진행. 현재 채팅은 공통 파일 수정 전 동시 작업을 확인했다. 내비 선택 시험 01a1a661, 공개 API 조사 01a1a664, 별도 실제 지도 01a1a630이 활성 상태로 동일 장치·소스를 중복 수정하지 않음.
+이번 실제 수행: NaviHelper/NavigationScreenRequest/SearchPlace/getDestinationInfo 공식 문서 재확인, 확보 SDK 3.0.5 public 선언과 ProbeActivity 수신 코드 대조, docs/evidence/pickgo-navi-selection-2026-11-04의 01~17 실행 로그 독립 집계. 08~17 destination 이벤트의 이름 집합은 기존 42dot뿐. NEW_INTENT는 명시 시험 명령을 포함하므로 선택결과 callback으로 세지 않음. 이 집계는 별도 채팅의 기존 실행 증거를 읽은 결과이며 본 채팅의 새 SDK 실행으로 주장하지 않음.
+판정: 검색 화면 호출 경로는 확인됨. 새 POI/자유 핀 좌표를 기존 경로 변경 없이 PICKGO에 반환하는 계약은 미확보. 해당 실행 담당은 내비 foreground를 유지한 검색 재시험 진행 중이므로 전 환경의 미지원으로 단정하지 않음. 현재 목적지 콜백을 검색 선택값으로 연결하거나 내비 목적지를 임의 변경하지 않음. 공통 웹/Android 제품 코드 이번 턴 수정 없음, 실제 메인 연동 미완료. 다른 담당 신규 파일·미커밋 보존.
+다음 통합 조건: 새 선택 좌표/출처/취소/세대 식별과 복귀 계약, 기존 경로 보존 확인 후 네이티브-메인 연결. 현대 내비 우선/카카오 조건 확인 후 대안 유지. 공개·계정·권한·외부 문의 발송 없음.
+공식 확인 URL: https://document.pleos.ai/docs/pleos-only/connect-sdk-pleos/NaviHelper/intro 및 해당 NaviHelper/NavigationScreenRequest 공개 API 목록. 기존 SDK 선언 증거: evidence/pickgo-design-2026-11-04-sdk-declarations.txt.
+
+
+## 2026-11-04 · PICKGO 내비 선택 실험
+사용자 실제에뮬레이터 시험 요청 수행. 새 experiments/pickgo-navi-selection 및 전용보고/증거만 생성, 다른제품변경 보존. 현대내비 상세선택2건은 기존목적지 유지·선택좌표 미수신. 공개계약 전체불가로 일반화하지 않음. 실제 Haiku5.5 검수 완료/지적별 대응 보고서. 초기 무경로 복구, probe정지, 제품PICKGO화면 복귀. 공개조사채팅과 기기/파일 범위분리; 공개/push없음. 상세 PICKGO_NAVI_SELECTION_TEST_2026-11-04.md 및 evidence/pickgo-navi-selection-2026-11-04/ 참조.
+
+
+## 2026-11-04 · 현대/Pleos 공개 API 조사 완료
+사용자 요청에 따라 공식 NaviHelper, Hyundai Developers, Pleos Fleet/Vehicle Data, 현대오토에버 routo 조사. NaviHelper 실제 연결·검색·조회는 별도 실행 증거 대조, 상세 선택좌표 수신은 수용조건 미충족. routo 검색/지도/경로 공식 규격 발견, 키/이용조건 미확보. 승인된 OSM 지도 시연 담당과 공유하고 중복 구현 없음. Dot R010 보고 회수·직접 검증·종료, 실제 Claude Haiku5.5 검수 및 지적 처리. 보고 PICKGO_PUBLIC_NAV_API_2026-11-04.md와 evidence/pickgo-public-nav-2026-11-04/ 추가, API/시험/협업 기록 갱신. 외부 문의·push 없음.
+
+## 2026-11-04 · 현대 내비 재시험 결과와 메인 연결 조건 재확인
+사용자 요청: 재시험 결과를 확인하고 선택 위치 수신 가능 시 메인 연결. 완료 보고 PICKGO_NAVI_SELECTION_TEST_2026-11-04.md, summary.json, 원시 11/22/23/25 XML·로그를 대조했다. 현대자동차 AVP본부 및 하나로마트 성남농협대왕지점 상세 선택은 확인되나 destination 이름은 모두 기존42dot, ActivityResult0, 최종 수동복귀 NEW_INTENT extras=null이다. 두번째 상세 관찰 후에도 선택지 좌표 수신 조건 불충족. 별도 시험의 실행 증거 확인이며 이 채팅의 새 에뮬레이터 실행은 아님. 따라서 사용자의 조건부 메인 연결은 수행하지 않음; 기존목적지를 새 선택지로 대체하지 않고 제품소스/타담당지도 변경 보존. 공개 SDK 전반의 불가능이나 목적지 설정 후 수신까지 실패한 것으로 확대하지 않는다. 공식 선택결과 반환 계약 또는 검증된 별도 지도 공급자 확보가 다음 연결 선행조건. 이번 소스변경·빌드·테스트·외부발송 없음.
+
+
+## 2026-11-04 실제 양재 지도
+지도 구현 종료: docs/PICKUP_REAL_MAP_2026-11-04.md 참조. 실제 OSM 양재 snapshot, 자유핀/서버차단/3후보, Claude2회 검수 보완. 최종219시험 통과. 공개/push 없음.
+
+## 2026-11-04 · routo 검색·지도 연결 준비
+사용자 승인: routo 답변/키를 기다리는 동안 검색과 지도 연동 구조 준비. main 기존 미커밋/동시 map 및 Android 작업 보존. 신규 routo/**(contracts, search-provider, map-adapter, selection-controller, connect, server, README)와 routo.test.mjs만 구현. 기존 메인/map/server/domain 소스는 변경하지 않음.
+공식 REST1.4.2와 WEB JS 문서를 재확인하여 서버 검색/정규화, 지도 SDK 로딩/클릭핀/해제, 세대별 검색·핀검사·5초 한도 확인, 검색출처 보존, 호스트 주입형 연결 함수를 구현. 실제좌표는 named fields를 사용하고 MapBoard 전달 경계만 [lon,lat]로 변환. REST key는 서버 closure/환경변수만 사용, 브라우저 키와 자동 공유 없음. 미설정/조건확인 전 외부호출 차단. 상위응답/URL/키는 오류에 노출하지 않음. 정차 적격/저장공유 허용은 routo 검색 성공으로 추정하지 않음.
+실행: node --test experiments/pickup-board/routo.test.mjs 15/15, node --test "experiments/pickup-board/*.test.mjs" 223/223. 전체집합은 다른 담당의 현재 변경도 포함. 모듈 node --check 완료. localhost 신규 준비서버 무키 smoke: status200/readyfalse/KEY_MISSING, search503/KEY_MISSING. evidence/pickup-routo-tests.txt, pickup-routo-all-tests.txt, pickup-routo-no-key-smoke.txt. 외부 API/실제 SDK/지도 렌더링/키발급/공개/push 미실행.
+통합 지점·설정·한계: experiments/pickup-board/routo/README.md. 발급 후 REST키/브라우저노출 허용 지도키·이용조건 설정, 실제응답/좌표왕복/CSP자원 검증, 현재 map 검사 유효기간 어댑터와 출처 저장 계약을 연결해야 함. 이 준비를 실제연동 완료 또는 키만 넣으면 실차까지 검증 완료로 표시하지 않음. 독립 검수 결과는 후속 기록.
+
+routo 준비 최종 검수: 실제 Claude claude-haiku-5-5, session646ed4ec-9aac-40d7-920b-9b3d7a43b9a0, exit0/is_error=false. evidence/pickup-routo-review-input.txt 및 review.json 보존. 검수 지적 처리:
+- 좌표 계약 미확인 지적: Codex가 이번 공식 REST/WEB JS 원문으로 lat/lon·LatLng 객체생성·lat()/lng()·click·리스너 remove 대조함. fake 실행을 실SDK 검증으로 확대하지 않으며 알려진 지점의 실왕복은 키 발급 후 필수로 유지.
+- 출처 혼동: provenance를 searchProvider/anchorProviderId/anchorCenter/coordinateSource로 분리. 핀을 이동해도 routo 검색 유래라는 사실 유지, 핀 자체가 해당 POI라고 주장하지 않음.
+- 확인만료: 자동 타이머·snapshot 만료 추가, draft validation에 확인시각/남은시간/서버재검증필수 표시. 클라이언트 epoch값을 서버 권한 근거로 신뢰하자는 제안은 채택하지 않음. 서버 쓰기 시 현재 좌표검사와 회차 version/view 검사 필수.
+- 오류코드 손실/렌더콜백 예외/앵커전 클릭/중복SDK로드: 알려진 오류코드 보존, 콜백 예외 격리, 앵커전 클릭 무시, window별 SDK 단일로드 및 다른키/실패 재시도시 새페이지 요구로 수정. 부분SDK Marker/LatLng 존재 검사. malformed 지도 이벤트는 이전 선택 취소.
+- 일부 불량POI 전체실패: 데이터 손상시 전체실패 정책 유지. (0,0) 임의결측 처리 제안은 공급자 규정 미확인/유효좌표라 미반영. point검사에서 지역 제한 유지.
+- 외부문자열 XSS/좌표순서/Origin: 호스트 textContent 요구, checkPoint [lon,lat] 문서화. web-origin.mjs 실제 원문 확인: 정확 loopback Host, 존재하는 Origin 동일값, Origin없음은 정확Host일때 허용. 공개배포 인증/요청량 제어는 준비서버 범위 밖으로 유지.
+최종 신규18/18, 현 작업트리 전체226/226 통과 및 전 모듈 node --check 종료0. 키 없는HTTP smoke 결과 유지. 전체지도 dispose API는 미확보로 호스트 페이지 종료 조건 명시. 실제 SDK/키/API/브라우저지도 미실행은 남은 활성화 검증 항목이며 준비 완료와 구분.
+
+
+## 2026-11-04 · 지도 화면 디자인 통일 완료
+지도 화면/메인 링크를 기존 Asta·짙은 회색·각진 터치 버튼 디자인으로 통일. 4개 소스 수정, 기존 미커밋 보존. 실제 Chrome 4크기 선택/차단/생성 복귀 및 226시험 통과. Claude Haiku5.5 검수 P2 모바일 결과 노출 보완. 상세 PICKGO_MAP_DESIGN_2026-11-04.md. 공개/push 없음.
+
+
+## 2026-11-04 · 확정 픽업 지점 현대 내비 연결
+사용자 OSM시연→확정지점현대내비목적지전달/안내시작 승인 인계 수신. main 기존다수미커밋보존. 지도담당01a1a630과mapPoint[lon,lat]/proposal/소유조율, 공통웹소스미수정. 전용experiments/pickgo-navigation/** 구현, native명시버튼/서버재검증/중복저장/원점차단/45초실제상태확인. 실제에뮬레이터정상2건, independent probe 좌표대조,90초원본/40초발췌/30초자동시작영상. 초기최종내비버튼필수설명은 두번째무터치자동카운트다운관찰로정정. Haiku5.5검수2회 P1결과덮어쓰기/회차변경/래치보완,후속R1도수정. 최종build/lint/Java43/웹226통과. 기기화면이요청하지않은합성회차로변경되어조작중단,단절캡처판정유보·마지막보완실기재검증남음. 4194전용서버최신OSM반영재시작/유지; 첫영상회차소멸. 기기/공통소스추가조작없음. DotR010재사용/새조사없음. commit/push/키·계정변경없음. 상세 PICKGO_NAVIGATION_2026-11-04.md.
+
+## 2026-11-04 · 다인 픽업 기능 범위 추가
+사용자 다인 경유/추천 픽업 순서 요청을 PICKGO_MULTI_PICKUP_2026-11-04.md 및 DECISIONS에 반영. main 기존 미커밋 보존, 앱 소스 변경 없음. 단일 rider 구조와 기존 내비 문서 기록 확인. 추천의 명시 적용·사람별 권한·미준비/취소/공동 지점·입력 revision·실제 경로 미확보 대안 및 완료 조건 작성. 구현/시험/실제 경유 연동 미실행. Claude 실행 경로 미확보로 독립 검수 미실행, Dot 새 조사 없음. 다음 작업은 해당 설계의 독립 검토 및 다인 상태/경유 모델 구현이며 완료 처리하지 않음.
+
+
+## 2026-11-04 · 메인 검색 전용 화면
+사용자 요청으로 메인 시연 장소/후보/합성 도면 진입을 제거하고 “어디서 태울까요?”와 검색창만 표시. app.mjs/index.html/style.css/main-selection.test.mjs 수정. 기존 미커밋 보존, 서버/API/지도 미수정. 검색 공급자 미연동으로 입력 후 준비 중 안내, 합성 회차 생성 없음. 기존 초대/복원/상태 흐름 유지. 전체 224시험 통과. 실제 브라우저 시각 검증 미실행. 작은 메인 화면 후속 정리이며 Claude 호출 없음(현재 shell Get-Command claude 결과 없음); 독립 검수 완료로 표시하지 않음. Dot 새 조사 없음.
+
+
+## 2026-11-04 · 앱 화면 일관성 완료
+디자인 스킬로 보조3화면6파일 통일. 지도 담당 완료/소유반환 확인, main/map/style/API/JS 미수정. 226시험·Chrome3크기 동의거절/근접시연/추천제안철회/복귀/넘침없음 통과. Claude Haiku5.5 P1두항목 및 P2보완, Codex 재검증 완료. 상세 PICKGO_APP_CONSISTENCY_2026-11-04.md.
+
+## 2026-11-04 · 메인 검색 후 주변 후보·직접 지도 연결
+- 사용자 승인: routo 키 대기 중 메인 후보3 및 직접 고르기 흐름 연결. 검색 전용 첫 화면 후속 변경을 보존.
+- app.mjs/index.html/main-selection.test.mjs: 양재사옥 지원 검색→결과선택→실제 /api/map 후보 최대3→좌표로 회차생성 또는 /map 직접 핀 선택. 없는 후보 생성 안 함. 검색 변경 시 이전 응답/선택 무효화, 서버 거절400/409 시 후보 제거. 실제 지도 선택 문구 표시. 서버의 기존 pointName 재검증 유지.
+- 검증: node --test "experiments/pickup-board/*.test.mjs" 226/226. docs/evidence/pickup-home-map-tests.txt. 실제 Chromium1440 검색/후보3/좌표회차 생성,390 검색/후보3/실제지도 전환 및 가로 넘침 없음. work/pickup-main-map/verify.mjs, home-{1440,390}.png.
+- Claude Haiku5.5 session9bc65fc2-bc40-4e9e-aa7e-211f1fd56081 exit0/is_errorfalse, 읽기 검수. 관련 지적인 실제지도문구/거절후 선택무효화/JSON오류/현대차별칭 반영. 성공생성 브라우저로 보완. 기존 초대403/404 재참여 보존 및 회차생성 멱등성 문제는 이번 범위 밖으로 유지(미응답 후 재시도시 미공유 고아회차 가능). point 입력 shape는 기존 map.check와 서버 검사/지도 시험에서 거절, 임의 수정 안 함.
+- 실제 routo 미호출. 현재 지원 검색은 양재사옥 한정. OSM 실제검색 후속 담당01a1a697에 app/index/main-selection 소유 반환·현재 계약 전달. map/server/domain/Android 변경 없음. 에뮬레이터·4194 조작 없음.
+
+
+2026-11-04 최종 재검수·재시연: singleTask/늦은JS콜백가드 보완, 실제 Haiku 추가2회(R1해결/P0P1회귀없음). 최종 APK 434a9fb0efb3aa57b91103706fe6e4f2246cce32eea641dcc0989c1c3b356d84 설치파일일치, build/lint종료0. 새회차 최초OSM선택부터native버튼1회/내비무터치자동안내/정확목적지·ROUTE_GUIDING/45초결과유지/반복런처1인스턴스 통과. reviewed-demo.mp4 94.42초. 최종native실기9회귀재통과,조회실패·세션소실결과유지2경로추가확인. 이전final-05는실패증거, reviewed-*가최종통과증거. probe종료·PICKGO결과화면복귀·4194회차유지,추가SDK단절/실차/물리폰은미검증. 상세 PICKGO_NAVIGATION_2026-11-04.md 최신절.
+
+
+## 2026-11-04 · npm 공동작업자 기본 환경
+사용자 일괄 설치 도구 요청으로 npm run setup/설치계획/doctor와 Windows WinGet 프로그램·Codex CLI·스킬 대조/복구·계정별 체크리스트 구현. main 기존 미커밋 보존. 최종 설치 도구14시험 및 당시 웹243시험 통과; 실제 npm web 설치/재진단 통과. 실제 Claude Haiku5.5 고정검수 지적 처리. 새 PC full 설치·로그인·플러그인·Android/Pleos는 미실행. commit/push/publish 없음. 상세 TEAM_SETUP_2026-11-04.md.
+
+
+## 2026-11-04 · OSM 실제 지도 데이터 검색
+사용자 현재OSM기반 실제검색 요청 구현. 실제 이름/주소 검색→검색장소별 후보→지도/회차생성 연결. 246회귀+최종12집중+Chrome1440/390 통과. Claude Haiku5.5 2회검수 P2보완. localhost4195 신규서버 제공,4180/4194 보존. 상세 PICKGO_OSM_SEARCH_2026-11-04.md.
+
+## 2026-11-04 · 다인 픽업 로컬 구현
+main 기존미커밋보존. multi/**, multi*.test.mjs 추가; server/index최소삽입후검색담당에게소유반환·메시지확인. 로컬다인21시험/전체254통과, Chrome3인2지점완료. Opus설계/Haiku고정검수·후속지적반영. 별도4196서버사용,Android/기기작업없음. 상세 PICKGO_MULTI_PICKUP_2026-11-04.md와증거폴더. 실도로시간·내비다중경유·차량UX·물리폰·장소재합의남음으로전체원안완료표시하지않음. 다음범위: 실제경로공급자확보와기존Android담당소유조율뒤경유어댑터연결. 공개/push없음.

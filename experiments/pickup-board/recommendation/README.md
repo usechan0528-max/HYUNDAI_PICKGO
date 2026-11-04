@@ -18,3 +18,10 @@ python work/pickup-recommendation/verify.py --all
 첫 명령은 고정 기존 회귀+추천 시험, 두 번째는 병행 작업의 최종 시험까지 포함합니다. fake DOM/합성 graph와 실제 loopback HTTP를 구분합니다. 실제 SDK/휴대폰/차량 실행을 뜻하지 않습니다.
 
 실제 첫 지역은 사용자 지정 강남역입니다. 정차 허용 구역·진입/보행 입구·실제 경로 공급자·native 차량 위치가 검증되기 전에는 live를 켜지 않습니다. 세부 근거, 공급자 비용/제약, 검수 처리와 남은 항목은 `docs/PICKUP_RECOMMENDATION_2026-11-03.md`, `docs/PICKUP_GANGNAM_DATA_2026-11-03.md`에 있습니다.
+
+## 2026-11-04 변경
+
+정차 자체 금지/전용 공간/물리적 불가능은 추천·선택에서 차단한다. 공식 지정 없는 일반 도로변과 허용 미확인은 안내 후 선택 가능하다. 주차만 금지와 정차 금지를 구분한다. `maxDwellSeconds`는 선택적 확인값이며 기본 60초는 계획값이지 법적 허용시간이 아니다. 현재 실지점 검토 기준은 현대자동차 양재사옥이며 docs/PICKUP_YANGJAE_2026-11-04.md 참조. 지도 임의 핀·실제 금지구역 자동 판별은 미연동, 현재는 이름 기반 합성 카탈로그 시연이다.
+
+검증: `node --test experiments/pickup-board/*.test.mjs` (저장소 루트).
+Provider의 동기 `selectionEvidence(place)`는 서버 소유 현행 제한을 수동 선택에도 적용한다. `prohibited`는 기존 계약의 정차 금지 호환 필드이며 주차만 금지는 `parkingProhibited`로 전달한다. 제한 데이터는 동일한 입구 단위로 정규화해야 한다. 현 목록의 시설 이름을 실제 도로변 전체의 허용/금지로 확대하지 않는다.

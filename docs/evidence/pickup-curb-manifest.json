@@ -1,0 +1,13 @@
+{
+  "experiments\\pickup-board\\recommendation\\board.mjs": "2bfcb8580e1ab9122f3e05f7096b23ee5be2eb43e133547868a5c34603919d5f",
+  "experiments\\pickup-board\\recommendation\\controller.mjs": "492593199b94adadb821acc190768ea243e6c4f2f615d415c5bbb9cad6d0f97f",
+  "experiments\\pickup-board\\recommendation\\demo-server.mjs": "5edeeb2dce42f640bc8a341b0a22ed4550483c53970bbdf3092c5017b8689017",
+  "experiments\\pickup-board\\recommendation\\eligibility.mjs": "9bc2d4e33b29375a381a6f42c5512e3e21d8ee1e0af3259c94438afe71bac8ba",
+  "experiments\\pickup-board\\recommendation\\engine.mjs": "a81c2f651287bca137720b522d991f6981bfc520e4b74ee7c9f162e7f7a35107",
+  "experiments\\pickup-board\\recommendation\\page.mjs": "ad7bba858b3c229de4ee2303a560f6903f01c73799c52bc1e6429b3aa49b2f2e",
+  "experiments\\pickup-board\\recommendation\\providers.mjs": "8de5416a2f392388d84170d92fdb98151c638cfe12cbe316399bc51998510521",
+  "experiments\\pickup-board\\recommendation-controller.test.mjs": "3f085880b12e6ea5eb8d6220cedc3682f862faf244edbe090c1e1a6276a39769",
+  "experiments\\pickup-board\\recommendation-http.test.mjs": "a0360838d94e71cf2c3d0040fe5af05f239f00272b2cd221c8d0d75c312c172c",
+  "experiments\\pickup-board\\recommendation-page.test.mjs": "89a984a726a28785ac0707c8b2b5af0640713005d32c814b6882ad8cb375a280",
+  "experiments\\pickup-board\\recommendation.test.mjs": "d44cbbb98cb08654695b65706f6f2c93a78211e04e8a1c6faf671671f1618953"
+}

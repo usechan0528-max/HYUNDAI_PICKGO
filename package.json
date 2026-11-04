@@ -1,0 +1,16 @@
+{
+  "name": "pickgo-team-environment",
+  "version": "0.1.0",
+  "private": true,
+  "description": "PICKGO collaborator environment bootstrap (Windows)",
+  "type": "module",
+  "engines": { "node": ">=22" },
+  "scripts": {
+    "setup": "node tools/team-setup/cli.mjs install",
+    "setup:plan": "node tools/team-setup/cli.mjs plan",
+    "doctor": "node tools/team-setup/cli.mjs doctor",
+    "test:setup": "node --test tools/team-setup/setup.test.mjs",
+    "start": "node experiments/pickup-board/server.mjs",
+    "test": "node --test experiments/pickup-board/*.test.mjs"
+  }
+}
