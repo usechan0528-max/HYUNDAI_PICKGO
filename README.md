@@ -133,8 +133,8 @@
 Node.js 22 이상에서 저장소를 내려받은 뒤 실행합니다. 별도 npm 패키지 설치 없이 시작할 수 있습니다.
 
 ```sh
-git clone https://github.com/usechan0528-max/HYUNDAI_AI.git
-cd HYUNDAI_AI
+git clone https://github.com/usechan0528-max/HYUNDAI_PICKGO.git
+cd HYUNDAI_PICKGO
 npm start
 ```
 
