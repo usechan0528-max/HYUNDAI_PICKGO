@@ -1,0 +1,172 @@
+Read-only targeted follow-up, no tools/edits, <=500 words Korean. Review only fixes below for new important defects. Prior review session9f63669b-cd1f-403e-b5ae-683ff329f495 found P2s: (1) six-person cap includes cancelled: explicit existing approved policy retained, UI now explains need for new trip at cap, (2) join recovery expired: unrecoverable403/404/409 now clears retry key/disables join/instructs cancel/reinvite, (3) arrived origin updated and planner excludes already travelled origin->active leg, (4) missing/invalid session401/403/404 cleared, setup shown, polling stopped; transient503 preserved. 258 automated tests now pass; real headless Chrome 3riders/2stops/shared boarding, stale cancel, partial/all cancellation, recommendation, reload, offline/reconnect pass. No real route provider/native navigation claim. Check diff for regressions; classify addressed or remaining.
+diff --git a/experiments/pickup-board/multi-client.test.mjs b/experiments/pickup-board/multi-client.test.mjs
+index f13cabc..9c188eb 100644
+--- a/experiments/pickup-board/multi-client.test.mjs
++++ b/experiments/pickup-board/multi-client.test.mjs
+@@ -7,7 +7,7 @@ import { randomUUID } from 'node:crypto';
+ const source=await readFile(new URL('./multi/page.mjs',import.meta.url),'utf8');
+ const html=await readFile(new URL('./multi/page.html',import.meta.url),'utf8');
+ const rider={id:'trip',version:1,view:'old-view',role:'rider',status:'active',demo:true,participant:{id:'p',name:'가',state:'waiting',ready:false},stop:{label:'지점'},ordinal:1,arrived:false};
+-async function harness({hash='',saved={},failSessionSave=false,previewFailure=false,joinFailure=false,mapFailure=false,failRetrySave=false,actionConflict=false}={}){
++async function harness({hash='',saved={},failSessionSave=false,previewFailure=false,joinFailure=false,mapFailure=false,failRetrySave=false,actionConflict=false,readStatus=200,joinStatus=200}={}){
+   function element(){return {children:[],value:'',textContent:'',hidden:false,disabled:false,open:false,append(...v){this.children.push(...v);},replaceChildren(){this.children=[];},get options(){return this.children;},querySelector(){return this.child??=element();},setAttribute(){},showModal(){this.open=true;},close(){this.open=false;},select(){}};}
+   const nodes=new Map([...html.matchAll(/id="([^"]+)"/g)].map(m=>[m[1],element()]));
+   const values=new Map(Object.entries(saved)),requests=[],history=[],callbacks=[];
+@@ -19,8 +19,9 @@ async function harness({hash='',saved={},failSessionSave=false,previewFailure=fa
+       const body=options.body?JSON.parse(options.body):null;requests.push({path,body});
+       if(path==='/api/map'){if(mapFailure)throw Error('map offline');return {ok:true,json:async()=>({available:false})};}
+       if(path.endsWith('/preview'))return {ok:!previewFailure,json:async()=>previewFailure?{error:'used'}:{name:'가',stop:{label:'지점',point:[127,37]},demo:true}};
+-      if(path.endsWith('/join')){if(joinFailure)throw Error('response lost');return {ok:true,json:async()=>({id:'trip',token:'rider-token',role:'rider'})};}
++      if(path.endsWith('/join')){if(joinFailure)throw Error('response lost');return {ok:joinStatus===200,status:joinStatus,json:async()=>joinStatus===200?{id:'trip',token:'rider-token',role:'rider'}:{error:'이미 사용된 초대입니다.'}};}
+       if(path.endsWith('/actions')&&actionConflict)return {ok:false,status:409,json:async()=>({error:'상태가 바뀌었습니다.'})};
++      if(path==='/api/trips/trip'&&readStatus!==200)return {ok:false,status:readStatus,json:async()=>({error:'회차 조회 실패'})};
+       return {ok:true,json:async()=>structuredClone(rider)};
+     }};
+   vm.createContext(ctx);
+@@ -74,3 +75,23 @@ test('rapid clicks retain original revision, rather than silently rebasing user
+   await Promise.all([h.nodes.get('ready').onclick(),h.nodes.get('notReady').onclick()]);
+   const requests=h.requests.filter(r=>r.path.endsWith('/actions'));assert.equal(requests.length,2);assert.ok(requests.every(r=>r.body.version===1));assert.deepEqual(requests.map(r=>r.body.ready),[true,false]);
+ });
++test('expired or invalid restored sessions return to setup and stop polling',async()=>{
++  for(const readStatus of [401,403,404]){
++    const h=await harness({readStatus,saved:{'pickgo-multi-session-v1':JSON.stringify({id:'trip',token:'rider'})}});
++    assert.equal(h.ctx.h.getSession(),null);assert.equal(h.values.has('pickgo-multi-session-v1'),false);
++    assert.equal(h.nodes.get('setup').hidden,false);assert.equal(h.nodes.get('trip').hidden,true);
++    assert.match(h.nodes.get('message').textContent,/새 초대/);
++    const n=h.requests.length;h.callbacks[0]();await Promise.resolve();assert.equal(h.requests.length,n);
++  }
++});
++test('temporary server failure keeps the saved session for reconnect',async()=>{
++  const h=await harness({readStatus:503,saved:{'pickgo-multi-session-v1':JSON.stringify({id:'trip',token:'rider'})}});
++  assert.equal(h.ctx.h.getSession().token,'rider');assert.ok(h.values.has('pickgo-multi-session-v1'));
++});
++test('unrecoverable invitation stops retrying and explains cancel/reinvite limits',async()=>{
++  for(const joinStatus of [403,404,409]){
++    const h=await harness({hash:'#trip=trip&invite=invite',joinStatus});await h.nodes.get('join').onclick();
++    assert.equal(h.nodes.get('join').disabled,true);assert.equal(h.values.has('pickgo-multi-join'),false);
++    assert.equal(h.ctx.h.getSession(),null);assert.match(h.nodes.get('invitationText').textContent,/새 초대/);
++  }
++});
+diff --git a/experiments/pickup-board/multi.test.mjs b/experiments/pickup-board/multi.test.mjs
+index 5c33c8f..fcf991c 100644
+--- a/experiments/pickup-board/multi.test.mjs
++++ b/experiments/pickup-board/multi.test.mjs
+@@ -95,3 +95,20 @@ test('join, manual order, next, arrive, cancel, board all invalidate recommendat
+     assert.throws(()=>f.act('apply',{recommendationId:rec.id}),/만료/);
+   }
+ });
++test('arrival updates provider origin and recommendation excludes the travelled active leg',async()=>{
++  let received;
++  const f=fixture({demo:false,provider:input=>{
++    received=input;
++    const m=matrix(['origin',...input.order,'destination'],10);
++    m.origin[input.order[0]]=500;
++    return {mode:'real',source:'injected test fixture, not live traffic',observedAt:100000,expiresAt:110000,matrix:m};
++  }});
++  const p=f.add('가');f.add('나',p.stopId);f.add('다');f.act('next');f.act('arrive');
++  const rec=(await f.b.recommend(f.d.id,f.d.token,f.cmd(f.d,'recommend'))).recommendation;
++  assert.deepEqual(received.origin,[127.01,37.01]);assert.equal(rec.currentSeconds,10);assert.equal(rec.seconds,10);
++  assert.equal(rec.order[0],p.stopId);
++  const m=matrix(['origin','a','b','destination'],10);m.origin.a=500;
++  assert.equal(bestOrder(['a','b'],m,{active:'a',arrived:true,final:true}).seconds,20);
++  assert.equal(bestOrder(['a'],m,{active:'a',arrived:true}).seconds,0);
++  assert.equal(bestOrder(['a','b'],m,{active:'a'}).seconds,510);
++});
+diff --git a/experiments/pickup-board/multi/board.mjs b/experiments/pickup-board/multi/board.mjs
+index cf845eb..f42637c 100644
+--- a/experiments/pickup-board/multi/board.mjs
++++ b/experiments/pickup-board/multi/board.mjs
+@@ -131,7 +131,8 @@ export class MultiBoard {
+       }
+       case 'arrive': {
+         ok(t.active, 409, '다음 픽업을 먼저 선택하세요.');
+-        const stop = t.stops.find(s => s.id === t.active); ok(!stop.arrived, 409, '이미 도착 표시되었습니다.'); stop.arrived = true; break;
++        const stop = t.stops.find(s => s.id === t.active); ok(!stop.arrived, 409, '이미 도착 표시되었습니다.');
++        stop.arrived = true; t.origin = [...stop.point]; break;
+       }
+       case 'board': {
+         ok(actor.role === 'rider', 403, '탑승은 본인이 확인합니다.'); const p = person();
+@@ -164,7 +165,8 @@ export class MultiBoard {
+       ok(data && data.mode === (t.demo ? 'demo' : 'real') && typeof data.source === 'string' && data.source.length > 0 &&
+         Number.isFinite(data.observedAt) && data.observedAt <= this.now() && Number.isFinite(data.expiresAt) && data.expiresAt > this.now() && this.now() - data.observedAt < 60000,
+       503, '경로 데이터가 오래되었거나 유효하지 않습니다.');
+-      const result = bestOrder(t.order, data.matrix, { final: !!t.destination, active: t.active });
++      const result = bestOrder(t.order, data.matrix, { final: !!t.destination, active: t.active,
++        arrived: !!t.stops.find(s => s.id === t.active)?.arrived });
+       t.recommendation = { ...result, id: token(), version, source: data.source, mode: data.mode, observedAt: data.observedAt,
+         expiresAt: Math.min(data.expiresAt, data.observedAt + 60000) };
+       return this.read(id, credential);
+diff --git a/experiments/pickup-board/multi/page.html b/experiments/pickup-board/multi/page.html
+index 9ab15fb..02e852b 100644
+--- a/experiments/pickup-board/multi/page.html
++++ b/experiments/pickup-board/multi/page.html
+@@ -8,7 +8,7 @@
+ <label class="check"><input id="demo" type="checkbox">합성 이동시간으로 순서 추천 시연</label><p>실제 경로 데이터는 미연결입니다. 선택하지 않으면 수동 순서를 사용합니다. 지도 후보의 현장 정차 조건은 직접 확인하세요.</p><button class="primary">회차 만들기</button></form></section>
+ <section id="invitation" hidden class="panel"><h1>픽업 초대</h1><p id="invitationText"></p><p>참여하면 이 승차 지점에 동의합니다. 위치 수집은 하지 않습니다.</p><button id="join" class="primary">이 지점으로 참여</button></section>
+ <section id="trip" hidden><div class="heading"><h1 id="title">픽업 순서</h1><button id="refresh">다시 확인</button></div><p id="mode"></p><p id="tripStatus"></p>
+-<div id="driver" hidden><section id="addPanel" class="panel"><h2>탑승자 추가</h2><form id="addPerson"><label>표시 이름<input id="personName" maxlength="30" required autocomplete="off"></label><label>승차 지점<select id="pickup" required></select></label><button class="primary">추가하고 초대 링크 만들기</button></form><p>최대 6명 · 인원은 실제 차량 정원에 맞추세요. 초대 후 장소를 바꾸려면 취소 후 새로 초대하세요.</p></section>
++<div id="driver" hidden><section id="addPanel" class="panel"><h2>탑승자 추가</h2><form id="addPerson"><label>표시 이름<input id="personName" maxlength="30" required autocomplete="off"></label><label>승차 지점<select id="pickup" required></select></label><button class="primary">추가하고 초대 링크 만들기</button></form><p>취소 포함 총 6명 · 인원은 실제 차량 정원에 맞추세요. 초대 후 장소를 바꾸려면 취소 후 새로 초대하세요. 총 6명을 추가한 회차는 재초대할 수 없어 새 회차가 필요합니다.</p></section>
+ <div class="columns"><section class="panel"><h2>경유 순서</h2><p id="routeSummary"></p><ol id="stops"></ol><div class="actions"><button id="recommend">추천 순서 보기</button><button id="next" class="primary">다음 픽업 선택</button><button id="arrive">이 지점 도착 확인</button></div><p>‘다음 픽업 선택’은 회차의 진행 지점을 선택합니다. 현대 내비 안내는 아직 연결되지 않았습니다.</p></section>
+ <section class="panel"><h2>탑승자</h2><div id="people"></div></section></div>
+ <section id="recommendation" class="panel" hidden><h2>추천 순서 확인</h2><p id="recommendationText"></p><p id="recommendationSource"></p><button id="apply" class="primary">이 순서 적용</button></section>
+diff --git a/experiments/pickup-board/multi/page.mjs b/experiments/pickup-board/multi/page.mjs
+index 400a846..dc13976 100644
+--- a/experiments/pickup-board/multi/page.mjs
++++ b/experiments/pickup-board/multi/page.mjs
+@@ -97,7 +97,17 @@ function render() {
+ }
+ async function refresh() {
+   if (!session) return;
+-  const next = await api(`/api/trips/${session.id}`);
++  let next;
++  try { next = await api(`/api/trips/${session.id}`); }
++  catch (e) {
++    if ([401,403,404].includes(e.status)) {
++      session = null; state = null;
++      try { sessionStorage.removeItem(storage); } catch { /* In-memory recovery still works. */ }
++      $('trip').hidden = true; $('setup').hidden = false;
++      $('message').textContent = '이전 회차가 만료되었거나 참여 권한이 없습니다. 운전자는 새 회차를 만들고, 탑승자는 새 초대를 받아 주세요.';
++    }
++    throw e;
++  }
+   const changed = !state || state.version !== next.version || state.recommendation?.id !== next.recommendation?.id;
+   state = next; if (changed) render();
+ }
+@@ -116,7 +126,16 @@ $('join').onclick = () => run(async () => {
+   // Persist the retry key BEFORE consuming a one-use invite. A lost response is recoverable for five minutes.
+   try { sessionStorage.setItem('pickgo-multi-join', JSON.stringify({ ...invite, joinId })); }
+   catch { throw new Error('이 브라우저에 참여 복구 정보를 저장할 수 없습니다. 초대는 아직 사용하지 않았습니다. 브라우저 저장을 허용한 뒤 다시 참여하세요.'); }
+-  const joined = await api(`/api/trips/${invite.id}/join`, { invite:invite.invite, joinId }, false);
++  let joined;
++  try { joined = await api(`/api/trips/${invite.id}/join`, { invite:invite.invite, joinId }, false); }
++  catch (e) {
++    if ([403,404,409].includes(e.status)) {
++      try { sessionStorage.removeItem('pickgo-multi-join'); } catch { /* Do not retry an invalid invite in this page. */ }
++      recoveringJoin = false; $('join').disabled = true;
++      $('invitationText').textContent = '이 초대로는 참여를 복구할 수 없습니다. 운전자에게 기존 픽업 취소와 새 초대를 요청하세요. 회차 총 6명 한도에 도달했다면 새 회차가 필요합니다.';
++    }
++    throw e;
++  }
+   session = joined;
+   try {
+     sessionStorage.setItem(storage, JSON.stringify(joined)); sessionStorage.removeItem('pickgo-multi-join');
+diff --git a/experiments/pickup-board/multi/planner.mjs b/experiments/pickup-board/multi/planner.mjs
+index 687ff39..5ead420 100644
+--- a/experiments/pickup-board/multi/planner.mjs
++++ b/experiments/pickup-board/multi/planner.mjs
+@@ -1,12 +1,13 @@
+ // Directed, complete matrix; exhaustive search is deliberately bounded to six stops.
+-export function bestOrder(order, matrix, { final = false, active = null } = {}) {
++export function bestOrder(order, matrix, { final = false, active = null, arrived = false } = {}) {
+   if (!Array.isArray(order) || order.length > 6 || new Set(order).size !== order.length) throw new Error('INVALID_ORDER');
+   const nodes = ['origin', ...order, ...(final ? ['destination'] : [])];
+   for (const a of nodes) for (const b of nodes) if (a !== b) {
+     if (!Number.isSafeInteger(matrix?.[a]?.[b]) || matrix[a][b] < 0 || matrix[a][b] > 604800) throw new Error('ROUTE_MISSING');
+   }
+   const cost = list => {
+-    const route = ['origin', ...list, ...(final ? ['destination'] : [])];
++    // Manual arrival means the origin-to-active leg has already been travelled.
++    const route = [...(active && arrived ? [] : ['origin']), ...list, ...(final ? ['destination'] : [])];
+     return route.slice(1).reduce((sum, to, i) => sum + matrix[route[i]][to], 0);
+   };
+   let best = [...order], total = cost(order);

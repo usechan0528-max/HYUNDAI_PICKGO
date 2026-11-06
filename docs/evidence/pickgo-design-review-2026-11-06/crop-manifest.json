@@ -1,0 +1,47 @@
+{
+  "coordinate": [
+    "07-ready-driver.png",
+    [
+      40,
+      320,
+      780,
+      480
+    ]
+  ],
+  "mobile-actions": [
+    "20-multi-rider.png",
+    [
+      16,
+      233,
+      374,
+      468
+    ]
+  ],
+  "shared-stop": [
+    "21-shared-stop.png",
+    [
+      30,
+      395,
+      1250,
+      960
+    ]
+  ],
+  "end-action": [
+    "15-boarded.png",
+    [
+      40,
+      130,
+      1240,
+      570
+    ]
+  ],
+  "candidate-labels": [
+    "03-candidates.png",
+    [
+      240,
+      285,
+      1040,
+      590
+    ]
+  ]
+}

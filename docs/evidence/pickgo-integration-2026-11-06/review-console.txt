@@ -1,0 +1,5 @@
+exit 0
+Traceback (most recent call last):
+  File "C:\Users\dldyd\Documents\Codex\2026-11-02\shx\HYUNDAI_AI\work\pickgo-integration\review.py", line 19, in <module>
+    d=json.loads(r.stdout);print(json.dumps({k:d.get(k) for k in ['session_id','is_error','modelUsage','result']},ensure_ascii=False))
+UnicodeEncodeError: 'cp949' codec can't encode character '\u2013' in position 3772: illegal multibyte sequence

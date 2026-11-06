@@ -2,7 +2,9 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import vm from 'node:vm';
 import { readFile } from 'node:fs/promises';
-const source=await readFile(new URL('./app.mjs',import.meta.url),'utf8');
+const labelSource = (await readFile(new URL('./place-label.mjs', import.meta.url), 'utf8')).replace('export function', 'function');
+const rawSource=await readFile(new URL('./app.mjs',import.meta.url),'utf8');
+const source = rawSource.replace("import { placeLabel } from './place-label.mjs';", labelSource);
 const html=await readFile(new URL('./index.html',import.meta.url),'utf8');
 const id='00000000-0000-4000-8000-000000000001', invite='a'.repeat(32);
 const hash=`#room=${id}&invite=${invite}`;
@@ -21,7 +23,7 @@ async function page({fragment='',store=new Map(),denied=false,clipboard=false,fi
   return {nodes,calls,store,location,state,context};
 }
 test('invite survives pre-join reload without account or location collection',async()=>{
-  const first=await page({fragment:hash});assert.equal(first.location.hash,'');assert.equal(first.calls.length,0);
+  const first=await page({fragment:hash});assert.equal(first.location.hash,'');assert.equal(first.calls.length,1);assert.ok(first.calls[0].path.endsWith('/preview'));assert.equal(first.nodes.get('invitePlace').textContent,'픽업 장소 · 하나로마트 양재점');
   const second=await page({store:first.store});assert.equal(second.nodes.get('create').hidden,true);
   await second.nodes.get('join').onclick();assert.equal(JSON.parse(second.store.get('pickupSession')).role,'rider');
   assert.equal(second.store.has('pickupInvitation'),false);
@@ -39,7 +41,7 @@ test('malformed invite cannot accidentally create a driver room or call join',as
 test('storage denial keeps invitation in fragment for reload and explains limitation',async()=>{
   const p=await page({fragment:hash,denied:true});assert.equal(p.location.hash,hash);
   assert.match(p.nodes.get('notice').textContent,/저장/);
-  await p.nodes.get('join').onclick();assert.equal(p.calls.length,0);assert.match(p.nodes.get('notice').textContent,/참여하지 않았/);
+  await p.nodes.get('join').onclick();assert.equal(p.calls.filter(c=>!c.path.endsWith('/preview')).length,0);assert.match(p.nodes.get('notice').textContent,/참여하지 않았/);
 });
 test('same-room driver cannot replace their own credential with rider role',async()=>{
   const p=await page({fragment:hash,store:new Map([['pickupSession',JSON.stringify({id,role:'driver',token:'driver',invite})]])});

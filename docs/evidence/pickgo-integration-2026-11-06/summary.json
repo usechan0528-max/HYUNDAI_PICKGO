@@ -1,0 +1,20 @@
+{
+  "multiBasicFlow": true,
+  "singleSearchSelectJoin": true,
+  "point": [
+    127.0351004,
+    37.463915
+  ],
+  "routeRequests": 1,
+  "destinationMatches": true,
+  "routeGuiding": true,
+  "retainedAfter45Seconds": true,
+  "repeatLaunchOneActivity": true,
+  "participant": "headless Chrome UI; not physical phone",
+  "navigationTapsAfterNativeStart": 0,
+  "fullPidRouteRequests": 1,
+  "fullPidUserStarts": 1,
+  "apkSHA256": "17835102F6CF7B564482D1AEFD43A71CA8B8938B5385B7325903349CB8E75B4B",
+  "serverHead": "25a30be009e906c5c3e0bb80c55f2c5ed2e74cd4",
+  "scope": "One emulator acceptance run; booleans follow completed assertions, navigation tap count reflects harness actions, not OS-wide input surveillance."
+}

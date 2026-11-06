@@ -244,3 +244,32 @@ Codex 환경설정 담당: package.json, tools/team-setup/**, DESKTOP_SETUP 안�
 01a1a697 OSM검색 담당: app/index/style/server/map/page.mjs/map/page.html/main-selection 및 신규 map/search.mjs/map-search.test.mjs 구현·검수 종료 소유 반환. 다른 담당 미커밋 보존. 4195 PID17452 검색 서버 유지,4180/4194 미조작. 상세 PICKGO_OSM_SEARCH_2026-11-04.md.
 
 다인 담당 로컬 구현 편집 종료: multi/** 및 multi*.test.mjs 소유 반환. server/index는 이미 검색담당에게 반환. 전용보고·증거 완료, 실제내비원안미완료 유지. 4196은 이 담당이 만든 로컬다인시연서버이며 다른 포트/기기 조작 없음.
+
+
+## 2026-11-06 · 다인 로컬 마무리 담당 종료
+Codex 01a1ac33: multi/board.mjs,planner.mjs,page.mjs,page.html 및 multi.test/multi-client.test 편집·검수·재검증 종료,소유반환. 전용보고 PICKGO_MULTI_CLOSURE_2026-11-06.md 및증거 추가. 기존 PICKGO_MULTI_PICKUP_2026-11-04.md 미커밋문단 보존·링크만추가. 공통server/index/Android 미수정,기기미조작. 다음통합실기담당에게 인계.
+
+## 2026-11-06 · 통합 실기 검증
+Codex 01a1ac52: 전용 work/pickgo-integration 및 evidence/pickgo-integration-2026-11-06, 통합 보고·공통 기록 담당. 기존 변경 보존. 실행 채팅 종료 확인 후 emulator-5556/4194 통합 검증 담당. Claude 읽기검수. 새 기능·공개·push 제외.
+
+2026-11-06 통합실기 담당01a1ac52 종료·소유반환. 앱소스수정없음,전용보고/증거/README/작업·시험기록추가. emulator-5556 PICKGO결과화면 및4194 PID56964유지. 재빌드설치APK해시17835102…75b4b. 원채팅아이폰작업과서버분리,이후기기·서버조작없음.
+
+
+## 2026-11-06 · 간결한 픽업 화면
+Codex 01a1ac60: index/app/style/location-links, map/page.html·mjs, multi/page.html의 표시·문구만 편집. 이전 소유반환 및 통합검증 종료 기록 확인. 기존 미커밋 baseline 보존. Claude Opus 디자인 협의, Haiku 고정 diff 검수. API/도메인/Android/기기 변경 제외.
+
+2026-11-06 Codex01a1ac69: 기존01a1ac60디자인초안과협의 회수, index/app/style/location-links/map표시/multi HTML 및phone/proximity/recommendation HTML문구 통합·검증종료,소유반환. 기존다인/통합미커밋보존. 전용보고 PICKGO_DESIGN_SIMPLE_2026-11-06.md.
+
+2026-11-06 동일디자인후속 Codex01a1ac69: map CSS/표시JS·multi표시·domain오류문구·recommendation오류문구추가,상태/API불변.검증후소유반환. PICKGO_COMPACT_UI_2026-11-06.md.
+
+2026-11-06 공모전 시연 자료 담당: Codex. README.md 재구성(수정 전 전문 docs/showcase/README_BEFORE_2026-11-06.md 보존), docs/showcase/**, work/pickgo-showcase/**, 전용 증거·보고 담당. 앱 소스·기존 서버·기기 수정 없음. 별도 임시 서버/브라우저에서 합성 인물 시연, Claude 읽기 검수.
+
+2026-11-06 공모전 시연자료 담당 완료·소유반환: README.md, docs/showcase/**, 전용evidence, multi/README.md의숨김설정·과거포트안내2문장. 기존미커밋·앱소스보존. 임시촬영서버/브라우저종료,기존서버·에뮬레이터미조작. Claude2회지적처리완료.
+
+2026-11-06 독립 디자인 검토 담당: 전용 보고·evidence 담당. 사용자 후속 좌표노출 수정 승인으로 app/phone-page/proximity-page/recommendation/page.mjs·신규 place-label.mjs·server 정적경로만 담당. 원본 showcase·API·좌표저장·Android 불변. 기존 미커밋 사본 전용 evidence/before-fix 보존.
+
+2026-11-06 독립 디자인 검토 담당 완료·소유반환: 전용보고/evidence, place-label.mjs, app/phone-page/proximity-page/recommendation/page.mjs, server 정적경로 및6개VM시험하네스(기존assertion보존)/client 좌표stale회귀. 기존미커밋사본보존, 원본showcase미수정, 260시험·실제Chrome·Haiku검수완료. 임시서버/브라우저종료. 기존서버/기기미조작.
+
+2026-11-06 보고서 개선·실제 비율 대응 담당 Codex: main 기존 미커밋 유지. 사용자 보고서 기반 수정 및 휴대폰 탑승자 UI 승인. 소유 범위 experiments/pickup-board의 index/app/style, multi/page, phone HTML/CSS, map/page, domain/server 초대 장소 preview와 관련 시험. 사전 사본 docs/evidence/pickgo-layout-2026-11-06/before 보존. Android·SDK·원본 영상 제외. Claude 고정 입력 읽기 검수, Dot 기존 조사 범위 유지.
+
+2026-11-06 보고서 개선·실제비율 담당 완료 및 파일 소유 반환: 상기 범위 + phone-page.mjs의역할별stop표시. 261시험/89레이아웃검사 및 Claude독립검수 처리. 임시53388/Chrome 종료, 최신 검토용4199 서버는 실행 유지. 기존4194서버·adb reverse보존. 기존 /multi UI새로고침 및 스크롤원위치 완료. PICKGO_LAYOUT_2026-11-06.md.

@@ -1,0 +1,983 @@
+✔ two participants share ready, pending, accepted and ended state (4.3072ms)
+✔ self acceptance and driver readiness are forbidden (0.4839ms)
+✔ reject preserves the agreed place; old proposal cannot be accepted (0.6863ms)
+✔ one-use invitation, wrong and cross-room credentials rejected (0.4105ms)
+✔ stale concurrent writes, repeated request IDs and replaced proposals rejected (1.053ms)
+✔ server-issued read lease expires at boundary and cannot be fabricated (0.4859ms)
+✔ end before join revokes invite and pending proposal is cleared on end (0.773ms)
+✔ malformed and unsupported commands do not change state (0.4988ms)
+✔ memory lifetime and restart are explicit disappearance, not phantom success (0.4554ms)
+✔ withdraw belongs to proposer; foreign read leases and cross-room writes fail (0.9136ms)
+✔ HTTP integration: create/join/read/write, isolation, input and origin defenses (137.3799ms)
+✔ manual arrival and boarding require owner, order and explicit end (1.5715ms)
+✔ role-owned mistake undo and cancellation preserve truthful outcome (0.6514ms)
+✔ proposal resolution invalidates arrival only on accepted changed place (0.6929ms)
+✔ arrival needs join and resolved proposals; end clears pending and cancels (0.4924ms)
+✔ stage commands reject duplicate, stale version, foreign and expired leases (0.7204ms)
+✔ boarding preserves true readiness without deriving it; end names the actor (0.2658ms)
+✔ HTTP manual lifecycle shares stage/outcome and rejects a stale end after undo (49.6634ms)
+✖ HTTP error then successful refresh removes the accidental new-session escape (3.815ms)
+✖ connection failure labels every stale fact and locks all mutation controls (1.0417ms)
+✖ six-second client expiry locks even without a completed network failure (1.7616ms)
+✖ place editor blocks current place and offline writes; remote proposal closes editor (1.0991ms)
+✖ end confirmation isolates controls and cancellation preserves the shared round (0.9351ms)
+✖ initial network failure preserves session; ended rounds offer a new start (0.8666ms)
+✖ manual status labels and owner controls follow stage; stale locks them (0.9837ms)
+✖ remote boarding or undo invalidates an open end confirmation (0.9836ms)
+✖ rejected action remains explained across successful polling until explicit refresh (1.1607ms)
+✖ place confirmation appears only for fresh joined active room without pending proposal (1.2199ms)
+✔ candidate schema exactly matches two parameterless commands and is outside the APK (16.6203ms)
+✔ parser accepts empty extras and JSON whitespace only; no required arguments (0.7775ms)
+✔ parser rejects unknown, wrong types, mixed, injected, double-encoded and oversized inputs (0.7089ms)
+✔ default unconfigured adapter refuses every known action without consulting domain (0.5165ms)
+✔ actual Board status uses minimal public mapping; arrival synchronizes rider view (2.3154ms)
+✔ rider credential and forged role cannot invoke driver commands (0.4367ms)
+✔ no participant, pending location change, boarded and ended states cannot arrive (1.4722ms)
+✔ arrival captures version and refuses intervening change; query returns fresh status (0.4195ms)
+✔ place agreement change after preparation cannot receive old arrival (0.4958ms)
+✔ same ticket is consumed once; new Intent invalidates old without applying either twice (0.5397ms)
+✔ simultaneously queued dispatch microtasks apply exactly once (0.4515ms)
+✔ ticket deadline, wall-clock rollback and forward expiry fail closed (0.8398ms)
+✔ monotonic clock reversal rejects dispatch (0.2343ms)
+✔ offline, denied/unknown/stale UX and caller are rechecked at dispatch without data leakage (1.5977ms)
+✔ one-use host attestation cannot be replayed or assigned to another invocation (0.4133ms)
+✔ clear, rebind, invalid binding, dispose and process recreation never restore pending commands (0.5264ms)
+✔ missing expired or restarted server room fails without room or credential in response (0.3312ms)
+✔ host exceptions and synchronous reentry cannot mutate or leak exception contents (0.6428ms)
+✔ empty, fabricated and already consumed tickets return failures without throwing (0.2715ms)
+✔ denied new invocation cancels pending arrival even after host policy recovers (0.2906ms)
+✔ accessor action is never executed; phase mismatch and async Board are rejected (0.491ms)
+✔ dispatch reentry from trusted host attestation cannot consume twice (0.3053ms)
+✔ accepted place revision changes even A-B-A; readiness and phone shares do not change it (3.5909ms)
+✔ combined real HTTP: phone sharing and synthetic proximity never mark arrival; boarding clears phone sample (186.001ms)
+✔ accepted place change invalidates both published phone fix and outstanding consent (1.5234ms)
+✖ search starts with no choices; blank and unsupported queries never create a pickup (5.9326ms)
+✖ search result loads exactly three real candidates and creates by explicit coordinate selection (1.2313ms)
+✖ direct choice opens the actual map after search and never creates a room early (2.0668ms)
+✖ editing query invalidates delayed responses and selected coordinates (1.0917ms)
+✖ expired map data yields no fabricated candidates (1.0453ms)
+✖ editing query discards an older asynchronous search response (0.9765ms)
+✔ synthetic point is copied, shared and cleared only when another place is accepted (3.0031ms)
+✔ invalid or real-coordinate payloads cannot be treated as diagram selections (0.7789ms)
+✔ default server persists the selected point through authenticated HTTP reads (122.8059ms)
+✔ actual OSM names, alternate labels and spaced Korean search return source coordinates (4.6585ms)
+✔ map selection changes anchor and never bypasses expired data or unknown place ids (69.4436ms)
+✔ outside dataset objects are not exposed and returned coordinates cannot mutate index (15.8279ms)
+✔ real HTTP search, anchor map selection and invalid inputs preserve local origin boundary (185.4197ms)
+✔ line and concave polygon representative coordinates lie on the actual geometry (0.5498ms)
+✔ expired and future-dated search datasets require refresh before offering results (0.4078ms)
+✔ real OSM anchor, source geometry and generated candidates (41.1461ms)
+✔ real bus stop, crossing and motorway centres cannot be selected (4.1811ms)
+✔ unknown legal conditions remain freely selectable outside blocked features (0.6038ms)
+✔ coverage, malformed and expired data fail without legal-allowed inference (83.608ms)
+✔ parking-only restriction is not no-stopping; no_stopping is blocked (0.6968ms)
+✔ polygon edge and hole-free ring checks, metric offsets (0.3563ms)
+✔ map pin create, counterpart propose and accept preserve coordinates and consent reset (37.7231ms)
+✔ forged create/propose names, direct API points and stale acceptance cannot bypass checks (52.9871ms)
+✔ HTTP real-map page, checking, pin creation and restricted direct requests (220.1798ms)
+✔ recommendations require explicit road width, while manual unknown-width pins remain selectable (34.3332ms)
+✔ invalid graph geometry fails to load and multipolygon courtyard is not a building (0.5557ms)
+✔ expired data blocks acceptance while the room is still alive (23.7302ms)
+✔ ambiguous width units and multi-values never produce recommendations (0.2568ms)
+✔ queued click retains viewed revision and recommendation instead of applying a new one (7.0317ms)
+✔ join credential storage failure preserves memory session and persisted retry key (8.3893ms)
+✔ lost join response can retry after reload using same key even when preview is consumed (2.9215ms)
+✔ map failure does not prevent existing participant from restoring their trip (7.1071ms)
+✔ cancel confirmation keeps revision from opening the dialog (6.5165ms)
+✔ stale cancellation closes dialog, refreshes and keeps failure visible (3.3923ms)
+✔ unwritable recovery storage preserves unused invitation and explains remedy (3.3932ms)
+✔ rapid clicks retain original revision, rather than silently rebasing user intent (16.2994ms)
+✔ expired or invalid restored sessions return to setup and stop polling (5.8359ms)
+✔ temporary server failure keeps the saved session for reconnect (3.2898ms)
+✔ unrecoverable invitation stops retrying and explains cancel/reinvite limits (6.6774ms)
+✔ multi HTTP: integrated static page, 3 rider workflow, guards and existing route coexist (221.0351ms)
+✔ three riders: independent identity, privacy, preparation, ordered boarding and completion (12.8678ms)
+✔ same stop explicitly shared; one boarding does not advance other person (10.4595ms)
+✔ cancel before arrival never moves origin; immutable grouping, cancelled invite, no-show ending (2.2302ms)
+✔ single-use invite retry is bound to same join ID and TTL (0.8605ms)
+✔ cross trip auth, rider driver actions, stale views and replay rejected (0.9735ms)
+✔ manual ordering must be a permutation and locks active first stop (1.0201ms)
+✔ recommendation preview does not apply; ready change, expiry and duplicate apply rejected (3.8654ms)
+✔ real provider absent, failed, timed out, incomplete or stale never falls back to synthetic (10.5395ms)
+✔ in-flight calculation cannot resurrect recommendation after cancellation (1.0838ms)
+✔ bounded participants, invalid points and expiry (1.249ms)
+✔ directed costs and final destination change preferred order; stable ties and active lock (0.5834ms)
+✔ join, manual order, next, arrive, cancel, board all invalidate recommendations (5.207ms)
+✔ arrival updates provider origin and recommendation excludes the travelled active leg (0.9778ms)
+✖ page shows explicit consent without collection, driver has no consent controls (3.9224ms)
+✖ pagehide while GET pending cannot restore fresh authority or old sample (2.0133ms)
+✖ late sample after decline cannot reappear and ended/boarded render clears immediately (1.1735ms)
+✖ poll started after stop cannot re-show old remote sample while delete is pending (1.6145ms)
+✖ fresh explicit consent clears local suppression without auto-resuming from a poll (1.6641ms)
+✖ accepted place revision stops collection and requires a new explicit consent (1.6796ms)
+✔ phone requires explicit consent, correct rider and same room; no location in ordinary read (9.2669ms)
+✔ revoke-before-grant tombstone, stale revoke, late publish and consumed replay cannot resurrect (0.7483ms)
+✔ read and sweep enforce grant20s/sample30s boundaries and monotonic rollback (0.8336ms)
+✔ invalid accuracy/ranges/types/old/future fixes rejected without version changes (0.7893ms)
+✔ boarding/end synchronously erase and undo does not restore; new consent supersedes prior (1.5504ms)
+✔ grant requires fresh actual view and bounded IDs; room prune deletes raw coordinate memory (1.1562ms)
+✔ client never collects before explicit start and server grant; stop ignores late callbacks (1.0925ms)
+✔ pending grant stop sends revoke and late grant cannot start watch (0.3102ms)
+✔ one shot clears watch, ignores duplicate callback and stop deletes published fix (0.3565ms)
+✔ denied/offline/inaccurate/timeout and failed delete are explicit; no automatic restart (9.5334ms)
+✔ HTTP real transport authenticates phone endpoint and enforces delete and no-store (152.8404ms)
+✔ device epoch skew is metadata and does not defeat bounded same-clock age/TTL (0.5196ms)
+✔ HTTP phone rejects driver grant, late publish, bad origin and malformed bodies (32.1868ms)
+✔ grant cap and stale state errors do not invite blind retries and never collect (0.9788ms)
+✖ UI synthetic proximity stays distinct from manual arrival and expires on render (2.4997ms)
+✖ accepted revision invalidates near, including same place after A-B-A (1.1626ms)
+✖ permission denial, pending changes and manual stage block proximity hints (1.1952ms)
+✖ rider cannot use vehicle demo and late lifecycle response cannot reactivate it (1.2447ms)
+✔ geodesic calculation, dateline, poles and invalid coordinates (4.1005ms)
+✔ two separate fixes confirm near; notification fires only once and reads never repeat it (1.0848ms)
+✔ entry and exit accuracy margins and hysteresis (0.9644ms)
+✔ uncertain valid sample resets candidate; unknown needs two far observations (0.4031ms)
+✔ TTL expires at exactly 5000 ms on read without new callback (0.6558ms)
+✔ first candidate must remain fresh; two observations across expiry cannot confirm (1.627ms)
+✔ duplicate and out-of-order observations cannot confirm or refresh freshness (0.5686ms)
+✔ observation time cannot be replaced by fresh receipt time (0.1975ms)
+✔ invalid time rejected NaN (0.2581ms)
+✔ invalid time rejected Infinity (0.2287ms)
+✔ invalid time rejected -1 (1.2419ms)
+✔ invalid time rejected 1000 (0.1506ms)
+✔ invalid time rejected null (0.1879ms)
+✔ future, observation after receipt, and backwards host clock fail closed (0.5055ms)
+✔ invalid accuracy rejected -1 (0.3507ms)
+✔ invalid accuracy rejected 30.001 (0.1053ms)
+✔ invalid accuracy rejected NaN (0.2334ms)
+✔ invalid accuracy rejected Infinity (0.084ms)
+✔ invalid accuracy rejected 5 (0.1363ms)
+✔ invalid accuracy rejected null (0.0969ms)
+✔ accuracy max is inclusive; coordinates reject invalid latitude/longitude (0.2147ms)
+✔ vehicle or unlabelled input never enters synthetic policy (0.1497ms)
+✔ permission-denied invalidates old generation and recovery does not repeat notification (0.7695ms)
+✔ disconnected invalidates old generation and recovery does not repeat notification (0.1152ms)
+✔ unsupported invalidates old generation and recovery does not repeat notification (0.1144ms)
+✔ initializing invalidates old generation and recovery does not repeat notification (0.1993ms)
+✔ manual-stage invalidates old generation and recovery does not repeat notification (0.1389ms)
+✔ background invalidates old generation and recovery does not repeat notification (0.0911ms)
+✔ same binding idempotent; new revision invalidates callbacks and gives new notification (0.6763ms)
+✔ conflicting coordinates with same revision invalidate previous state and token (0.2222ms)
+✔ pre-bind observation cannot be used for a new destination (0.1403ms)
+✔ end/dispose clear state and reject delayed callback (0.2345ms)
+✔ isolated detector calls leave Board unchanged; manual Board actions still operate (1.9633ms)
+✔ review M1: stale replay cannot downgrade still fresh near (0.1632ms)
+✔ review M2: changing destination ID requires increasing revision (0.1757ms)
+✔ review L3: rejected poor fix does not consume valid observation timestamp (0.1833ms)
+✔ exact computed accuracy margins include enter100 and exit150 boundaries (0.2136ms)
+✔ review follow-up: end is terminal even for the same session (0.5959ms)
+✔ review follow-up: detector cannot switch sessions to reset revision history (0.4953ms)
+✔ no collection before consent; stop clears watch and ignores late callback (18.3585ms)
+✔ permission error and loss of foreground eligibility stop sharing (1.3532ms)
+✔ old grant resolution does not terminate a newer consent (0.5827ms)
+✔ revoke network failure still ends local collection (0.3869ms)
+✔ busy publisher drains only newest queued fix (2.1339ms)
+✔ actual HTTP authenticated recommendation, selection and latest-evidence acceptance (152.6635ms)
+✔ server cleanup removes idle expired positions without a further request (1118.3847ms)
+✖ page clears candidates at response-relative expiry and offline (2.5925ms)
+✖ page hides candidate snapshot immediately on local sharing invalidation (1.1551ms)
+✖ late calculate response after page hide cannot render candidates (1.0674ms)
+✖ unknown stopping conditions are visible without inventing a legal time limit (1.1321ms)
+✔ fresh route-based ranking → proposal → counterpart acceptance; never automatic (8.0126ms)
+✔ east graph changes ranking; no synthetic recommendation by default (2.3265ms)
+✔ one-shot consent cannot authorize continuous sharing or client supplied route (0.8634ms)
+✔ expiry invalidates recommendation and prevents delayed selection (1.6666ms)
+✔ revoke invalidates recommendation and prevents delayed selection (1.0341ms)
+✔ new-fix invalidates recommendation and prevents delayed selection (0.7266ms)
+✔ ended invalidates recommendation and prevents delayed selection (0.8375ms)
+✔ rollback invalidates recommendation and prevents delayed selection (0.8202ms)
+✔ revoke tombstone rejects late grant and publish; reordered updates fail (0.844ms)
+✔ ordinary actions cannot bypass recommendation evidence; reject still works (1.2832ms)
+✔ in-flight provider response cannot resurrect revoked inputs (2.0431ms)
+✔ provider failures return no candidates (0.5616ms)
+✔ exclude prohibited curb (0.3166ms)
+✔ exclude closure (0.1349ms)
+✔ exclude vehicle class denied (0.2064ms)
+✔ exclude permission expires before arrival (0.1811ms)
+✔ exclude wrong entrance evidence (0.2759ms)
+✔ exclude no pedestrian path (0.1683ms)
+✔ exclude wrong route (0.1783ms)
+✔ exclude unknown approach (0.1149ms)
+✔ exclude negative travel time (0.1314ms)
+✔ exclude mixed synthetic data (0.3287ms)
+✔ exclude unknown source (0.1198ms)
+✔ exclude stale permission evidence (0.2559ms)
+✔ exclude zero dwell permission (0.1435ms)
+✔ exclude short stop prohibited (0.1044ms)
+✔ exclude bus-only (0.2027ms)
+✔ exclude taxi-only (0.1262ms)
+✔ exclude building interior (0.1115ms)
+✔ exclude motorway center (0.1045ms)
+✔ accuracy, future time and stale source cannot produce ranking (0.3088ms)
+✔ unconfigured live provider rejects grants and fixes server-side (0.748ms)
+✔ expired positions prevent recommendation acceptance and delete derived summary (2.0113ms)
+✔ consent ID cap remains fail closed including revoked IDs (4.2427ms)
+✔ withdraw during provider acceptance prevents delayed acceptance (1.3233ms)
+✔ provider timeout aborts and prevents stacking a provider that ignores abort (3009.9526ms)
+✔ manual proposals remain explicit manual choices; recommendation origin cannot bypass binding loss (1.2959ms)
+✔ accepted manual and recommended place changes revoke both continuous grants (1.351ms)
+✔ explicit end remains available at mutation cap and removes locations (1.2615ms)
+✔ ordinary curb unknown permission, parking-only ban and short dwell remain selectable (0.3046ms)
+✔ new prohibition blocks recommendation selection and manual bypass (0.6709ms)
+✔ server restriction catalogue guards manual creation, proposal and acceptance (0.2377ms)
+✔ missing or stale restriction updates cannot erase a known ban (0.7473ms)
+✔ out-of-catalogue top scores do not hide selectable catalogue candidates (0.3515ms)
+✔ another entrance cannot overwrite a known ban under the same place name (0.3742ms)
+✔ missing key and pending terms never perform external fetch (4.1855ms)
+✔ REST request encodes query and uses lat,lon; normalized coordinates stay distinct (11.4217ms)
+✔ quota/auth/malformed replies are sanitized; zero results is valid (1.7779ms)
+✔ cancel, timeout and invalid inputs fail without leaking URL/key (29.21ms)
+✔ latest search wins even if provider ignores abort; empty and errors clear previous point (2.4946ms)
+✔ moving, expiry, blocked check, late validation and disposal prevent stale confirmation (1.8088ms)
+✔ confirmation preserves routo provenance after moving pin and cannot be repeated (0.8641ms)
+✔ map adapter uses named coordinates, clears previous pins and unregisters listeners (0.7627ms)
+✔ browser SDK loader refuses unconfigured key and cancels without loading (0.7028ms)
+✔ composed picker connects REST search, result pan, map click, validation and confirmation (9.0047ms)
+✔ preparation HTTP server exposes status without credentials, rejects foreign origin, serves normalized search (75.3183ms)
+✔ oversized upstream response cancels the stream instead of retaining it (1.2362ms)
+✔ SDK loader handles success, transport failure and cancellation with cleanup (1.0163ms)
+✔ malformed map event invalidates an earlier confirmable selection (4.2848ms)
+✔ slow validation expires from request start, and missing validity cannot authorize a pin (0.7192ms)
+✔ observer failure cannot consume the confirmed draft, and expiry emits without a click (0.5951ms)
+✔ loader reuses the same page SDK and refuses silently switching keys (0.2799ms)
+✔ connection preserves expected search errors and ignores pin click without a search anchor (0.5776ms)
+✔ lost join response retries same capability only for five minutes, never after end (4.514ms)
+✔ default RecommendationBoard preserves real HTTP phone grant/publish/read API (95.3693ms)
+✔ explicit HTTPS proxy origin: independent rider joins and completes without location (35.007ms)
+✖ invite survives pre-join reload without account or location collection (3.0718ms)
+✖ already joined rider reopens original link without consuming invitation twice (1.1691ms)
+✖ malformed invite cannot accidentally create a driver room or call join (3.0992ms)
+✖ storage denial keeps invitation in fragment for reload and explains limitation (1.7797ms)
+✖ same-room driver cannot replace their own credential with rider role (1.2851ms)
+✖ persistent notice survives refresh; reopening same invite preserves retry key (1.0982ms)
+✖ existing other session is preserved until explicit join; invitation can be dismissed (1.09ms)
+✖ dismissing an attempted invitation explains recovery loss before deleting retry key (10.5906ms)
+✖ copy failure exposes selectable link and local-only notice; used invitation gets scrubbed (2.7298ms)
+✖ failed credential save preserves retry key and persistent five-minute recovery notice (1.4487ms)
+✔ public origin is opt-in HTTPS with no path, credentials or token (4.8622ms)
+✔ loopback default rejects external hosts and spoofed forwarding headers (0.4237ms)
+✔ proxy origin requires exact Host/Origin; navigation without Origin can open invite (1.778ms)
+ℹ tests 259
+ℹ suites 0
+ℹ pass 219
+ℹ fail 40
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 3795.7094
+
+✖ failing tests:
+
+test at experiments\pickup-board\client.test.mjs:25:1
+✖ HTTP error then successful refresh removes the accidental new-session escape (3.815ms)
+  evalmachine.<anonymous>:1
+  import { placeLabel } from './place-label.mjs';
+  ^^^^^^
+  
+  SyntaxError: Cannot use import statement outside a module
+      at new Script (node:vm:117:7)
+      at createScript (node:vm:269:10)
+      at Object.runInContext (node:vm:300:10)
+      at harness (file:///C:/Users/dldyd/Documents/Codex/2026-11-02/shx/HYUNDAI_AI/experiments/pickup-board/client.test.mjs:22:33)
+      at TestContext.<anonymous> (file:///C:/Users/dldyd/Documents/Codex/2026-11-02/shx/HYUNDAI_AI/experiments/pickup-board/client.test.mjs:26:17)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.start (node:internal/test_runner/test:1262:17)
+      at startSubtestAfterBootstrap (node:internal/test_runner/harness:387:17)
+
+test at experiments\pickup-board\client.test.mjs:32:1
+✖ connection failure labels every stale fact and locks all mutation controls (1.0417ms)
+  evalmachine.<anonymous>:1
+  import { placeLabel } from './place-label.mjs';
+  ^^^^^^
+  
+  SyntaxError: Cannot use import statement outside a module
+      at new Script (node:vm:117:7)
+      at createScript (node:vm:269:10)
+      at Object.runInContext (node:vm:300:10)
+      at harness (file:///C:/Users/dldyd/Documents/Codex/2026-11-02/shx/HYUNDAI_AI/experiments/pickup-board/client.test.mjs:22:33)
+      at TestContext.<anonymous> (file:///C:/Users/dldyd/Documents/Codex/2026-11-02/shx/HYUNDAI_AI/experiments/pickup-board/client.test.mjs:33:17)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+
+test at experiments\pickup-board\client.test.mjs:40:1
+✖ six-second client expiry locks even without a completed network failure (1.7616ms)
+  evalmachine.<anonymous>:1
+  import { placeLabel } from './place-label.mjs';
+  ^^^^^^
+  
+  SyntaxError: Cannot use import statement outside a module
+      at new Script (node:vm:117:7)
+      at createScript (node:vm:269:10)
+      at Object.runInContext (node:vm:300:10)
+      at harness (file:///C:/Users/dldyd/Documents/Codex/2026-11-02/shx/HYUNDAI_AI/experiments/pickup-board/client.test.mjs:22:33)
+      at TestContext.<anonymous> (file:///C:/Users/dldyd/Documents/Codex/2026-11-02/shx/HYUNDAI_AI/experiments/pickup-board/client.test.mjs:41:17)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+
+test at experiments\pickup-board\client.test.mjs:45:1
+✖ place editor blocks current place and offline writes; remote proposal closes editor (1.0991ms)
+  evalmachine.<anonymous>:1
+  import { placeLabel } from './place-label.mjs';
+  ^^^^^^
+  
+  SyntaxError: Cannot use import statement outside a module
+      at new Script (node:vm:117:7)
+      at createScript (node:vm:269:10)
+      at Object.runInContext (node:vm:300:10)
+      at harness (file:///C:/Users/dldyd/Documents/Codex/2026-11-02/shx/HYUNDAI_AI/experiments/pickup-board/client.test.mjs:22:33)
+      at TestContext.<anonymous> (file:///C:/Users/dldyd/Documents/Codex/2026-11-02/shx/HYUNDAI_AI/experiments/pickup-board/client.test.mjs:46:17)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+
+test at experiments\pickup-board\client.test.mjs:53:1
+✖ end confirmation isolates controls and cancellation preserves the shared round (0.9351ms)
+  evalmachine.<anonymous>:1
+  import { placeLabel } from './place-label.mjs';
+  ^^^^^^
+  
+  SyntaxError: Cannot use import statement outside a module
+      at new Script (node:vm:117:7)
+      at createScript (node:vm:269:10)
+      at Object.runInContext (node:vm:300:10)
+      at harness (file:///C:/Users/dldyd/Documents/Codex/2026-11-02/shx/HYUNDAI_AI/experiments/pickup-board/client.test.mjs:22:33)
+      at TestContext.<anonymous> (file:///C:/Users/dldyd/Documents/Codex/2026-11-02/shx/HYUNDAI_AI/experiments/pickup-board/client.test.mjs:54:17)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+
+test at experiments\pickup-board\client.test.mjs:58:1
+✖ initial network failure preserves session; ended rounds offer a new start (0.8666ms)
+  evalmachine.<anonymous>:1
+  import { placeLabel } from './place-label.mjs';
+  ^^^^^^
+  
+  SyntaxError: Cannot use import statement outside a module
+      at new Script (node:vm:117:7)
+      at createScript (node:vm:269:10)
+      at Object.runInContext (node:vm:300:10)
+      at harness (file:///C:/Users/dldyd/Documents/Codex/2026-11-02/shx/HYUNDAI_AI/experiments/pickup-board/client.test.mjs:22:33)
+      at TestContext.<anonymous> (file:///C:/Users/dldyd/Documents/Codex/2026-11-02/shx/HYUNDAI_AI/experiments/pickup-board/client.test.mjs:59:17)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+
+test at experiments\pickup-board\client.test.mjs:65:1
+✖ manual status labels and owner controls follow stage; stale locks them (0.9837ms)
+  evalmachine.<anonymous>:1
+  import { placeLabel } from './place-label.mjs';
+  ^^^^^^
+  
+  SyntaxError: Cannot use import statement outside a module
+      at new Script (node:vm:117:7)
+      at createScript (node:vm:269:10)
+      at Object.runInContext (node:vm:300:10)
+      at harness (file:///C:/Users/dldyd/Documents/Codex/2026-11-02/shx/HYUNDAI_AI/experiments/pickup-board/client.test.mjs:22:33)
+      at TestContext.<anonymous> (file:///C:/Users/dldyd/Documents/Codex/2026-11-02/shx/HYUNDAI_AI/experiments/pickup-board/client.test.mjs:66:16)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+
+test at experiments\pickup-board\client.test.mjs:74:1
+✖ remote boarding or undo invalidates an open end confirmation (0.9836ms)
+  evalmachine.<anonymous>:1
+  import { placeLabel } from './place-label.mjs';
+  ^^^^^^
+  
+  SyntaxError: Cannot use import statement outside a module
+      at new Script (node:vm:117:7)
+      at createScript (node:vm:269:10)
+      at Object.runInContext (node:vm:300:10)
+      at harness (file:///C:/Users/dldyd/Documents/Codex/2026-11-02/shx/HYUNDAI_AI/experiments/pickup-board/client.test.mjs:22:33)
+      at TestContext.<anonymous> (file:///C:/Users/dldyd/Documents/Codex/2026-11-02/shx/HYUNDAI_AI/experiments/pickup-board/client.test.mjs:75:16)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+
+test at experiments\pickup-board\client.test.mjs:84:1
+✖ rejected action remains explained across successful polling until explicit refresh (1.1607ms)
+  evalmachine.<anonymous>:1
+  import { placeLabel } from './place-label.mjs';
+  ^^^^^^
+  
+  SyntaxError: Cannot use import statement outside a module
+      at new Script (node:vm:117:7)
+      at createScript (node:vm:269:10)
+      at Object.runInContext (node:vm:300:10)
+      at harness (file:///C:/Users/dldyd/Documents/Codex/2026-11-02/shx/HYUNDAI_AI/experiments/pickup-board/client.test.mjs:22:33)
+      at TestContext.<anonymous> (file:///C:/Users/dldyd/Documents/Codex/2026-11-02/shx/HYUNDAI_AI/experiments/pickup-board/client.test.mjs:85:16)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+
+test at experiments\pickup-board\client.test.mjs:92:1
+✖ place confirmation appears only for fresh joined active room without pending proposal (1.2199ms)
+  evalmachine.<anonymous>:1
+  import { placeLabel } from './place-label.mjs';
+  ^^^^^^
+  
+  SyntaxError: Cannot use import statement outside a module
+      at new Script (node:vm:117:7)
+      at createScript (node:vm:269:10)
+      at Object.runInContext (node:vm:300:10)
+      at harness (file:///C:/Users/dldyd/Documents/Codex/2026-11-02/shx/HYUNDAI_AI/experiments/pickup-board/client.test.mjs:22:33)
+      at TestContext.<anonymous> (file:///C:/Users/dldyd/Documents/Codex/2026-11-02/shx/HYUNDAI_AI/experiments/pickup-board/client.test.mjs:93:16)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+
+test at experiments\pickup-board\main-selection.test.mjs:26:1
+✖ search starts with no choices; blank and unsupported queries never create a pickup (5.9326ms)
+  evalmachine.<anonymous>:1
+  import { placeLabel } from './place-label.mjs';
+  ^^^^^^
+  
+  SyntaxError: Cannot use import statement outside a module
+      at new Script (node:vm:117:7)
+      at createScript (node:vm:269:10)
+      at Object.runInContext (node:vm:300:10)
+      at page (file:///C:/Users/dldyd/Documents/Codex/2026-11-02/shx/HYUNDAI_AI/experiments/pickup-board/main-selection.test.mjs:19:33)
+      at TestContext.<anonymous> (file:///C:/Users/dldyd/Documents/Codex/2026-11-02/shx/HYUNDAI_AI/experiments/pickup-board/main-selection.test.mjs:27:10)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.start (node:internal/test_runner/test:1262:17)
+      at startSubtestAfterBootstrap (node:internal/test_runner/harness:387:17)
+
+test at experiments\pickup-board\main-selection.test.mjs:30:1
+✖ search result loads exactly three real candidates and creates by explicit coordinate selection (1.2313ms)
+  evalmachine.<anonymous>:1
+  import { placeLabel } from './place-label.mjs';
+  ^^^^^^
+  
+  SyntaxError: Cannot use import statement outside a module
+      at new Script (node:vm:117:7)
+      at createScript (node:vm:269:10)
+      at Object.runInContext (node:vm:300:10)
+      at page (file:///C:/Users/dldyd/Documents/Codex/2026-11-02/shx/HYUNDAI_AI/experiments/pickup-board/main-selection.test.mjs:19:33)
+      at TestContext.<anonymous> (file:///C:/Users/dldyd/Documents/Codex/2026-11-02/shx/HYUNDAI_AI/experiments/pickup-board/main-selection.test.mjs:31:10)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+
+test at experiments\pickup-board\main-selection.test.mjs:35:1
+✖ direct choice opens the actual map after search and never creates a room early (2.0668ms)
+  evalmachine.<anonymous>:1
+  import { placeLabel } from './place-label.mjs';
+  ^^^^^^
+  
+  SyntaxError: Cannot use import statement outside a module
+      at new Script (node:vm:117:7)
+      at createScript (node:vm:269:10)
+      at Object.runInContext (node:vm:300:10)
+      at page (file:///C:/Users/dldyd/Documents/Codex/2026-11-02/shx/HYUNDAI_AI/experiments/pickup-board/main-selection.test.mjs:19:33)
+      at TestContext.<anonymous> (file:///C:/Users/dldyd/Documents/Codex/2026-11-02/shx/HYUNDAI_AI/experiments/pickup-board/main-selection.test.mjs:36:10)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+
+test at experiments\pickup-board\main-selection.test.mjs:38:1
+✖ editing query invalidates delayed responses and selected coordinates (1.0917ms)
+  evalmachine.<anonymous>:1
+  import { placeLabel } from './place-label.mjs';
+  ^^^^^^
+  
+  SyntaxError: Cannot use import statement outside a module
+      at new Script (node:vm:117:7)
+      at createScript (node:vm:269:10)
+      at Object.runInContext (node:vm:300:10)
+      at page (file:///C:/Users/dldyd/Documents/Codex/2026-11-02/shx/HYUNDAI_AI/experiments/pickup-board/main-selection.test.mjs:19:33)
+      at TestContext.<anonymous> (file:///C:/Users/dldyd/Documents/Codex/2026-11-02/shx/HYUNDAI_AI/experiments/pickup-board/main-selection.test.mjs:39:10)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+
+test at experiments\pickup-board\main-selection.test.mjs:42:1
+✖ expired map data yields no fabricated candidates (1.0453ms)
+  evalmachine.<anonymous>:1
+  import { placeLabel } from './place-label.mjs';
+  ^^^^^^
+  
+  SyntaxError: Cannot use import statement outside a module
+      at new Script (node:vm:117:7)
+      at createScript (node:vm:269:10)
+      at Object.runInContext (node:vm:300:10)
+      at page (file:///C:/Users/dldyd/Documents/Codex/2026-11-02/shx/HYUNDAI_AI/experiments/pickup-board/main-selection.test.mjs:19:33)
+      at TestContext.<anonymous> (file:///C:/Users/dldyd/Documents/Codex/2026-11-02/shx/HYUNDAI_AI/experiments/pickup-board/main-selection.test.mjs:43:10)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+
+test at experiments\pickup-board\main-selection.test.mjs:47:1
+✖ editing query discards an older asynchronous search response (0.9765ms)
+  evalmachine.<anonymous>:1
+  import { placeLabel } from './place-label.mjs';
+  ^^^^^^
+  
+  SyntaxError: Cannot use import statement outside a module
+      at new Script (node:vm:117:7)
+      at createScript (node:vm:269:10)
+      at Object.runInContext (node:vm:300:10)
+      at page (file:///C:/Users/dldyd/Documents/Codex/2026-11-02/shx/HYUNDAI_AI/experiments/pickup-board/main-selection.test.mjs:19:33)
+      at TestContext.<anonymous> (file:///C:/Users/dldyd/Documents/Codex/2026-11-02/shx/HYUNDAI_AI/experiments/pickup-board/main-selection.test.mjs:48:10)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+
+test at experiments\pickup-board\phone-page.test.mjs:19:1
+✖ page shows explicit consent without collection, driver has no consent controls (3.9224ms)
+  evalmachine.<anonymous>:1
+  import { placeLabel } from './place-label.mjs';
+  ^^^^^^
+  
+  SyntaxError: Cannot use import statement outside a module
+      at new Script (node:vm:117:7)
+      at createScript (node:vm:269:10)
+      at Object.runInContext (node:vm:300:10)
+      at harness (file:///C:/Users/dldyd/Documents/Codex/2026-11-02/shx/HYUNDAI_AI/experiments/pickup-board/phone-page.test.mjs:16:27)
+      at TestContext.<anonymous> (file:///C:/Users/dldyd/Documents/Codex/2026-11-02/shx/HYUNDAI_AI/experiments/pickup-board/phone-page.test.mjs:20:16)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.start (node:internal/test_runner/test:1262:17)
+      at startSubtestAfterBootstrap (node:internal/test_runner/harness:387:17)
+
+test at experiments\pickup-board\phone-page.test.mjs:24:1
+✖ pagehide while GET pending cannot restore fresh authority or old sample (2.0133ms)
+  evalmachine.<anonymous>:1
+  import { placeLabel } from './place-label.mjs';
+  ^^^^^^
+  
+  SyntaxError: Cannot use import statement outside a module
+      at new Script (node:vm:117:7)
+      at createScript (node:vm:269:10)
+      at Object.runInContext (node:vm:300:10)
+      at harness (file:///C:/Users/dldyd/Documents/Codex/2026-11-02/shx/HYUNDAI_AI/experiments/pickup-board/phone-page.test.mjs:16:27)
+      at TestContext.<anonymous> (file:///C:/Users/dldyd/Documents/Codex/2026-11-02/shx/HYUNDAI_AI/experiments/pickup-board/phone-page.test.mjs:25:16)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+
+test at experiments\pickup-board\phone-page.test.mjs:28:1
+✖ late sample after decline cannot reappear and ended/boarded render clears immediately (1.1735ms)
+  evalmachine.<anonymous>:1
+  import { placeLabel } from './place-label.mjs';
+  ^^^^^^
+  
+  SyntaxError: Cannot use import statement outside a module
+      at new Script (node:vm:117:7)
+      at createScript (node:vm:269:10)
+      at Object.runInContext (node:vm:300:10)
+      at harness (file:///C:/Users/dldyd/Documents/Codex/2026-11-02/shx/HYUNDAI_AI/experiments/pickup-board/phone-page.test.mjs:16:27)
+      at TestContext.<anonymous> (file:///C:/Users/dldyd/Documents/Codex/2026-11-02/shx/HYUNDAI_AI/experiments/pickup-board/phone-page.test.mjs:29:16)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+
+test at experiments\pickup-board\phone-page.test.mjs:34:1
+✖ poll started after stop cannot re-show old remote sample while delete is pending (1.6145ms)
+  evalmachine.<anonymous>:1
+  import { placeLabel } from './place-label.mjs';
+  ^^^^^^
+  
+  SyntaxError: Cannot use import statement outside a module
+      at new Script (node:vm:117:7)
+      at createScript (node:vm:269:10)
+      at Object.runInContext (node:vm:300:10)
+      at harness (file:///C:/Users/dldyd/Documents/Codex/2026-11-02/shx/HYUNDAI_AI/experiments/pickup-board/phone-page.test.mjs:16:27)
+      at TestContext.<anonymous> (file:///C:/Users/dldyd/Documents/Codex/2026-11-02/shx/HYUNDAI_AI/experiments/pickup-board/phone-page.test.mjs:35:16)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+
+test at experiments\pickup-board\phone-page.test.mjs:38:1
+✖ fresh explicit consent clears local suppression without auto-resuming from a poll (1.6641ms)
+  evalmachine.<anonymous>:1
+  import { placeLabel } from './place-label.mjs';
+  ^^^^^^
+  
+  SyntaxError: Cannot use import statement outside a module
+      at new Script (node:vm:117:7)
+      at createScript (node:vm:269:10)
+      at Object.runInContext (node:vm:300:10)
+      at harness (file:///C:/Users/dldyd/Documents/Codex/2026-11-02/shx/HYUNDAI_AI/experiments/pickup-board/phone-page.test.mjs:16:27)
+      at TestContext.<anonymous> (file:///C:/Users/dldyd/Documents/Codex/2026-11-02/shx/HYUNDAI_AI/experiments/pickup-board/phone-page.test.mjs:39:16)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+
+test at experiments\pickup-board\phone-page.test.mjs:44:1
+✖ accepted place revision stops collection and requires a new explicit consent (1.6796ms)
+  evalmachine.<anonymous>:1
+  import { placeLabel } from './place-label.mjs';
+  ^^^^^^
+  
+  SyntaxError: Cannot use import statement outside a module
+      at new Script (node:vm:117:7)
+      at createScript (node:vm:269:10)
+      at Object.runInContext (node:vm:300:10)
+      at harness (file:///C:/Users/dldyd/Documents/Codex/2026-11-02/shx/HYUNDAI_AI/experiments/pickup-board/phone-page.test.mjs:16:27)
+      at TestContext.<anonymous> (file:///C:/Users/dldyd/Documents/Codex/2026-11-02/shx/HYUNDAI_AI/experiments/pickup-board/phone-page.test.mjs:45:16)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+
+test at experiments\pickup-board\proximity-page.test.mjs:21:1
+✖ UI synthetic proximity stays distinct from manual arrival and expires on render (2.4997ms)
+  evalmachine.<anonymous>:1
+  import { placeLabel } from './place-label.mjs';
+  ^^^^^^
+  
+  SyntaxError: Cannot use import statement outside a module
+      at new Script (node:vm:117:7)
+      at createScript (node:vm:269:10)
+      at Object.runInContext (node:vm:300:10)
+      at setup (file:///C:/Users/dldyd/Documents/Codex/2026-11-02/shx/HYUNDAI_AI/experiments/pickup-board/proximity-page.test.mjs:16:32)
+      at TestContext.<anonymous> (file:///C:/Users/dldyd/Documents/Codex/2026-11-02/shx/HYUNDAI_AI/experiments/pickup-board/proximity-page.test.mjs:22:17)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.start (node:internal/test_runner/test:1262:17)
+      at startSubtestAfterBootstrap (node:internal/test_runner/harness:387:17)
+
+test at experiments\pickup-board\proximity-page.test.mjs:25:1
+✖ accepted revision invalidates near, including same place after A-B-A (1.1626ms)
+  evalmachine.<anonymous>:1
+  import { placeLabel } from './place-label.mjs';
+  ^^^^^^
+  
+  SyntaxError: Cannot use import statement outside a module
+      at new Script (node:vm:117:7)
+      at createScript (node:vm:269:10)
+      at Object.runInContext (node:vm:300:10)
+      at setup (file:///C:/Users/dldyd/Documents/Codex/2026-11-02/shx/HYUNDAI_AI/experiments/pickup-board/proximity-page.test.mjs:16:32)
+      at TestContext.<anonymous> (file:///C:/Users/dldyd/Documents/Codex/2026-11-02/shx/HYUNDAI_AI/experiments/pickup-board/proximity-page.test.mjs:26:17)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+
+test at experiments\pickup-board\proximity-page.test.mjs:29:1
+✖ permission denial, pending changes and manual stage block proximity hints (1.1952ms)
+  evalmachine.<anonymous>:1
+  import { placeLabel } from './place-label.mjs';
+  ^^^^^^
+  
+  SyntaxError: Cannot use import statement outside a module
+      at new Script (node:vm:117:7)
+      at createScript (node:vm:269:10)
+      at Object.runInContext (node:vm:300:10)
+      at setup (file:///C:/Users/dldyd/Documents/Codex/2026-11-02/shx/HYUNDAI_AI/experiments/pickup-board/proximity-page.test.mjs:16:32)
+      at TestContext.<anonymous> (file:///C:/Users/dldyd/Documents/Codex/2026-11-02/shx/HYUNDAI_AI/experiments/pickup-board/proximity-page.test.mjs:30:17)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+
+test at experiments\pickup-board\proximity-page.test.mjs:35:1
+✖ rider cannot use vehicle demo and late lifecycle response cannot reactivate it (1.2447ms)
+  evalmachine.<anonymous>:1
+  import { placeLabel } from './place-label.mjs';
+  ^^^^^^
+  
+  SyntaxError: Cannot use import statement outside a module
+      at new Script (node:vm:117:7)
+      at createScript (node:vm:269:10)
+      at Object.runInContext (node:vm:300:10)
+      at setup (file:///C:/Users/dldyd/Documents/Codex/2026-11-02/shx/HYUNDAI_AI/experiments/pickup-board/proximity-page.test.mjs:16:32)
+      at TestContext.<anonymous> (file:///C:/Users/dldyd/Documents/Codex/2026-11-02/shx/HYUNDAI_AI/experiments/pickup-board/proximity-page.test.mjs:36:21)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+
+test at experiments\pickup-board\recommendation-page.test.mjs:20:1
+✖ page clears candidates at response-relative expiry and offline (2.5925ms)
+  evalmachine.<anonymous>:1
+  import { placeLabel } from '../place-label.mjs';
+  ^^^^^^
+  
+  SyntaxError: Cannot use import statement outside a module
+      at new Script (node:vm:117:7)
+      at createScript (node:vm:269:10)
+      at Object.runInNewContext (node:vm:310:10)
+      at harness (file:///C:/Users/dldyd/Documents/Codex/2026-11-02/shx/HYUNDAI_AI/experiments/pickup-board/recommendation-page.test.mjs:18:5)
+      at TestContext.<anonymous> (file:///C:/Users/dldyd/Documents/Codex/2026-11-02/shx/HYUNDAI_AI/experiments/pickup-board/recommendation-page.test.mjs:20:95)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.start (node:internal/test_runner/test:1262:17)
+      at startSubtestAfterBootstrap (node:internal/test_runner/harness:387:17)
+
+test at experiments\pickup-board\recommendation-page.test.mjs:21:1
+✖ page hides candidate snapshot immediately on local sharing invalidation (1.1551ms)
+  evalmachine.<anonymous>:1
+  import { placeLabel } from '../place-label.mjs';
+  ^^^^^^
+  
+  SyntaxError: Cannot use import statement outside a module
+      at new Script (node:vm:117:7)
+      at createScript (node:vm:269:10)
+      at Object.runInNewContext (node:vm:310:10)
+      at harness (file:///C:/Users/dldyd/Documents/Codex/2026-11-02/shx/HYUNDAI_AI/experiments/pickup-board/recommendation-page.test.mjs:18:5)
+      at TestContext.<anonymous> (file:///C:/Users/dldyd/Documents/Codex/2026-11-02/shx/HYUNDAI_AI/experiments/pickup-board/recommendation-page.test.mjs:21:104)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+
+test at experiments\pickup-board\recommendation-page.test.mjs:22:1
+✖ late calculate response after page hide cannot render candidates (1.0674ms)
+  evalmachine.<anonymous>:1
+  import { placeLabel } from '../place-label.mjs';
+  ^^^^^^
+  
+  SyntaxError: Cannot use import statement outside a module
+      at new Script (node:vm:117:7)
+      at createScript (node:vm:269:10)
+      at Object.runInNewContext (node:vm:310:10)
+      at harness (file:///C:/Users/dldyd/Documents/Codex/2026-11-02/shx/HYUNDAI_AI/experiments/pickup-board/recommendation-page.test.mjs:18:5)
+      at TestContext.<anonymous> (file:///C:/Users/dldyd/Documents/Codex/2026-11-02/shx/HYUNDAI_AI/experiments/pickup-board/recommendation-page.test.mjs:22:97)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+
+test at experiments\pickup-board\recommendation-page.test.mjs:24:1
+✖ unknown stopping conditions are visible without inventing a legal time limit (1.1321ms)
+  evalmachine.<anonymous>:1
+  import { placeLabel } from '../place-label.mjs';
+  ^^^^^^
+  
+  SyntaxError: Cannot use import statement outside a module
+      at new Script (node:vm:117:7)
+      at createScript (node:vm:269:10)
+      at Object.runInNewContext (node:vm:310:10)
+      at harness (file:///C:/Users/dldyd/Documents/Codex/2026-11-02/shx/HYUNDAI_AI/experiments/pickup-board/recommendation-page.test.mjs:18:5)
+      at TestContext.<anonymous> (file:///C:/Users/dldyd/Documents/Codex/2026-11-02/shx/HYUNDAI_AI/experiments/pickup-board/recommendation-page.test.mjs:24:109)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+
+test at experiments\pickup-board\web-invite.test.mjs:23:1
+✖ invite survives pre-join reload without account or location collection (3.0718ms)
+  evalmachine.<anonymous>:1
+  import { placeLabel } from './place-label.mjs';
+  ^^^^^^
+  
+  SyntaxError: Cannot use import statement outside a module
+      at new Script (node:vm:117:7)
+      at createScript (node:vm:269:10)
+      at Object.runInContext (node:vm:300:10)
+      at page (file:///C:/Users/dldyd/Documents/Codex/2026-11-02/shx/HYUNDAI_AI/experiments/pickup-board/web-invite.test.mjs:20:32)
+      at TestContext.<anonymous> (file:///C:/Users/dldyd/Documents/Codex/2026-11-02/shx/HYUNDAI_AI/experiments/pickup-board/web-invite.test.mjs:24:21)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.start (node:internal/test_runner/test:1262:17)
+      at startSubtestAfterBootstrap (node:internal/test_runner/harness:387:17)
+
+test at experiments\pickup-board\web-invite.test.mjs:30:1
+✖ already joined rider reopens original link without consuming invitation twice (1.1691ms)
+  evalmachine.<anonymous>:1
+  import { placeLabel } from './place-label.mjs';
+  ^^^^^^
+  
+  SyntaxError: Cannot use import statement outside a module
+      at new Script (node:vm:117:7)
+      at createScript (node:vm:269:10)
+      at Object.runInContext (node:vm:300:10)
+      at page (file:///C:/Users/dldyd/Documents/Codex/2026-11-02/shx/HYUNDAI_AI/experiments/pickup-board/web-invite.test.mjs:20:32)
+      at TestContext.<anonymous> (file:///C:/Users/dldyd/Documents/Codex/2026-11-02/shx/HYUNDAI_AI/experiments/pickup-board/web-invite.test.mjs:32:17)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+
+test at experiments\pickup-board\web-invite.test.mjs:35:1
+✖ malformed invite cannot accidentally create a driver room or call join (3.0992ms)
+  evalmachine.<anonymous>:1
+  import { placeLabel } from './place-label.mjs';
+  ^^^^^^
+  
+  SyntaxError: Cannot use import statement outside a module
+      at new Script (node:vm:117:7)
+      at createScript (node:vm:269:10)
+      at Object.runInContext (node:vm:300:10)
+      at page (file:///C:/Users/dldyd/Documents/Codex/2026-11-02/shx/HYUNDAI_AI/experiments/pickup-board/web-invite.test.mjs:20:32)
+      at TestContext.<anonymous> (file:///C:/Users/dldyd/Documents/Codex/2026-11-02/shx/HYUNDAI_AI/experiments/pickup-board/web-invite.test.mjs:36:17)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+
+test at experiments\pickup-board\web-invite.test.mjs:39:1
+✖ storage denial keeps invitation in fragment for reload and explains limitation (1.7797ms)
+  evalmachine.<anonymous>:1
+  import { placeLabel } from './place-label.mjs';
+  ^^^^^^
+  
+  SyntaxError: Cannot use import statement outside a module
+      at new Script (node:vm:117:7)
+      at createScript (node:vm:269:10)
+      at Object.runInContext (node:vm:300:10)
+      at page (file:///C:/Users/dldyd/Documents/Codex/2026-11-02/shx/HYUNDAI_AI/experiments/pickup-board/web-invite.test.mjs:20:32)
+      at TestContext.<anonymous> (file:///C:/Users/dldyd/Documents/Codex/2026-11-02/shx/HYUNDAI_AI/experiments/pickup-board/web-invite.test.mjs:40:17)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+
+test at experiments\pickup-board\web-invite.test.mjs:44:1
+✖ same-room driver cannot replace their own credential with rider role (1.2851ms)
+  evalmachine.<anonymous>:1
+  import { placeLabel } from './place-label.mjs';
+  ^^^^^^
+  
+  SyntaxError: Cannot use import statement outside a module
+      at new Script (node:vm:117:7)
+      at createScript (node:vm:269:10)
+      at Object.runInContext (node:vm:300:10)
+      at page (file:///C:/Users/dldyd/Documents/Codex/2026-11-02/shx/HYUNDAI_AI/experiments/pickup-board/web-invite.test.mjs:20:32)
+      at TestContext.<anonymous> (file:///C:/Users/dldyd/Documents/Codex/2026-11-02/shx/HYUNDAI_AI/experiments/pickup-board/web-invite.test.mjs:45:17)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+
+test at experiments\pickup-board\web-invite.test.mjs:49:1
+✖ persistent notice survives refresh; reopening same invite preserves retry key (1.0982ms)
+  evalmachine.<anonymous>:1
+  import { placeLabel } from './place-label.mjs';
+  ^^^^^^
+  
+  SyntaxError: Cannot use import statement outside a module
+      at new Script (node:vm:117:7)
+      at createScript (node:vm:269:10)
+      at Object.runInContext (node:vm:300:10)
+      at page (file:///C:/Users/dldyd/Documents/Codex/2026-11-02/shx/HYUNDAI_AI/experiments/pickup-board/web-invite.test.mjs:20:32)
+      at TestContext.<anonymous> (file:///C:/Users/dldyd/Documents/Codex/2026-11-02/shx/HYUNDAI_AI/experiments/pickup-board/web-invite.test.mjs:51:17)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+
+test at experiments\pickup-board\web-invite.test.mjs:56:1
+✖ existing other session is preserved until explicit join; invitation can be dismissed (1.09ms)
+  evalmachine.<anonymous>:1
+  import { placeLabel } from './place-label.mjs';
+  ^^^^^^
+  
+  SyntaxError: Cannot use import statement outside a module
+      at new Script (node:vm:117:7)
+      at createScript (node:vm:269:10)
+      at Object.runInContext (node:vm:300:10)
+      at page (file:///C:/Users/dldyd/Documents/Codex/2026-11-02/shx/HYUNDAI_AI/experiments/pickup-board/web-invite.test.mjs:20:32)
+      at TestContext.<anonymous> (file:///C:/Users/dldyd/Documents/Codex/2026-11-02/shx/HYUNDAI_AI/experiments/pickup-board/web-invite.test.mjs:58:17)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+
+test at experiments\pickup-board\web-invite.test.mjs:62:1
+✖ dismissing an attempted invitation explains recovery loss before deleting retry key (10.5906ms)
+  evalmachine.<anonymous>:1
+  import { placeLabel } from './place-label.mjs';
+  ^^^^^^
+  
+  SyntaxError: Cannot use import statement outside a module
+      at new Script (node:vm:117:7)
+      at createScript (node:vm:269:10)
+      at Object.runInContext (node:vm:300:10)
+      at page (file:///C:/Users/dldyd/Documents/Codex/2026-11-02/shx/HYUNDAI_AI/experiments/pickup-board/web-invite.test.mjs:20:32)
+      at TestContext.<anonymous> (file:///C:/Users/dldyd/Documents/Codex/2026-11-02/shx/HYUNDAI_AI/experiments/pickup-board/web-invite.test.mjs:63:17)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+
+test at experiments\pickup-board\web-invite.test.mjs:67:1
+✖ copy failure exposes selectable link and local-only notice; used invitation gets scrubbed (2.7298ms)
+  evalmachine.<anonymous>:1
+  import { placeLabel } from './place-label.mjs';
+  ^^^^^^
+  
+  SyntaxError: Cannot use import statement outside a module
+      at new Script (node:vm:117:7)
+      at createScript (node:vm:269:10)
+      at Object.runInContext (node:vm:300:10)
+      at page (file:///C:/Users/dldyd/Documents/Codex/2026-11-02/shx/HYUNDAI_AI/experiments/pickup-board/web-invite.test.mjs:20:32)
+      at TestContext.<anonymous> (file:///C:/Users/dldyd/Documents/Codex/2026-11-02/shx/HYUNDAI_AI/experiments/pickup-board/web-invite.test.mjs:68:17)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+
+test at experiments\pickup-board\web-invite.test.mjs:75:1
+✖ failed credential save preserves retry key and persistent five-minute recovery notice (1.4487ms)
+  evalmachine.<anonymous>:1
+  import { placeLabel } from './place-label.mjs';
+  ^^^^^^
+  
+  SyntaxError: Cannot use import statement outside a module
+      at new Script (node:vm:117:7)
+      at createScript (node:vm:269:10)
+      at Object.runInContext (node:vm:300:10)
+      at page (file:///C:/Users/dldyd/Documents/Codex/2026-11-02/shx/HYUNDAI_AI/experiments/pickup-board/web-invite.test.mjs:20:32)
+      at TestContext.<anonymous> (file:///C:/Users/dldyd/Documents/Codex/2026-11-02/shx/HYUNDAI_AI/experiments/pickup-board/web-invite.test.mjs:76:17)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)

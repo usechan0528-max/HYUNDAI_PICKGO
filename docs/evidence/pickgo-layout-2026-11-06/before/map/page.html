@@ -1,0 +1,12 @@
+<!doctype html>
+<html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>PICKGO · 양재 픽업 지도</title><link rel="stylesheet" href="/map/vendor/leaflet.css"><link rel="stylesheet" href="/style.css"><link rel="stylesheet" href="/map/page.css"></head>
+<body class="map-page"><div class="map-shell"><header><a href="/" class="brand">PICKGO</a><span class="map-context">픽업 장소 선택</span><a href="/" class="button secondary back-link">돌아가기</a></header>
+<main><aside><details class="map-options"><summary>주변 장소·지도 설정</summary><h1 id="mapQuestion">어디서 태울까요?</h1><p id="mapIntro" class="intro">현대자동차 양재사옥 주변</p>
+<div class="legend"><span class="swatch blocked"></span>차단 영역 <span class="swatch possible"></span>추천 장소</div>
+<p class="help">지도에서 선택 · 빨간 영역 제외</p>
+<div class="controls"><button id="home">검색 장소로 이동</button><label><input id="zones" type="checkbox" checked> 차단 영역 표시</label></div>
+<h2>주변 픽업 장소</h2><p class="caption">일반도로 가장자리 추정 · 거리는 검색 장소 중심에서 직선거리</p><div id="candidates"><p>장소를 불러오는 중…</p></div>
+
+<details><summary>지도 데이터와 선택 기준</summary><p id="dataInfo"></p><p>버스정류장·횡단보도 주변, 건물 내부, 고속도로·전용 차로 등 데이터에서 판별된 영역을 차단합니다. 도로폭·교차로 범위는 추정값입니다.</p><p>미수록 금지표지·어린이보호구역·시간대/임시 통제는 누락될 수 있습니다. 선택 가능은 합법 정차 인증이 아닙니다. 현장 확인과 정차 책임은 사용자에게 있습니다.</p><a href="/map/data/yangjae.json">사용한 지도 데이터</a> · <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noreferrer">ODbL 출처</a><p>선택한 장소는 상대와 공유되며 회차 만료 시 삭제됩니다. 현재 위치 권한은 요청하지 않습니다. 배경 지도를 보는 영역과 IP 주소가 타일 요청으로 OpenStreetMap에 전달됩니다.</p></details></details><section class="selection"><h2 id="selectionTitle">지도에서 지점을 선택하세요</h2><p id="selectionText" role="status">장소를 고르거나 지도를 눌러 주세요</p><p id="coordinates" hidden></p><button id="confirm" disabled>여기서 픽업</button><p id="roomState"></p></section>
+</aside><section class="maparea" aria-label="픽업 지도"><div class="map-heading"><h2 id="mapAreaTitle">양재사옥 주변</h2></div><div id="map" aria-label="양재사옥 주변 지도"></div><p id="mapNotice">정차 전 현장 표지를 확인하세요.</p><p id="error" role="alert"></p></section></main>
+<footer><span>주행 중 조작 금지</span><span class="storage-note">선택한 지점은 상대와 공유됩니다.</span></footer></div><script src="/map/vendor/leaflet.js"></script><script type="module" src="/map/page.mjs"></script></body></html>

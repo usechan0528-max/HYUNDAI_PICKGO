@@ -1,3 +1,4 @@
+import { placeLabel } from './place-label.mjs';
 import { PhoneShare } from './phone-controller.mjs';
 const $=id=>document.getElementById(id);
 let session=null, state=null, freshUntil=0, sampleUntil=0, sampleSeenAt=0, sample=null, polling=false, suppressSample=false;
@@ -11,8 +12,9 @@ async function request(path,body,keepalive=false) {
 const share=new PhoneShare({geo:navigator.geolocation,send:(body,keep)=>request('/phone',body,keep),allowed,notify:text=>{if(!share.current){suppressSample=true;sample=null;}$('message').textContent=text; render();}});
 function render() {
  $('consent').hidden=session?.role!=='rider';
+ $('stop').hidden=session?.role!=='rider';
  $('share').disabled=!allowed() || !!share.current;
- $('context').textContent=!session?'먼저 약속판에서 회차에 참여해 주세요.':performance.now()>=freshUntil?'현재 회차 미확인 · 위치 수집 중지':state?.status!=='active'?'회차가 종료되었습니다.':state.stage==='boarded'?'탑승이 확인되어 위치 공유를 종료합니다.':`${session.role==='rider'?'탑승자':'운전자'} · ${state.place}`;
+ $('context').textContent=!session?'먼저 약속판에서 회차에 참여해 주세요.':performance.now()>=freshUntil?'현재 회차 미확인 · 위치 수집 중지':state?.status!=='active'?'회차가 종료되었습니다.':state.stage==='boarded'?'탑승이 확인되어 위치 공유를 종료합니다.':`${session.role==='rider'?'탑승자':'운전자'} · ${placeLabel(state.place)}`;
  if(suppressSample || !environment() || performance.now()>=sampleUntil || state?.status!=='active' || state?.stage==='boarded') sample=null;
  $('sample').textContent=sample?`휴대폰 위치 1개 수신 · 정확도 약 ${Math.ceil(sample.accuracy)}m · 관측 ${Math.max(0,Math.floor((sample.ageMs+Math.max(0,performance.now()-sampleSeenAt))/1000))}초 전 · 자동 만료까지 ${Math.ceil((sampleUntil-performance.now())/1000)}초`:'공유된 최신 위치 없음';
  if(share.current && !allowed()) void share.stop('회차 또는 연결을 확인할 수 없어 중지했습니다.');

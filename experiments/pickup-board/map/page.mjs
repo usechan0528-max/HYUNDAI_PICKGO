@@ -2,22 +2,25 @@ const $=id=>document.getElementById(id),L=window.L;
 let map,selected,selectionGeneration=0,marker,session,state,busy=false,data,tilesReady=false;
 let currentMarker,proposalMarker;const candidateMarkers=[];
 try{session=JSON.parse(sessionStorage.getItem('pickupSession'));}catch{}
+const question = session?.role === 'rider' ? '어디서 탈까요?' : '어디서 태울까요?';
+$('mapQuestion').textContent = question;
+$('selectionTitle').textContent = question;
 const latlng=p=>[p[1],p[0]];
 async function api(path,body,auth=false){const r=await fetch(path,{method:body?'POST':'GET',cache:'no-store',signal:AbortSignal.timeout(8000),headers:{...(body?{'Content-Type':'application/json'}:{}),...(auth&&session?{Authorization:`Bearer ${session.token}`}:{})},...(body?{body:JSON.stringify(body)}:{})});const out=await r.json();if(!r.ok)throw Error(out.error||'요청 실패');return out;}
 function updateAction(){
-  $('confirm').textContent=session?'이 핀을 상대에게 제안':'이 핀으로 픽업 시작';
+  $('confirm').textContent=session?'장소 제안':'여기서 픽업';
   $('confirm').disabled=busy||!tilesReady||!data?.available||!selected?.selectable||!navigator.onLine||document.hidden||!!session&&(!state||state.status!=='active'||!state.joined||state.stage==='boarded'||!!state.proposal);
-  $('roomState').textContent=!session?'확정 좌표는 초대한 상대에게 공유됩니다.':!state?'현재 약속을 확인하지 못했습니다. 약속판에서 다시 확인해 주세요.':!state.joined?'상대가 초대에 참여한 뒤 위치를 제안할 수 있습니다.':state.proposal?'기존 장소 제안을 처리한 뒤 다시 선택하세요.':'상대 수락 전까지 기존 픽업 지점을 유지합니다.';
+  $('roomState').textContent=!session?'선택한 장소는 초대한 상대에게 공유됩니다.':!state?'현재 약속을 확인하지 못했습니다. 약속판에서 다시 확인해 주세요.':!state.joined?'상대가 초대에 참여한 뒤 위치를 제안할 수 있습니다.':state.proposal?'기존 장소 제안을 처리한 뒤 다시 선택하세요.':'상대 수락 전까지 기존 픽업 지점을 유지합니다.';
 }
 function tooltip(text){const node=document.createElement('span');node.textContent=text;return node;}
 function icon(label,cls=''){const el=document.createElement('span');el.className=`pin-content ${cls}`;el.textContent=label;return L.divIcon({className:'map-pin',html:el,iconSize:[30,30],iconAnchor:[15,15]});}
 async function choose(point){
-  if(busy)return;const gen=++selectionGeneration;selected=null;updateAction();$('selectionTitle').textContent='선택 지점 확인 중';$('selectionText').textContent='금지·접근 제한 영역을 검사하고 있습니다.';
+  if(busy)return;const gen=++selectionGeneration;selected=null;updateAction();$('selectionTitle').textContent='장소 확인 중';$('selectionText').textContent='금지·접근 제한 영역을 검사하고 있습니다.';
   if(marker)marker.remove();marker=L.marker(latlng(point),{icon:icon('·','pin-selected')}).addTo(map);
-  try{const result=await api('/api/map/check',{point});if(gen!==selectionGeneration)return;selected=result;marker.setIcon(icon(result.selectable?'핀':'×',result.selectable?'pin-selected':'pin-blocked'));
-    $('selectionTitle').textContent=result.selectable?'지도 기준 차단 없음':'선택할 수 없는 지점';$('selectionTitle').closest('section').classList.toggle('bad',!result.selectable);
+  try{const result=await api('/api/map/check',{point});if(gen!==selectionGeneration)return;selected=result;marker.setIcon(icon(result.selectable?'✓':'×',result.selectable?'pin-selected':'pin-blocked'));
+    $('selectionTitle').textContent=result.selectable?'선택한 장소':'선택할 수 없는 장소';$('selectionTitle').closest('section').classList.toggle('bad',!result.selectable);
     $('selectionText').textContent=result.selectable?`${result.road} · ${result.advisories.join(' ')}`:result.reasons.join(' · ');
-    $('coordinates').textContent=`위도 ${point[1].toFixed(7)} · 경도 ${point[0].toFixed(7)}`;
+    $('coordinates').textContent='';
   }catch(e){if(gen!==selectionGeneration)return;$('selectionTitle').textContent='확인하지 못했습니다';$('selectionText').textContent=e.message;selected=null;}
   updateAction();
   // On stacked layouts, reveal the result and its action after a deliberate pin choice.
@@ -40,9 +43,9 @@ async function start(){
   try{
     const place=new URLSearchParams(location.search).get('place');
     data=await api(place?`/api/map?place=${encodeURIComponent(place)}`:'/api/map');
-    $('mapIntro').textContent=`${data.anchor.name}을 기준으로 도로폭이 표기된 일반도로의 픽업 후보를 표시했습니다.`;
+    $('mapIntro').textContent=`${data.anchor.name} 주변`;
     $('mapAreaTitle').textContent=`${data.anchor.name} 주변`;
-    $('map').setAttribute('aria-label',`${data.anchor.name} 주변 실제 지도`);
+    $('map').setAttribute('aria-label',`${data.anchor.name} 주변 지도`);
     map=L.map('map',{minZoom:15,maxZoom:19,maxBounds:[[data.bounds[1],data.bounds[0]],[data.bounds[3],data.bounds[2]]],maxBoundsViscosity:1}).setView(latlng(data.anchor.coordinates),17);
     L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors · <a href="https://www.openstreetmap.org/fixthemap">지도 오류 제보</a>'}).on('load',function(){tilesReady=[...this.getContainer().querySelectorAll('img.leaflet-tile')].every(i=>i.complete&&i.naturalWidth>0);if(tilesReady)$('error').textContent='';updateAction();}).on('tileerror',()=>{tilesReady=false;$('error').textContent='배경 지도 연결 실패 · 도형만으로 위치를 판단하지 말고 연결 후 다시 확인하세요.';selected=null;updateAction();}).addTo(map);
     const layer=L.layerGroup().addTo(map),lines=[];
@@ -59,12 +62,14 @@ async function start(){
       const direction=c.name;
       candidateMarkers.push(L.marker(latlng(c.point),{icon:icon(i+1)}).addTo(map).bindTooltip(tooltip(`${i+1}. ${direction}`)).on('click',()=>choose(c.point)));
       const b=document.createElement('button');b.className='candidate';const number=document.createElement('span');number.className='number';number.textContent=i+1;
-      const text=document.createElement('span'),strong=document.createElement('strong'),small=document.createElement('small');strong.textContent=direction;small.textContent=`직선 ${c.distanceM}m · 도로폭 ${c.roadWidthM}m 표기`;text.append(strong,small);b.append(number,text);b.onclick=()=>{map.panTo(latlng(c.point));void choose(c.point);};$('candidates').append(b);
+      const text=document.createElement('span'),strong=document.createElement('strong'),small=document.createElement('small');strong.textContent=direction;small.textContent=`검색 장소에서 직선 ${c.distanceM}m · 도로폭 ${c.roadWidthM}m 표기`;text.append(strong,small);b.append(number,text);b.onclick=()=>{map.panTo(latlng(c.point));void choose(c.point);};$('candidates').append(b);
     });
-    if(!data.recommendations.length)$('candidates').textContent=data.available?'조건에 맞는 추천 후보가 없습니다.':'지도 판정 데이터가 만료되었습니다. 갱신이 필요합니다.';
+    if(!data.recommendations.length)$('candidates').textContent=data.available?'조건에 맞는 추천 장소가 없습니다.':'지도 판정 데이터가 만료되었습니다. 갱신이 필요합니다.';
     $('dataInfo').textContent=`지도 데이터 수집: ${new Date(data.retrievedAt).toLocaleString('ko-KR')} · 양재사옥 주변 한정 · OpenStreetMap contributors`;
     const overview=()=>map.fitBounds([latlng(data.anchor.coordinates),...data.recommendations.map(c=>latlng(c.point))],{padding:[50,50],maxZoom:17});overview();$('home').onclick=overview;
     map.on('click',e=>choose([e.latlng.lng,e.latlng.lat]));await refreshRoom();
+    const candidateParam=new URLSearchParams(location.search).get('candidate');
+    if(candidateParam!==null && /^[0-2]$/.test(candidateParam) && data.recommendations[Number(candidateParam)]){const c=data.recommendations[Number(candidateParam)];map.panTo(latlng(c.point));await choose(c.point);}
   }catch(e){$('error').textContent=`지도를 준비하지 못했습니다. ${e.message}`;$('candidates').textContent='새로고침하여 다시 연결해 주세요.';}
 }
 $('confirm').onclick=async()=>{

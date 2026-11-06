@@ -45,7 +45,7 @@ test('explicit HTTPS proxy origin: independent rider joins and completes without
       let raw='';res.setEncoding('utf8');res.on('data',c=>raw+=c);res.on('end',()=>resolve({status:res.statusCode,headers:res.headers,raw,data:res.headers['content-type'].includes('application/json')?JSON.parse(raw):null}));
     });req.on('error',reject);req.end(body?JSON.stringify(body):undefined);
   });
-  const page=await request('/');assert.equal(page.status,200);assert.match(page.raw,/설치·가입 없이/);
+  const page=await request('/');assert.equal(page.status,200);assert.match(page.raw, /id="join"[^>]*>탑승자로 참여/);
   assert.equal(page.headers['referrer-policy'],'no-referrer');assert.equal(page.headers['cache-control'],'no-store');
   assert.equal((await request('/api/rooms',{place:PLACES[0]},null,{Origin:'https://attacker.example'})).status,403);
   assert.equal((await request('/',null,null,{Host:'attacker.example','X-Forwarded-Host':'pickup.example'})).status,403);

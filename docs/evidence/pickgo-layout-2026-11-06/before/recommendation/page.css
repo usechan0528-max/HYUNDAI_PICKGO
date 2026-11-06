@@ -1,0 +1,16 @@
+/* PICKGO shell, surfaces and touch controls are shared with the other screens. */
+.recommendation-page .row { display:flex;gap:12px;align-items:center;justify-content:space-between;flex-wrap:wrap; }
+.recommendation-page .row button { flex:1; }
+.recommendation-page .section-heading button { flex:0 1 auto; }
+.recommendation-page #mode { font-size:16px;color:var(--muted); }
+.recommendation-page #candidates { display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px; }
+.recommendation-page #candidates:empty { display:none; }
+.recommendation-page .candidate { text-align:left;display:flex;flex-direction:column;align-items:stretch;justify-content:flex-start;gap:12px;min-width:0;overflow-wrap:anywhere; }
+.recommendation-page .candidate strong { font-size:22px; }
+.recommendation-page .candidate small { font-size:16px;line-height:1.5;color:var(--muted);font-weight:400; }
+.recommendation-page .candidate:disabled small { color:inherit; }
+/* Keep empty live status regions in the accessibility tree. */
+@media(max-width:1099px) { .recommendation-page #candidates { grid-template-columns:1fr; } }
+@media(max-width:479px) { .recommendation-page .row { align-items:stretch;flex-direction:column; } .recommendation-page .row button { width:100%; } }
+
+.recommendation-page .candidate:active:not(:disabled) small { color:#f4f4f4; }

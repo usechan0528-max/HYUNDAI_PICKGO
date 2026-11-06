@@ -1,0 +1,45 @@
+node:internal/modules/run_main:107
+    triggerUncaughtException(
+    ^
+
+AssertionError [ERR_ASSERTION]: single-1280x720 unreachable controls
++ actual - expected
+
++ [
++   {
++     clip: [
++       38.390625,
++       64,
++       1241.609375,
++       684
++     ],
++     id: '',
++     rect: [
++       42.390625,
++       661.390625,
++       1227.609375,
++       709.390625
++     ],
++     text: ''
++   }
++ ]
+- []
+
+    at measure (file:///C:/Users/dldyd/Documents/Codex/2026-11-02/shx/HYUNDAI_AI/work/pickgo-layout/verify.mjs:41:181)
+    at async file:///C:/Users/dldyd/Documents/Codex/2026-11-02/shx/HYUNDAI_AI/work/pickgo-layout/verify.mjs:48:23 {
+  generatedMessage: false,
+  code: 'ERR_ASSERTION',
+  actual: [
+    {
+      id: '',
+      text: '',
+      rect: [ 42.390625, 661.390625, 1227.609375, 709.390625 ],
+      clip: [ 38.390625, 64, 1241.609375, 684 ]
+    }
+  ],
+  expected: [],
+  operator: 'deepStrictEqual',
+  diff: 'simple'
+}
+
+Node.js v24.22.1

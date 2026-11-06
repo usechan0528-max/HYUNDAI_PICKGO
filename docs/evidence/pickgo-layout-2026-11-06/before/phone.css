@@ -1,0 +1,40 @@
+/* Shared support shell; Asta, palette and states come from style.css.
+   1180px shell minus 2 x 40px gutters = 1100px content. Phone gutters: 16px. */
+.support-page { --button:64px; }
+.support-page main { width:100%;max-width:1180px;height:auto;min-height:100dvh;margin:auto;padding:0 40px 32px;display:flex;flex-direction:column;gap:24px; }
+.support-page .support-header { min-height:76px;gap:16px;flex-wrap:wrap; }
+.support-page .support-brand { color:inherit;font-size:26px;font-weight:650;text-decoration:none; }
+.support-page .support-header .button { min-height:52px;padding:10px 20px;font-size:20px; }
+.support-page .page-heading { display:grid;gap:12px; }
+.support-page h1 { font-size:30px;line-height:1.3;letter-spacing:-.5px; }
+.support-page h2 { font-size:22px;line-height:1.4;letter-spacing:0; }
+.support-page p { font-size:18px;line-height:1.6;overflow-wrap:anywhere; }
+.support-page section { background:var(--surface);padding:24px;margin:0;display:grid;gap:16px; }
+.support-page section p { color:#f4f4f4; }
+.support-page button,.support-page .button { font-size:20px; }
+.support-page button:disabled { opacity:1; }
+.support-page .support-actions { display:grid;gap:12px; }
+.support-page .support-actions button { width:100%; }
+.support-page .support-note { display:grid;gap:12px; }
+.support-page .support-note p,.support-page footer { font-size:16px;color:var(--muted); }
+.support-page [role=status],.support-page #sample { font-variant-numeric:tabular-nums; }
+.support-page [role=alert] { color:#f0c580; }
+.support-page main>section:not([hidden]) { animation:none; }
+.support-page footer { display:block;padding:0;line-height:1.6; }
+.phone-page main { max-width:840px; }
+.phone-page #message { font-size:22px;font-weight:600; }
+.phone-page #sample { color:var(--muted); }
+@media(max-width:899px) {
+ .support-page main { padding:0 24px 24px;gap:20px; }
+ .support-page .support-header { min-height:72px; }
+}
+@media(max-width:479px) {
+ .support-page main { padding:0 16px 24px;gap:20px; }
+ .support-page .support-brand { font-size:22px; }
+ .support-page .support-header .button { font-size:18px;padding:10px 16px; }
+ .support-page h1 { font-size:24px; }
+ .support-page h2,.phone-page #message { font-size:20px; }
+ .support-page section { padding:20px 16px; }
+}
+.support-page .primary:focus-visible { outline-color:#161616; }
+.support-page .secondary { border-color:#767676; }

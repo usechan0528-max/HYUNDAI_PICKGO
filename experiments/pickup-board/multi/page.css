@@ -1,1 +1,37 @@
 .multi-shell{max-width:1360px;margin:auto;padding:0 32px 40px}.multi-shell header{height:80px}.multi-shell header a{font-size:28px;color:inherit;text-decoration:none;font-weight:650}.multi-shell main{display:block}.multi-shell h1{font-size:34px;margin:20px 0 12px}.multi-shell h2{font-size:26px;margin-bottom:16px}.multi-shell p{font-size:18px;margin:12px 0}.multi-shell .notice{color:#d9c394;font-size:16px}.multi-shell .panel{margin:24px 0}.multi-shell label{display:grid;gap:10px;font-size:20px;margin:16px 0}.multi-shell select,.multi-shell input:not([type=checkbox]){width:100%;min-height:56px;background:#151515;color:#f4f4f4;border:1px solid #777;border-radius:2px;font:inherit;padding:12px}.multi-shell .check{display:flex;align-items:center}.check input{width:24px;height:24px}.multi-shell button{font-size:20px;min-height:58px;padding:12px 18px}.columns{display:grid;grid-template-columns:1fr 1fr;gap:24px}.actions,.heading{display:flex;gap:12px;flex-wrap:wrap;align-items:center}.heading{justify-content:space-between}.multi-shell ol{padding-left:28px}.multi-shell li{padding:16px 0;border-bottom:1px solid #555}.multi-shell li strong{font-size:22px}.person{padding:20px 0;border-bottom:1px solid #555}.person strong{font-size:22px}.person input{font-size:14px!important}.multi-shell #end,.multi-shell #leave{margin-top:24px}.multi-shell #message{color:#d9c394;overflow-wrap:anywhere}.multi-shell dialog{max-width:560px;background:#202020;color:#fff;border:1px solid #777;padding:28px}.multi-shell dialog::backdrop{background:#000b}.multi-shell a{color:#ddd}.multi-shell button:disabled{opacity:.55}@media(max-width:800px){.multi-shell{padding:0 16px 24px}.columns{grid-template-columns:1fr;gap:0}.multi-shell .panel{padding:20px}.multi-shell h1{font-size:28px}.actions button{flex:1}.multi-shell label{font-size:18px}}
+
+/* 1224px WebView: fluid pair of columns; a single main scrollport keeps footer clear. */
+.multi-shell{height:100dvh;display:grid;grid-template-rows:64px minmax(0,1fr) 32px;padding:0 clamp(16px,3vw,32px);max-width:1440px}
+.multi-shell header{height:auto}.multi-shell main{display:block;overflow:auto;padding:8px 4px 28px;scrollbar-gutter:stable;scrollbar-width:thin;scrollbar-color:#737373 #202020;scroll-padding:16px;overscroll-behavior:contain}
+.multi-shell footer{font-size:14px}.multi-shell .heading{gap:12px}.multi-shell h1{font-size:28px;margin:8px 0}
+.multi-shell #refresh{margin:0}.multi-shell .columns{grid-template-columns:minmax(0,1fr) minmax(0,1fr);align-items:start;gap:20px}
+.multi-shell .panel{min-width:0;margin:16px 0;padding:20px}
+.multi-shell h2{font-size:24px;overflow-wrap:anywhere}.multi-shell p{font-size:18px;overflow-wrap:anywhere}
+.multi-shell button{min-width:0;min-height:56px;padding:12px 16px;font-size:20px;overflow-wrap:anywhere}
+.multi-shell button:disabled{opacity:1;color:#a5a5a5}
+.multi-shell .actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-top:16px}
+.multi-shell #next,.multi-shell #arrive{grid-column:1/-1}.multi-shell #recommend{grid-column:1/-1;order:3}
+.multi-shell details>summary{cursor:pointer;min-height:56px;display:flex;align-items:center;font-size:20px;font-weight:600;gap:12px;list-style:none}
+.multi-shell details>summary:after{content:'+';margin-left:auto}.multi-shell details[open]>summary:after{content:'−'}
+.multi-shell .route-details{margin-top:16px}.multi-shell #stops{margin:0}.multi-shell li{padding:12px 0}
+.multi-shell .person{padding:16px 0}.multi-shell .person:first-child{padding-top:0}.multi-shell .person:last-child{border-bottom:0;padding-bottom:0}
+.multi-shell .person a{display:flex;align-items:center;min-height:48px}.multi-shell .person input{width:100%;min-width:0}
+.multi-shell #currentStopStatus{color:#f4f4f4;font-size:22px}.multi-shell #nextHelp{font-size:16px}
+.multi-shell #addPanel>p{font-size:16px}.multi-shell #addPerson{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.5fr);gap:16px;align-items:end}
+.multi-shell #addPerson label{margin:12px 0}.multi-shell #addPerson button{grid-column:1/-1}
+.multi-shell .readiness-actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-top:20px}
+.multi-shell .readiness-actions [aria-pressed=true]{background:#e7e7e7;color:#161616}
+.multi-shell .readiness-actions button:disabled{background:#272727;color:#a5a5a5}
+.multi-shell .boarding-actions{display:grid;gap:12px}.multi-shell .cancel-actions{margin-top:24px}.multi-shell .cancel-actions button{width:100%}
+.multi-shell #rider{max-width:720px}.multi-shell #boardingHelp{font-size:16px;margin:20px 0 12px}
+.multi-shell #message:empty,.multi-shell #error:empty{display:none}
+.multi-shell dialog{width:calc(100% - 32px);max-height:calc(100dvh - 32px);overflow:auto;margin:auto}
+@media(max-width:800px){.multi-shell{grid-template-rows:56px minmax(0,1fr) 28px;padding-inline:16px}.multi-shell .columns,.multi-shell #addPerson{grid-template-columns:minmax(0,1fr)}.multi-shell .panel{padding:20px 16px}.multi-shell h2{font-size:22px}.multi-shell .readiness-actions button{padding-inline:8px}.multi-shell .heading h1{font-size:26px}}
+@media(max-height:500px){.multi-shell{grid-template-rows:48px minmax(0,1fr) 28px}}
+.multi-shell p{word-break:keep-all}
+.multi-shell:has(#rider:not([hidden])),.multi-shell:has(#invitation:not([hidden])){max-width:520px;padding-inline:max(16px,env(safe-area-inset-left)) max(16px,env(safe-area-inset-right));grid-template-rows:56px minmax(0,1fr) 28px}
+.multi-shell:has(#rider:not([hidden])) .heading h1{font-size:26px}
+.multi-shell:has(#rider:not([hidden])) header a{font-size:24px}
+.multi-shell:has(#rider:not([hidden])) .panel{padding:20px 16px}
+.multi-shell:has(#rider:not([hidden])) button{font-size:18px}
+.multi-shell:has(#rider:not([hidden])) #leave{width:100%;margin-top:8px}

@@ -1,0 +1,482 @@
+Read-only independent integration acceptance review. No tools or edits. Korean concise findings. Actual Haiku5.5 required. Scope: current PICKGO local web plus Android WebView/NaviHelper emulator integration. Multi is deliberately NOT connected to navigation. No production/car UX/physical phone claims. No application source changed this session; rebuilt debug APK and restarted 4194 server after detecting it predated latest multi source. Test harness initial failures were non-invoked expression and readiness waits; preserved attempts. Review the fixed harness, actual evidence and native source for unsupported success claims or missed important regression. Report P1/P2 with concrete evidence, distinguish limitations from defects. Do not ask to implement excluded real routing/multi navigation. Acceptance: actual emulator multi basic flow; single OSM search/select, separate headless Chrome rider UI join, explicit native start only once, destination match + ROUTE_GUIDING, retained result after45s / repeated launcher one Activity. 258 web tests pass, RouteGate43 pass, assembleDebug/lintDebug pass (0errors3warnings).
+
+FILE work/pickgo-integration/verify.mjs
+import {Browser} from '../../.agents/skills/design-taste-frontend/scripts/lib/cdp.mjs';
+import {execFileSync} from 'node:child_process';
+import {writeFileSync,readFileSync} from 'node:fs';
+import assert from 'node:assert/strict';
+const out='docs/evidence/pickgo-integration-2026-11-06';
+const adb=(...args)=>execFileSync('work/pleos-environment/android-sdk/platform-tools/adb.exe',['-s','emulator-5556',...args],{timeout:20000});
+const pause=ms=>new Promise(r=>setTimeout(r,ms));
+const pid=adb('shell','pidof','org.example.pickgonavigation').toString().trim();
+adb('forward','tcp:9416','localabstract:webview_devtools_remote_'+pid);
+const tabs=await(await fetch('http://127.0.0.1:9416/json')).json();
+const ws=new WebSocket(tabs.find(t=>t.url.startsWith('http://127.0.0.1:4194')).webSocketDebuggerUrl);
+await new Promise(r=>ws.onopen=r);let seq=0;const pending=new Map();
+ws.onmessage=e=>{const m=JSON.parse(e.data);if(m.id){pending.get(m.id)?.(m);pending.delete(m.id);}};
+async function ev(fn){const id=++seq;const p=new Promise(r=>pending.set(id,r));ws.send(JSON.stringify({id,method:'Runtime.evaluate',params:{expression:`(${fn})()`,awaitPromise:true,returnByValue:true}}));const m=await p;if(m.result?.exceptionDetails)throw Error(JSON.stringify(m.result.exceptionDetails));return m.result?.result?.value;}
+const driver={eval:ev};
+async function wait(p,fn){for(let i=0;i<60;i++){if(await p.eval(fn))return;await pause(250);}console.log('Failure UI',await p.eval(()=>document.body.innerText));throw Error('timeout '+fn);}
+async function click(p,id){await p.eval(new Function(`document.getElementById('${id}').click()`));await pause(700);}
+function shot(name){writeFileSync(`${out}/${name}.png`,adb('exec-out','screencap','-p'));}
+function xml(name){adb('shell','uiautomator','dump','/sdcard/pickgo-integration.xml');const x=adb('shell','cat','/sdcard/pickgo-integration.xml').toString();writeFileSync(`${out}/${name}.xml`,x);return x;}
+const browser=await Browser.launch();
+try{
+ await ev(()=>{sessionStorage.removeItem('pickgo-multi-session-v1');location.assign('/');});await wait(driver,()=>!!document.querySelector('a[href="/multi"]'));
+ await ev(()=>document.querySelector('a[href="/multi"]').click());await wait(driver,()=>document.querySelectorAll('#origin option').length>0);
+ await ev(()=>document.getElementById('createTrip').requestSubmit());await wait(driver,()=>!document.getElementById('trip').hidden);
+ await ev(()=>{document.getElementById('personName').value='통합시험 A';document.getElementById('addPerson').requestSubmit();});
+ await wait(driver,()=>!!document.querySelector('#people a'));
+ const multiLink=await ev(()=>document.querySelector('#people a').href);
+ const rider=await browser.newPage({width:390,height:900});await rider.goto(multiLink);await wait(rider,()=>!document.getElementById('invitation').hidden && !document.getElementById('join').disabled);await click(rider,'join');await wait(rider,()=>!document.getElementById('rider').hidden);await click(rider,'ready');
+ await wait(driver,()=>document.getElementById('people').innerText.includes('준비 완료'));
+ await click(driver,'next');await wait(driver,()=>!document.getElementById('arrive').disabled);await click(driver,'arrive');
+ await wait(rider,()=>!document.getElementById('board').disabled);await click(rider,'board');await wait(driver,()=>!document.getElementById('end').disabled);await click(driver,'end');
+ await wait(driver,()=>document.getElementById('tripStatus').textContent==='모두 탑승 완료');shot('01-multi-completed');
+ assert.match(xml('01-multi-completed'),/확정 지점으로 현대 내비 안내 시작[^>]*enabled="false"/);
+ console.log('PASS emulator multi entry / create / invite / ready / next / arrive / board / completion; native disabled');
+ await ev(()=>document.querySelector('header a').click());await wait(driver,()=>!!document.getElementById('create')?.onsubmit);await pause(1000);
+ await ev(()=>{document.getElementById('placeQuery').value='하나로마트';document.getElementById('searchPlaces').click();});await wait(driver,()=>document.querySelectorAll('.search-result').length>1);shot('02-search');
+ await ev(()=>document.querySelector('.search-result').click());await wait(driver,()=>document.querySelectorAll('[data-home-candidate]:not([hidden])').length>0);
+ await ev(()=>document.querySelector('[data-home-candidate]').click());await click(driver,'homeStart');await wait(driver,()=>!document.getElementById('board').hidden);
+ const invite=await ev(()=>document.getElementById('inviteLink').href);const singleRider=await browser.newPage({width:390,height:900});await singleRider.goto(invite);await wait(singleRider,()=>!document.getElementById('joinBox').hidden);await click(singleRider,'join');await wait(singleRider,()=>!document.getElementById('board').hidden);
+ await singleRider.eval(()=>document.querySelector('[data-ready="true"]').click());
+ await pause(4000);
+ const state=await ev(async()=>{const d=JSON.parse(sessionStorage.getItem('pickupSession'));const s=await(await fetch('/api/rooms/'+d.id,{headers:{Authorization:'Bearer '+d.token}})).json();return {joined:s.joined,mapPoint:s.mapPoint,placeRevision:s.placeRevision,version:s.version,status:s.status,proposal:!!s.proposal};});
+ assert.equal(state.joined,true);assert.equal(state.proposal,false);assert.ok(state.mapPoint);writeFileSync(`${out}/selected-state.json`,JSON.stringify(state,null,2));shot('03-single-agreed');
+ const before=adb('logcat','-d','-v','threadtime','--pid='+pid,'PickgoNavigation:I','*:S').toString();
+ const ui=xml('03-single-agreed');const node=ui.match(/<node[^>]*text="확정 지점으로 현대 내비 안내 시작"[^>]*>/)?.[0];assert.ok(node);assert.match(node,/enabled="true"/);const b=node.match(/bounds="\[(\d+),(\d+)\]\[(\d+),(\d+)\]"/).slice(1).map(Number);
+ adb('shell','input','tap',String(Math.round((b[0]+b[2])/2)),String(Math.round((b[1]+b[3])/2)));
+ console.log('Native explicit start tapped once; no navigation UI taps after this');
+ await pause(12000);shot('04-navigation');await pause(12000);console.log('Observing destination and route state, 24 seconds elapsed');await pause(12000);await pause(14000);
+ adb('shell','am','start','--user','10','-n','org.example.pickgonavigation/.NavigationActivity');await pause(2500);shot('05-return-retained');assert.match(xml('05-return-retained'),/45초 관찰 종료 시점/);
+ adb('shell','am','start','--user','10','-n','org.example.pickgonavigation/.NavigationActivity');await pause(1500);assert.match(xml('06-repeat'),/45초 관찰 종료 시점/);
+ const full=adb('logcat','-d','-v','threadtime','--pid='+pid,'PickgoNavigation:I','*:S').toString();const log=full.split('\n').filter(l=>!before.includes(l)).join('\n');writeFileSync(`${out}/runtime.log`,log);
+ assert.equal((log.match(/REQUEST_ROUTE_SENT/g)||[]).length,1);assert.match(log,/DESTINATION_MATCH=true/);assert.match(log,/MODE=ROUTE_GUIDING/);assert.match(log,/OBSERVATION_FINISHED/);
+ const activities=adb('shell','dumpsys','activity','activities').toString();assert.equal(activities.split('\n').filter(l=>l.includes('* Hist')&&l.includes('org.example.pickgonavigation/.NavigationActivity')).length,1);
+ writeFileSync(`${out}/summary.json`,JSON.stringify({multiBasicFlow:true,singleSearchSelectJoin:true,point:state.mapPoint,routeRequests:1,destinationMatches:true,routeGuiding:true,retainedAfter45Seconds:true,repeatLaunchOneActivity:true,participant:'headless Chrome UI; not physical phone',navigationTapsAfterNativeStart:0},null,2));
+ console.log('PASS single OSM -> rider UI agreement -> native -> destination match / ROUTE_GUIDING -> 45s return / repeat launch');
+}finally{await browser.close();ws.close();}
+
+
+FILE docs/evidence/pickgo-integration-2026-11-06/verify.txt
+PASS emulator multi entry / create / invite / ready / next / arrive / board / completion; native disabled
+Native explicit start tapped once; no navigation UI taps after this
+Observing destination and route state, 24 seconds elapsed
+Warning: Activity not started, its current task has been brought to the front
+Warning: Activity not started, intent has been delivered to currently running top-most instance.
+PASS single OSM -> rider UI agreement -> native -> destination match / ROUTE_GUIDING -> 45s return / repeat launch
+
+FILE docs/evidence/pickgo-integration-2026-11-06/summary.json
+{
+  "multiBasicFlow": true,
+  "singleSearchSelectJoin": true,
+  "point": [
+    127.0351004,
+    37.463915
+  ],
+  "routeRequests": 1,
+  "destinationMatches": true,
+  "routeGuiding": true,
+  "retainedAfter45Seconds": true,
+  "repeatLaunchOneActivity": true,
+  "participant": "headless Chrome UI; not physical phone",
+  "navigationTapsAfterNativeStart": 0
+}
+FILE docs/evidence/pickgo-integration-2026-11-06/runtime.log
+11-05 07:38:46.369 27004 27004 I PickgoNavigation: USER_START
+11-05 07:38:46.450 27004 27004 I PickgoNavigation: REQUEST_ROUTE_SENT
+11-05 07:38:47.711 27004 27004 I PickgoNavigation: MODE=SAFE_GUIDING
+11-05 07:38:47.714 27004 27004 I PickgoNavigation: DESTINATION_MATCH=false
+11-05 07:38:49.854 27004 27004 I PickgoNavigation: DESTINATION_MATCH=false
+11-05 07:38:49.870 27004 27004 I PickgoNavigation: MODE=SAFE_GUIDING
+11-05 07:38:50.676 27004 27004 I PickgoNavigation: DESTINATION_MATCH=false
+11-05 07:38:50.681 27004 27004 I PickgoNavigation: MODE=SAFE_GUIDING
+11-05 07:38:52.181 27004 27004 I PickgoNavigation: DESTINATION_MATCH=false
+11-05 07:38:52.185 27004 27004 I PickgoNavigation: MODE=SAFE_GUIDING
+11-05 07:38:53.738 27004 27004 I PickgoNavigation: MODE=ROUTE_GUIDING
+11-05 07:38:54.543 27004 27004 I PickgoNavigation: MODE=ROUTE_GUIDING
+11-05 07:38:54.764 27004 27004 I PickgoNavigation: DESTINATION_MATCH=true
+11-05 07:38:54.764 27004 27004 I PickgoNavigation: GUIDANCE_CONFIRMED
+11-05 07:38:55.174 27004 27004 I PickgoNavigation: GUIDANCE_CONFIRMED
+11-05 07:38:55.356 27004 27004 I PickgoNavigation: MODE=ROUTE_GUIDING
+11-05 07:38:55.356 27004 27004 I PickgoNavigation: GUIDANCE_CONFIRMED
+11-05 07:38:56.296 27004 27004 I PickgoNavigation: DESTINATION_MATCH=true
+11-05 07:38:56.296 27004 27004 I PickgoNavigation: GUIDANCE_CONFIRMED
+11-05 07:38:56.677 27004 27004 I PickgoNavigation: GUIDANCE_CONFIRMED
+11-05 07:38:56.681 27004 27004 I PickgoNavigation: GUIDANCE_CONFIRMED
+11-05 07:38:56.697 27004 27004 I PickgoNavigation: MODE=ROUTE_GUIDING
+11-05 07:38:56.697 27004 27004 I PickgoNavigation: GUIDANCE_CONFIRMED
+11-05 07:38:57.693 27004 27004 I PickgoNavigation: DESTINATION_MATCH=true
+11-05 07:38:57.694 27004 27004 I PickgoNavigation: GUIDANCE_CONFIRMED
+11-05 07:38:58.178 27004 27004 I PickgoNavigation: GUIDANCE_CONFIRMED
+11-05 07:38:58.290 27004 27004 I PickgoNavigation: MODE=ROUTE_GUIDING
+11-05 07:38:58.290 27004 27004 I PickgoNavigation: GUIDANCE_CONFIRMED
+11-05 07:38:59.235 27004 27004 I PickgoNavigation: DESTINATION_MATCH=true
+11-05 07:38:59.235 27004 27004 I PickgoNavigation: GUIDANCE_CONFIRMED
+11-05 07:38:59.680 27004 27004 I PickgoNavigation: GUIDANCE_CONFIRMED
+11-05 07:38:59.688 27004 27004 I PickgoNavigation: GUIDANCE_CONFIRMED
+11-05 07:38:59.797 27004 27004 I PickgoNavigation: MODE=ROUTE_GUIDING
+11-05 07:38:59.797 27004 27004 I PickgoNavigation: GUIDANCE_CONFIRMED
+11-05 07:39:00.718 27004 27004 I PickgoNavigation: DESTINATION_MATCH=true
+11-05 07:39:00.718 27004 27004 I PickgoNavigation: GUIDANCE_CONFIRMED
+11-05 07:39:01.182 27004 27004 I PickgoNavigation: GUIDANCE_CONFIRMED
+11-05 07:39:01.217 27004 27004 I PickgoNavigation: MODE=ROUTE_GUIDING
+11-05 07:39:01.217 27004 27004 I PickgoNavigation: GUIDANCE_CONFIRMED
+11-05 07:39:02.187 27004 27004 I PickgoNavigation: DESTINATION_MATCH=true
+11-05 07:39:02.187 27004 27004 I PickgoNavigation: GUIDANCE_CONFIRMED
+11-05 07:39:02.684 27004 27004 I PickgoNavigation: GUIDANCE_CONFIRMED
+11-05 07:39:02.689 27004 27004 I PickgoNavigation: GUIDANCE_CONFIRMED
+11-05 07:39:02.708 27004 27004 I PickgoNavigation: MODE=ROUTE_GUIDING
+11-05 07:39:02.709 27004 27004 I PickgoNavigation: GUIDANCE_CONFIRMED
+11-05 07:39:03.697 27004 27004 I PickgoNavigation: DESTINATION_MATCH=true
+11-05 07:39:03.697 27004 27004 I PickgoNavigation: GUIDANCE_CONFIRMED
+11-05 07:39:04.186 27004 27004 I PickgoNavigation: GUIDANCE_CONFIRMED
+11-05 07:39:04.198 27004 27004 I PickgoNavigation: MODE=ROUTE_GUIDING
+11-05 07:39:04.198 27004 27004 I PickgoNavigation: GUIDANCE_CONFIRMED
+11-05 07:39:05.196 27004 27004 I PickgoNavigation: DESTINATION_MATCH=true
+11-05 07:39:05.196 27004 27004 I PickgoNavigation: GUIDANCE_CONFIRMED
+11-05 07:39:05.688 27004 27004 I PickgoNavigation: GUIDANCE_CONFIRMED
+11-05 07:39:05.693 27004 27004 I PickgoNavigation: GUIDANCE_CONFIRMED
+11-05 07:39:05.703 27004 27004 I PickgoNavigation: MODE=ROUTE_GUIDING
+11-05 07:39:05.703 27004 27004 I PickgoNavigation: GUIDANCE_CONFIRMED
+11-05 07:39:06.707 27004 27004 I PickgoNavigation: DESTINATION_MATCH=true
+11-05 07:39:06.707 27004 27004 I PickgoNavigation: GUIDANCE_CONFIRMED
+11-05 07:39:07.189 27004 27004 I PickgoNavigation: GUIDANCE_CONFIRMED
+11-05 07:39:07.207 27004 27004 I PickgoNavigation: MODE=ROUTE_GUIDING
+11-05 07:39:07.207 27004 27004 I PickgoNavigation: GUIDANCE_CONFIRMED
+11-05 07:39:08.199 27004 27004 I PickgoNavigation: DESTINATION_MATCH=true
+11-05 07:39:08.199 27004 27004 I PickgoNavigation: GUIDANCE_CONFIRMED
+11-05 07:39:08.696 27004 27004 I PickgoNavigation: GUIDANCE_CONFIRMED
+11-05 07:39:08.700 27004 27004 I PickgoNavigation: GUIDANCE_CONFIRMED
+11-05 07:39:08.721 27004 27004 I PickgoNavigation: MODE=ROUTE_GUIDING
+11-05 07:39:08.721 27004 27004 I PickgoNavigation: GUIDANCE_CONFIRMED
+11-05 07:39:09.713 27004 27004 I PickgoNavigation: DESTINATION_MATCH=true
+11-05 07:39:09.713 27004 27004 I PickgoNavigation: GUIDANCE_CONFIRMED
+11-05 07:39:10.197 27004 27004 I PickgoNavigation: GUIDANCE_CONFIRMED
+11-05 07:39:10.285 27004 27004 I PickgoNavigation: MODE=ROUTE_GUIDING
+11-05 07:39:10.285 27004 27004 I PickgoNavigation: GUIDANCE_CONFIRMED
+11-05 07:39:11.205 27004 27004 I PickgoNavigation: DESTINATION_MATCH=true
+11-05 07:39:11.205 27004 27004 I PickgoNavigation: GUIDANCE_CONFIRMED
+11-05 07:39:11.700 27004 27004 I PickgoNavigation: GUIDANCE_CONFIRMED
+11-05 07:39:11.705 27004 27004 I PickgoNavigation: GUIDANCE_CONFIRMED
+11-05 07:39:11.717 27004 27004 I PickgoNavigation: MODE=ROUTE_GUIDING
+11-05 07:39:11.717 27004 27004 I PickgoNavigation: GUIDANCE_CONFIRMED
+11-05 07:39:12.712 27004 27004 I PickgoNavigation: DESTINATION_MATCH=true
+11-05 07:39:12.712 27004 27004 I PickgoNavigation: GUIDANCE_CONFIRMED
+11-05 07:39:13.200 27004 27004 I PickgoNavigation: GUIDANCE_CONFIRMED
+11-05 07:39:13.223 27004 27004 I PickgoNavigation: MODE=ROUTE_GUIDING
+11-05 07:39:13.223 27004 27004 I PickgoNavigation: GUIDANCE_CONFIRMED
+11-05 07:39:14.210 27004 27004 I PickgoNavigation: DESTINATION_MATCH=true
+11-05 07:39:14.210 27004 27004 I PickgoNavigation: GUIDANCE_CONFIRMED
+11-05 07:39:14.703 27004 27004 I PickgoNavigation: GUIDANCE_CONFIRMED
+11-05 07:39:14.709 27004 27004 I PickgoNavigation: GUIDANCE_CONFIRMED
+11-05 07:39:14.716 27004 27004 I PickgoNavigation: MODE=ROUTE_GUIDING
+11-05 07:39:14.716 27004 27004 I PickgoNavigation: GUIDANCE_CONFIRMED
+11-05 07:39:15.714 27004 27004 I PickgoNavigation: DESTINATION_MATCH=true
+11-05 07:39:15.714 27004 27004 I PickgoNavigation: GUIDANCE_CONFIRMED
+11-05 07:39:16.204 27004 27004 I PickgoNavigation: GUIDANCE_CONFIRMED
+11-05 07:39:16.216 27004 27004 I PickgoNavigation: MODE=ROUTE_GUIDING
+11-05 07:39:16.216 27004 27004 I PickgoNavigation: GUIDANCE_CONFIRMED
+11-05 07:39:17.221 27004 27004 I PickgoNavigation: DESTINATION_MATCH=true
+11-05 07:39:17.221 27004 27004 I PickgoNavigation: GUIDANCE_CONFIRMED
+11-05 07:39:17.705 27004 27004 I PickgoNavigation: GUIDANCE_CONFIRMED
+11-05 07:39:17.714 27004 27004 I PickgoNavigation: GUIDANCE_CONFIRMED
+11-05 07:39:17.721 27004 27004 I PickgoNavigation: MODE=ROUTE_GUIDING
+11-05 07:39:17.721 27004 27004 I PickgoNavigation: GUIDANCE_CONFIRMED
+11-05 07:39:18.722 27004 27004 I PickgoNavigation: DESTINATION_MATCH=true
+11-05 07:39:18.722 27004 27004 I PickgoNavigation: GUIDANCE_CONFIRMED
+11-05 07:39:19.207 27004 27004 I PickgoNavigation: GUIDANCE_CONFIRMED
+11-05 07:39:19.232 27004 27004 I PickgoNavigation: MODE=ROUTE_GUIDING
+11-05 07:39:19.232 27004 27004 I PickgoNavigation: GUIDANCE_CONFIRMED
+11-05 07:39:20.214 27004 27004 I PickgoNavigation: DESTINATION_MATCH=true
+11-05 07:39:20.214 27004 27004 I PickgoNavigation: GUIDANCE_CONFIRMED
+11-05 07:39:20.709 27004 27004 I PickgoNavigation: GUIDANCE_CONFIRMED
+11-05 07:39:20.714 27004 27004 I PickgoNavigation: GUIDANCE_CONFIRMED
+11-05 07:39:20.730 27004 27004 I PickgoNavigation: MODE=ROUTE_GUIDING
+11-05 07:39:20.730 27004 27004 I PickgoNavigation: GUIDANCE_CONFIRMED
+11-05 07:39:21.716 27004 27004 I PickgoNavigation: DESTINATION_MATCH=true
+11-05 07:39:21.716 27004 27004 I PickgoNavigation: GUIDANCE_CONFIRMED
+11-05 07:39:22.211 27004 27004 I PickgoNavigation: GUIDANCE_CONFIRMED
+11-05 07:39:22.236 27004 27004 I PickgoNavigation: MODE=ROUTE_GUIDING
+11-05 07:39:22.237 27004 27004 I PickgoNavigation: GUIDANCE_CONFIRMED
+11-05 07:39:23.220 27004 27004 I PickgoNavigation: DESTINATION_MATCH=true
+11-05 07:39:23.220 27004 27004 I PickgoNavigation: GUIDANCE_CONFIRMED
+11-05 07:39:23.713 27004 27004 I PickgoNavigation: GUIDANCE_CONFIRMED
+11-05 07:39:23.717 27004 27004 I PickgoNavigation: GUIDANCE_CONFIRMED
+11-05 07:39:23.723 27004 27004 I PickgoNavigation: MODE=ROUTE_GUIDING
+11-05 07:39:23.723 27004 27004 I PickgoNavigation: GUIDANCE_CONFIRMED
+11-05 07:39:24.719 27004 27004 I PickgoNavigation: DESTINATION_MATCH=true
+11-05 07:39:24.719 27004 27004 I PickgoNavigation: GUIDANCE_CONFIRMED
+11-05 07:39:25.214 27004 27004 I PickgoNavigation: GUIDANCE_CONFIRMED
+11-05 07:39:25.238 27004 27004 I PickgoNavigation: MODE=ROUTE_GUIDING
+11-05 07:39:25.238 27004 27004 I PickgoNavigation: GUIDANCE_CONFIRMED
+11-05 07:39:26.228 27004 27004 I PickgoNavigation: DESTINATION_MATCH=true
+11-05 07:39:26.228 27004 27004 I PickgoNavigation: GUIDANCE_CONFIRMED
+11-05 07:39:26.717 27004 27004 I PickgoNavigation: GUIDANCE_CONFIRMED
+11-05 07:39:26.725 27004 27004 I PickgoNavigation: GUIDANCE_CONFIRMED
+11-05 07:39:26.742 27004 27004 I PickgoNavigation: MODE=ROUTE_GUIDING
+11-05 07:39:26.742 27004 27004 I PickgoNavigation: GUIDANCE_CONFIRMED
+11-05 07:39:27.731 27004 27004 I PickgoNavigation: DESTINATION_MATCH=true
+11-05 07:39:27.731 27004 27004 I PickgoNavigation: GUIDANCE_CONFIRMED
+11-05 07:39:28.219 27004 27004 I PickgoNavigation: GUIDANCE_CONFIRMED
+11-05 07:39:28.236 27004 27004 I PickgoNavigation: MODE=ROUTE_GUIDING
+11-05 07:39:28.236 27004 27004 I PickgoNavigation: GUIDANCE_CONFIRMED
+11-05 07:39:29.231 27004 27004 I PickgoNavigation: DESTINATION_MATCH=true
+11-05 07:39:29.231 27004 27004 I PickgoNavigation: GUIDANCE_CONFIRMED
+11-05 07:39:29.722 27004 27004 I PickgoNavigation: GUIDANCE_CONFIRMED
+11-05 07:39:29.727 27004 27004 I PickgoNavigation: GUIDANCE_CONFIRMED
+11-05 07:39:29.742 27004 27004 I PickgoNavigation: MODE=ROUTE_GUIDING
+11-05 07:39:29.742 27004 27004 I PickgoNavigation: GUIDANCE_CONFIRMED
+11-05 07:39:30.731 27004 27004 I PickgoNavigation: DESTINATION_MATCH=true
+11-05 07:39:30.731 27004 27004 I PickgoNavigation: GUIDANCE_CONFIRMED
+11-05 07:39:31.227 27004 27004 I PickgoNavigation: GUIDANCE_CONFIRMED
+11-05 07:39:31.255 27004 27004 I PickgoNavigation: MODE=ROUTE_GUIDING
+11-05 07:39:31.255 27004 27004 I PickgoNavigation: GUIDANCE_CONFIRMED
+11-05 07:39:32.237 27004 27004 I PickgoNavigation: DESTINATION_MATCH=true
+11-05 07:39:32.237 27004 27004 I PickgoNavigation: GUIDANCE_CONFIRMED
+11-05 07:39:32.729 27004 27004 I PickgoNavigation: OBSERVATION_FINISHED
+
+FILE experiments/pickgo-navigation/app/src/main/java/org/example/pickgonavigation/NavigationActivity.java
+package org.example.pickgonavigation;
+
+import android.annotation.SuppressLint;
+import android.app.Activity;
+import android.net.Uri;
+import android.os.*;
+import android.util.Log;
+import android.webkit.*;
+import android.widget.*;
+import android.graphics.Color;
+import java.io.*;
+import java.net.*;
+import java.nio.charset.StandardCharsets;
+import java.util.concurrent.*;
+import org.json.*;
+import ai.pleos.playground.navi.helper.NaviHelper;
+import ai.pleos.playground.navi.helper.listener.NaviHelperEventListener;
+import ai.pleos.playground.navi.data.*;
+import ai.pleos.playground.navi.constants.*;
+import kotlin.Unit;
+
+/** Local emulator demonstration. No JavaScript-callable native interface and no Intent commands.
+ * Only the native button can request a route. This is not a driving-enabled production shell. */
+public final class NavigationActivity extends Activity {
+ private static final String ORIGIN = "http://127.0.0.1:4194";
+ private final Handler main = new Handler(Looper.getMainLooper());
+ private final ExecutorService io = Executors.newSingleThreadExecutor();
+ private final ScheduledExecutorService deadlines = Executors.newSingleThreadScheduledExecutor();
+ private volatile HttpURLConnection activeConnection;
+ private WebView web;
+ private TextView status;
+ private Button start;
+ private NaviHelper navi;
+ private boolean connected, destroyed, resumed, reading, starting, sent, guiding, destinationMatches;
+ private boolean roundIntact, checkingRound;
+ private int generation;
+ private long requestedAt, destinationAt, modeAt;
+ private long roomChecked;
+ private RouteGate.Target displayed, requested;
+ private String credential, roomId;
+ private String requestCredential, outcome;
+ private static long now() { return SystemClock.elapsedRealtime(); }
+ private void message(String value) { if (!destroyed) status.setText(value); }
+ private void record(String value) { Log.i("PickgoNavigation", value); }
+ private void unavailable(String fallback){
+  // Preserve the completed request result even when the current room/session cannot be read.
+  String previous=requested==null?null:getPreferences(MODE_PRIVATE).getString(requested.key()+":outcome",null);
+  message(previous==null?fallback:"이전 안내 요청 결과: "+previous+" / 현재 픽업 상태는 확인할 수 없습니다.");
+ }
+ private static boolean local(Uri uri) {
+  return uri != null && "http".equals(uri.getScheme()) && "127.0.0.1".equals(uri.getHost())
+   && uri.getPort()==4194 && uri.getUserInfo()==null;
+ }
+ private boolean home() { return web != null && local(Uri.parse(web.getUrl()==null?"":web.getUrl())) && "/".equals(Uri.parse(web.getUrl()).getPath()); }
+ private boolean used(RouteGate.Target t) { return t != null && getPreferences(MODE_PRIVATE).getBoolean(t.key(),false); }
+ private void buttons() { start.setEnabled(resumed && home() && connected && !starting && !sent && RouteGate.fresh(displayed,now()) && !used(displayed)); }
+ private final NaviHelperEventListener listener = new NaviHelperEventListener() {
+  @Override public void onDestinationInfo(DestinationInfo info) { main.post(() -> {
+   if (!sent || destroyed) return;
+   destinationMatches=RouteGate.matches(requested,info.getLatitude(),info.getLongitude()); destinationAt=now();
+   record("DESTINATION_MATCH="+destinationMatches); verified();
+  }); }
+  @Override public void onRouteStateInfo(RouteStateInfo info) { main.post(() -> {
+   if (!sent || destroyed) return;
+   guiding=info.getNaviMode()==NaviMode.ROUTE_GUIDING; modeAt=now();
+   record("MODE="+info.getNaviMode()); verified();
+  }); }
+  @Override public void onError(NaviErrorCode error) { main.post(() -> {
+   if(destroyed)return; record("SDK_ERROR="+error); message("내비 응답 오류 · 안내 여부는 현대 내비에서 확인하세요.");
+  }); }
+ };
+ private void verified() {
+  if(!sent)return;
+  outcome=observationMessage(false);
+  message(outcome);
+ }
+ private String observationMessage(boolean finished){
+  switch(RouteGate.observation(roundIntact,roomChecked,destinationMatches,guiding,now(),destinationAt,modeAt,finished)){
+   case ROUND_UNAVAILABLE:return "회차가 변경됐거나 확인할 수 없습니다. 현대 내비 경로는 자동 취소하지 않았으니 확인하세요.";
+   case GUIDING:record("GUIDANCE_CONFIRMED");return "현재 현대 내비가 확정 지점으로 안내 중입니다. 목적지 일치를 확인했습니다.";
+   case LAST_GUIDING:return "45초 관찰 종료 시점: 현대 내비 목적지 일치·안내 중. 이후 상태는 현대 내비에서 확인하세요.";
+   case TIMEOUT:return "안내 확인 시간 초과 · 재전송하지 않았습니다. 현대 내비에서 확인하세요.";
+   default:return "현대 내비 상태 확인 중 · 아직 목적지 일치와 안내를 함께 확인하지 못했습니다.";
+  }
+ }
+ private void checkRound(){
+  if(checkingRound||requested==null)return;checkingRound=true;
+  final RouteGate.Target target=requested;final String token=requestCredential;
+  io.execute(()->{try{RouteGate.Target latest=readTarget(target.id(),token);main.post(()->{
+   checkingRound=false;if(destroyed||!sent||requested!=target)return;
+   roundIntact=RouteGate.samePlace(target,latest);roomChecked=latest.observed();verified();
+  });}catch(Exception e){main.post(()->{checkingRound=false;if(destroyed||!sent||requested!=target)return;roundIntact=false;record("ROUND_UNAVAILABLE");verified();});}});
+ }
+ private final Runnable tick = new Runnable() { public void run() {
+  if(destroyed)return;
+  if(sent && now()-requestedAt<45000) {
+   if(now()-roomChecked>=3000)checkRound();
+   try { navi.getDestinationInfo(); navi.getRouteStateInfo(); }
+   catch(Exception e) { connected=false;guiding=false; message("내비 연결이 끊겼습니다. 안내 상태를 확인한 뒤 PICKGO 앱을 다시 실행하세요."); }
+   verified();
+  } else if(sent) {
+   outcome=observationMessage(true);
+   getPreferences(MODE_PRIVATE).edit().putString(requested.key()+":outcome",outcome).apply();message(outcome);
+   sent=false; record("OBSERVATION_FINISHED");
+  }
+  if(resumed && !starting && !sent) refresh();
+  buttons(); main.postDelayed(this,1500);
+ }};
+ @SuppressLint("SetJavaScriptEnabled") @Override public void onCreate(Bundle saved) {
+  super.onCreate(saved);
+  WebView.setWebContentsDebuggingEnabled((getApplicationInfo().flags & android.content.pm.ApplicationInfo.FLAG_DEBUGGABLE)!=0);
+  LinearLayout layout=new LinearLayout(this); layout.setOrientation(LinearLayout.VERTICAL);
+  LinearLayout tabs=new LinearLayout(this);
+  Button mapButton=new Button(this);mapButton.setText("픽업 지도");mapButton.setOnClickListener(v->{if(!starting&&!sent)web.loadUrl(ORIGIN+"/map");});tabs.addView(mapButton);
+  Button boardButton=new Button(this);boardButton.setText("약속판");boardButton.setOnClickListener(v->{if(!starting&&!sent)web.loadUrl(ORIGIN+"/");});tabs.addView(boardButton);
+  layout.addView(tabs);
+  web=new WebView(this); web.setBackgroundColor(Color.WHITE);
+  web.getSettings().setJavaScriptEnabled(true); web.getSettings().setDomStorageEnabled(true);
+  web.getSettings().setAllowFileAccess(false); web.getSettings().setAllowContentAccess(false);
+  web.getSettings().setUseWideViewPort(true); web.getSettings().setLoadWithOverviewMode(true);
+  web.getSettings().setMixedContentMode(WebSettings.MIXED_CONTENT_NEVER_ALLOW);
+  web.setWebViewClient(new WebViewClient(){
+   @Override public boolean shouldOverrideUrlLoading(WebView v,WebResourceRequest r){return !local(r.getUrl());}
+   @Override public void onPageStarted(WebView v,String url,android.graphics.Bitmap icon){ generation++; displayed=null; credential=null; roomId=null; buttons(); }
+   @Override public WebResourceResponse shouldInterceptRequest(WebView v,WebResourceRequest r){
+    Uri u=r.getUrl(); boolean tile=!r.isForMainFrame()&&"https".equals(u.getScheme())&&"tile.openstreetmap.org".equals(u.getHost())&&u.getUserInfo()==null&&(u.getPort()==-1||u.getPort()==443)&&u.getPath().matches("/\\d+/\\d+/\\d+\\.png");
+    return local(u)||tile?null:new WebResourceResponse("text/plain","UTF-8",403,"Blocked",null,new ByteArrayInputStream(new byte[0]));
+   }
+  });
+  layout.addView(web,new LinearLayout.LayoutParams(-1,0,1));
+  status=new TextView(this); status.setTextSize(16); status.setPadding(16,8,16,4); layout.addView(status);
+  start=new Button(this); start.setText("확정 지점으로 현대 내비 안내 시작"); start.setTextSize(20);
+  layout.addView(start,new LinearLayout.LayoutParams(-1,64)); start.setOnClickListener(v->begin());
+  TextView notice=new TextView(this); notice.setText("에뮬레이터 시연 · 안내 시작 시 기존 내비 경로가 변경됩니다."); notice.setPadding(16,0,16,4);layout.addView(notice);
+  setContentView(layout); message("현대 내비 연결 중 · 지도에서 지점을 정하고 상대가 참여하면 안내할 수 있습니다.");
+  try { navi=new NaviHelper(this);navi.initialize(()->{ main.post(()->{if(destroyed)return;connected=true;navi.addListener(listener);record("CONNECTED");buttons();});return Unit.INSTANCE;},error->{main.post(()->{connected=false;message("현대 내비 연결 실패 · 앱을 다시 열어 연결해 주세요.");buttons();});return Unit.INSTANCE;}); }
+  catch(Exception e){ message("이 환경에서는 현대 내비를 연결할 수 없습니다.");record("INITIALIZE_FAILED"); }
+  main.postDelayed(()->{if(!connected&&!destroyed)message("현대 내비 연결 시간 초과 · 내비를 연 뒤 앱을 다시 실행하세요.");},10000);
+  web.loadUrl(ORIGIN+"/"); main.post(tick);
+ }
+ private void refresh() {
+  if(reading||!home()){if(!home()){displayed=null;buttons();}return;}
+  reading=true; int gen=generation;
+  // evaluateJavascript runs in this WebView's main frame only. Nothing is exposed to subframes.
+  web.evaluateJavascript("(()=>{try{return sessionStorage.getItem('pickupSession')}catch(e){return null}})()",raw->{
+   if(destroyed||gen!=generation||!home()||starting||sent){reading=false;return;}
+   try {
+    Object decoded=new JSONTokener(raw).nextValue(); if(!(decoded instanceof String))throw new JSONException("No session");
+    JSONObject session=new JSONObject((String)decoded); String id=session.getString("id"), token=session.getString("token");
+    validateSession(id,token); roomId=id;credential=token;
+    io.execute(()->{try{RouteGate.Target t=readTarget(id,token);main.post(()->{
+     reading=false;if(destroyed||gen!=generation||!home()||starting||sent)return;
+     displayed=t; if(used(t))message(getPreferences(MODE_PRIVATE).getString(t.key()+":outcome","이미 안내를 요청한 지점입니다. 재실행으로 관찰이 끝났을 수 있습니다. 현대 내비에서 확인하세요."));
+     else message(String.format(java.util.Locale.ROOT,"확정 픽업 지점 · %.7f, %.7f · 안내 시작을 누르세요.",t.lat(),t.lon()));buttons();
+    });}catch(Exception e){main.post(()->{reading=false;if(gen!=generation||destroyed||starting||sent)return;displayed=null;unavailable("지도 지점·상대 참여·장소 합의를 확인하세요. 연결이 없으면 안내할 수 없습니다.");buttons();});}});
+   }catch(Exception e){reading=false;displayed=null;unavailable("지도에서 픽업 지점을 확정하고 상대를 초대하세요.");buttons();}
+  });
+ }
+ private static void validateSession(String id,String token) {
+  if(!id.matches("[a-f0-9-]{36}")||!token.matches("[A-Za-z0-9_-]{32}"))throw new IllegalArgumentException("Invalid session");
+ }
+ private RouteGate.Target readTarget(String id,String token) throws Exception {
+  validateSession(id,token); long began=now();
+  HttpURLConnection c=(HttpURLConnection)new URL(ORIGIN+"/api/rooms/"+id).openConnection();
+  activeConnection=c;
+  ScheduledFuture<?> deadline=deadlines.schedule(c::disconnect,4000,TimeUnit.MILLISECONDS);
+  c.setConnectTimeout(2500);c.setReadTimeout(2500);c.setInstanceFollowRedirects(false);c.setRequestProperty("Authorization","Bearer "+token);c.setUseCaches(false);
+  try{
+   if(c.getResponseCode()!=200)throw new IOException("Room unavailable");
+   ByteArrayOutputStream body=new ByteArrayOutputStream();byte[] chunk=new byte[2048];int length;
+   try(InputStream stream=c.getInputStream()){while((length=stream.read(chunk))!=-1){body.write(chunk,0,length);if(body.size()>16384||now()-began>=4000)throw new IOException("Invalid response");}}
+   byte[] bytes=body.toByteArray();if(now()-began>=4000)throw new IOException("Response expired");
+   JSONObject r=new JSONObject(new String(bytes,StandardCharsets.UTF_8));JSONArray p=r.getJSONArray("mapPoint");
+   if(p.length()!=2||!(p.get(0) instanceof Number)||!(p.get(1) instanceof Number)||!id.equals(r.getString("id")))throw new IOException("Invalid point");
+   return RouteGate.validate(id,r.getString("role"),r.getString("status"),r.getBoolean("joined"),r.getString("stage"),!r.has("proposal")||!r.isNull("proposal"),r.getLong("version"),r.getLong("placeRevision"),p.getDouble(0),p.getDouble(1),began);
+  }finally{deadline.cancel(false);c.disconnect();activeConnection=null;}
+ }
+ private void begin(){
+  if(!start.isEnabled())return;
+  final RouteGate.Target expected=displayed;final String id=roomId,token=credential;final int gen=generation;
+  starting=true;buttons();message("최신 합의 상태를 확인하고 있습니다…");record("USER_START");
+  io.execute(()->{try{RouteGate.Target latest=readTarget(id,token);main.post(()->{
+   if(destroyed)return;starting=false;
+   if(gen!=generation||!resumed||!home()||!connected||!RouteGate.fresh(expected,now())||!RouteGate.fresh(latest,now())||!RouteGate.same(expected,latest)||used(latest)){
+    displayed=null;message("상태가 바뀌었거나 오래되었습니다. 최신 지점을 다시 확인한 뒤 안내 시작을 누르세요.");record("STALE_BLOCKED");buttons();return;
+   }
+   // Persist before side effect: restart, rapid taps and uncertain SDK returns must not replay.
+   if(!getPreferences(MODE_PRIVATE).edit().putBoolean(latest.key(),true).commit()){message("중복 방지 기록 실패 · 안내를 요청하지 않았습니다.");buttons();return;}
+   requested=latest;requestCredential=token;requestedAt=now();roomChecked=latest.observed();roundIntact=true;outcome=null;destinationMatches=false;guiding=false;sent=true;
+   try{
+    navi.requestRoute(new RouteInfo(latest.lat(),latest.lon(),null,null,"PICKGO 픽업 지점","","","",RouteOption.RECOMMENDED,"",false));
+    record("REQUEST_ROUTE_SENT");message("현대 내비에 요청했습니다. 실제 목적지와 안내 상태를 확인 중입니다.");
+    navi.requestNavigationScreen(NavigationScreenRequest.Foreground.INSTANCE);
+   }catch(Exception e){record("REQUEST_UNCERTAIN");message("내비 요청 결과를 확인하지 못했습니다. 중복 요청 없이 현대 내비에서 확인하세요.");}
+   buttons();
+  });}catch(Exception e){main.post(()->{if(destroyed)return;starting=false;displayed=null;record("REVALIDATION_FAILED");message("최신 상태 확인 실패 · 안내를 요청하지 않았습니다. 연결 후 다시 확인하세요.");buttons();});}});
+ }
+ @Override protected void onResume(){super.onResume();resumed=true;if(web!=null)web.onResume();}
+ @Override protected void onPause(){resumed=false;generation++;displayed=null;if(web!=null)web.onPause();buttons();super.onPause();}
+ @Override protected void onDestroy(){destroyed=true;generation++;main.removeCallbacksAndMessages(null);if(activeConnection!=null)activeConnection.disconnect();io.shutdownNow();deadlines.shutdownNow();if(navi!=null){navi.removeListener(listener);navi.release();}web.destroy();super.onDestroy();}
+}
+
+FILE experiments/pickgo-navigation/app/src/main/java/org/example/pickgonavigation/RouteGate.java
+package org.example.pickgonavigation;
+
+/** Pure policy. All times are monotonic. Coordinates are WGS84, never diagram pixels. */
+public final class RouteGate {
+ public static final long TTL = 8000;
+ public record Target(String id, long version, long revision, double lat, double lon, long observed) {
+  public String key() { return id + ":" + revision; }
+ }
+ public static Target validate(String id, String role, String status, boolean joined, String stage,
+   boolean proposal, long version, long revision, double lon, double lat, long observed) {
+  if (id == null || !id.matches("[a-f0-9-]{36}") || !"driver".equals(role) || !"active".equals(status)
+    || !joined || !"waiting".equals(stage) || proposal || version < 1 || revision < 1
+    || !Double.isFinite(lat) || !Double.isFinite(lon) || lon < 127.032 || lon > 127.050 || lat < 37.455 || lat > 37.471)
+   throw new IllegalArgumentException("확정된 지도 지점과 상대 참여를 확인하세요. 변경 제안 중에는 안내할 수 없습니다.");
+  return new Target(id, version, revision, lat, lon, observed);
+ }
+ public static boolean fresh(Target target, long now) { return target != null && now >= target.observed && now - target.observed < TTL; }
+ public static boolean same(Target a, Target b) {
+  return a != null && b != null && a.id.equals(b.id) && a.version == b.version && a.revision == b.revision
+    && a.lat == b.lat && a.lon == b.lon;
+ }
+ public static boolean matches(Target target, double lat, double lon) {
+  return target != null && Math.abs(target.lat-lat) <= 0.00002 && Math.abs(target.lon-lon) <= 0.00002;
+ }
+ public static boolean samePlace(Target a, Target b) {
+  // Post-dispatch: ready toggles change version but not the agreed place. Pre-dispatch uses same().
+  return a!=null&&b!=null&&a.id.equals(b.id)&&a.revision==b.revision&&a.lat==b.lat&&a.lon==b.lon;
+ }
+ public static boolean confirmed(boolean matches,boolean guiding,long now,long destinationAt,long modeAt){
+  return matches&&guiding&&now>=destinationAt&&now>=modeAt&&now-destinationAt<3000&&now-modeAt<3000;
+ }
+ public enum Observation { WAITING, GUIDING, LAST_GUIDING, TIMEOUT, ROUND_UNAVAILABLE }
+ public static Observation observation(boolean roundIntact,long roomChecked,boolean matches,boolean guiding,
+   long now,long destinationAt,long modeAt,boolean finished){
+  if(!roundIntact||now<roomChecked||now-roomChecked>=TTL)return Observation.ROUND_UNAVAILABLE;
+  if(confirmed(matches,guiding,now,destinationAt,modeAt))return finished?Observation.LAST_GUIDING:Observation.GUIDING;
+  return finished?Observation.TIMEOUT:Observation.WAITING;
+ }
+}

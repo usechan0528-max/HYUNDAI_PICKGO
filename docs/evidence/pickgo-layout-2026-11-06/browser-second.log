@@ -1,0 +1,1 @@
+PASS 75 layout/state checks; actual viewport + desktop/mobile/landscape/compact reflow, all scrollable controls reachable.

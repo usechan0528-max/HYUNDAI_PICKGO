@@ -1,0 +1,9 @@
+file:///C:/Users/dldyd/Documents/Codex/2026-11-02/shx/HYUNDAI_AI/work/pickgo-integration/verify.mjs:14
+async function wait(p,fn){for(let i=0;i<60;i++){if(await p.eval(fn))return;await pause(250);}throw Error('timeout '+fn);}
+                                                                                                   ^
+
+Error: timeout ()=>!document.getElementById('rider').hidden
+    at wait (file:///C:/Users/dldyd/Documents/Codex/2026-11-02/shx/HYUNDAI_AI/work/pickgo-integration/verify.mjs:14:100)
+    at async file:///C:/Users/dldyd/Documents/Codex/2026-11-02/shx/HYUNDAI_AI/work/pickgo-integration/verify.mjs:26:182
+
+Node.js v24.22.1

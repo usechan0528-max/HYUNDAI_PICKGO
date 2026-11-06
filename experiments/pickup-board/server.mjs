@@ -7,7 +7,7 @@ import {mapModel, mapData} from './map/service.mjs';
 import {mapSearch} from './map/search.mjs';
 import { parsePublicOrigin, requestOrigin } from './web-origin.mjs';
 import { MultiBoard } from './multi/board.mjs';
-const files = { '/phone': ['phone.html','text/html'], '/phone.css': ['phone.css','text/css'], '/phone-page.mjs': ['phone-page.mjs','text/javascript'], '/phone-controller.mjs': ['phone-controller.mjs','text/javascript'], '/': ['index.html', 'text/html'], '/app.mjs': ['app.mjs', 'text/javascript'], '/style.css': ['style.css', 'text/css'], '/fonts/AstaSans.ttf': ['fonts/AstaSans.ttf', 'font/ttf'], '/fonts/OFL.txt': ['fonts/OFL.txt', 'text/plain'] };
+const files = { '/place-label.mjs': ['place-label.mjs', 'text/javascript'], '/phone': ['phone.html','text/html'], '/phone.css': ['phone.css','text/css'], '/phone-page.mjs': ['phone-page.mjs','text/javascript'], '/phone-controller.mjs': ['phone-controller.mjs','text/javascript'], '/': ['index.html', 'text/html'], '/app.mjs': ['app.mjs', 'text/javascript'], '/style.css': ['style.css', 'text/css'], '/fonts/AstaSans.ttf': ['fonts/AstaSans.ttf', 'font/ttf'], '/fonts/OFL.txt': ['fonts/OFL.txt', 'text/plain'] };
 Object.assign(files, {
   '/proximity': ['proximity-page.html', 'text/html'],
   '/proximity-page.mjs': ['proximity-page.mjs', 'text/javascript'],
@@ -65,12 +65,13 @@ export function createServer(board = new MapBoard(), options = {}) {
         if(body.point!==undefined){if(typeof board.createPoint!=='function')throw new Fault(409,'이 시연 서버는 실제 지도 핀을 지원하지 않습니다.');return reply(201,board.createPoint(body.point));}
         return reply(201, board.create(body.place, body.pickupPoint));
       }
-      const match = path.match(/^\/api\/rooms\/([a-f0-9-]{36})(?:\/(join|actions|phone|recommendation))?$/);
+      const match = path.match(/^\/api\/rooms\/([a-f0-9-]{36})(?:\/(join|preview|actions|phone|recommendation))?$/);
       if (!match) throw new Fault(404, '찾을 수 없습니다.');
       const [, id, action] = match, credential = req.headers.authorization?.replace(/^Bearer /, '');
       if (action === 'recommendation' && typeof board.recommend === 'function' && ['GET','POST'].includes(req.method)) return reply(200, await board.recommend(id, credential, req.method === 'POST' ? body : null));
       if (action === 'phone' && typeof board.phone === 'function' && ['GET','POST'].includes(req.method)) return reply(200, board.phone(id, credential, req.method === 'POST' ? body : null));
       if (req.method === 'GET' && !action) return reply(200, board.read(id, credential));
+      if (req.method === 'POST' && action === 'preview') return reply(200, board.preview(id, body.invite));
       if (req.method === 'POST' && action === 'join') return reply(200, board.join(id, body.invite, body.joinId));
       if (req.method === 'POST' && action === 'actions') return reply(200, board.act(id, credential, body));
       throw new Fault(405, '지원하지 않는 요청입니다.');

@@ -1,0 +1,14 @@
+TASTESKILL · LINT   13 file(s)
+
+WARN
+  [eyebrow] Eyebrow / kicker label above a heading.  (8×)
+      experiments/pickup-board/index.html:13  class="section-label
+      experiments/pickup-board/index.html:15  class="section-label
+      experiments/pickup-board/index.html:19  class="section-label
+      experiments/pickup-board/index.html:20  class="section-label
+      experiments/pickup-board/style.css:7  .section-label{
+      experiments/pickup-board/style.css:9  .section-label{
+      … 2 more
+
+RESULT: 0 FAIL, 8 WARN
+Interface fragments marked data-ui keep their own borders and shadows. Any other line that must keep a flagged pattern for a real reason can carry the comment taste-skill-ignore.

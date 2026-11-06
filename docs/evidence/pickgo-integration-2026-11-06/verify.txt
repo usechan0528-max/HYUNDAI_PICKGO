@@ -1,0 +1,6 @@
+PASS emulator multi entry / create / invite / ready / next / arrive / board / completion; native disabled
+Native explicit start tapped once; no navigation UI taps after this
+Observing destination and route state, 24 seconds elapsed
+Warning: Activity not started, its current task has been brought to the front
+Warning: Activity not started, intent has been delivered to currently running top-most instance.
+PASS single OSM -> rider UI agreement -> native -> destination match / ROUTE_GUIDING -> 45s return / repeat launch

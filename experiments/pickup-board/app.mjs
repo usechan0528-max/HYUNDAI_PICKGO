@@ -1,6 +1,8 @@
+import { placeLabel } from './place-label.mjs';
 const $ = id => document.getElementById(id);
 let session = null, state = null, received = 0, online = false, busy = false, polling = false, unavailable = false;
 const requestTimes = new WeakMap();
+let toolsAttention = false;
 let editing = false, ending = null, actionError = '', dismissConfirmed = false;
 const invitation = new URLSearchParams(location.hash.slice(1));
 const hasInvite = invitation.has('invite') || invitation.has('room');
@@ -32,6 +34,7 @@ if (incoming || hasInvite) {
     }
   }
 } else session = previousSession;
+$('pickupQuestion').textContent = incoming || session?.role === 'rider' ? '어디서 탈까요?' : '어디서 태울까요?';
 const save = value => {
   session = value;
   try { sessionStorage.setItem('pickupSession', JSON.stringify(value)); return true; }
@@ -53,51 +56,60 @@ function render() {
   if (!session) return;
   $('welcome').hidden = true;
   const valid = fresh(), active = state?.status === 'active', can = valid && active && !busy;
+  const attention = !!state && (!valid || !active);
+  if (attention && !toolsAttention) $('pickupTools').open = true;
+  toolsAttention = attention;
   const boarded = state?.stage === 'boarded', arrived = state?.stage === 'arrived';
   if (!active || boarded || state?.proposal || !state?.joined) editing = false;
   if (!active || (ending !== null && ending !== state?.version)) ending = null;
   $('board').hidden = editing || ending !== null;
   $('editPlace').hidden = !editing;
   $('endConfirm').hidden = !ending;
+  $('editQuestion').textContent = session.role === 'rider' ? '어디서 탈까요?' : '어디서 태울까요?';
   $('role').textContent = session.role === 'driver' ? '운전자 화면' : '탑승자 화면';
-  $('connection').textContent = valid ? '최신 상태' : '연결 확인 필요 · 이전 기록';
+  $('role').setAttribute('data-role', session.role);
+  $('connection').textContent = valid ? '픽업 현황 연결됨' : '연결 확인 필요 · 이전 기록';
   $('connection').classList.toggle('stale', !valid); $('facts').classList.toggle('stale', !valid);
-  $('pickupText').textContent = !valid ? '현재 미확인' : !active ? (state.outcome === 'completed' ? '픽업 완료' : '픽업 취소') : boarded ? '탑승 완료' : arrived ? '운전자 도착' : '도착 전';
+  $('pickupText').textContent = !valid ? '현재 미확인' : !active ? (state.outcome === 'completed' ? '픽업 완료' : '픽업 취소') : boarded ? '탑승 완료' : arrived ? '운전자 도착' : '운전자 도착 전';
   $('headline').textContent = $('pickupText').textContent;
   $('placeLabel').textContent = valid ? '픽업 장소' : '이전 픽업 장소 · 현재 미확인';
-  $('place').textContent = state?.place || '확인 전';
-  $('selectedPoint').textContent = state?.mapPoint ? `${valid ? '' : '이전 기록 · '}실제 지도에서 선택한 픽업 지점 · 현장 표지 확인 필요` : state?.pickupPoint ? `${valid ? '' : '이전 기록 · ' }시연 도면 지점 (${state.pickupPoint.x}, ${state.pickupPoint.y}) · 실제 좌표 아님` : '';
-  $('readyText').textContent = !valid ? '현재 미확인' : !active ? '픽업 종료' : boarded ? '탑승 완료 · 종료 대기' : !state.joined ? '참여 대기' : state.ready ? '준비 완료' : '준비 중';
+  $('place').textContent = placeLabel(state?.place);
+  $('placeConfirmed').hidden = !(valid && active && state?.joined && !state?.proposal && state?.place);
+  $('selectedPoint').textContent = state?.mapPoint ? `${valid ? '' : '이전 기록 · '}선택한 장소 · 현장 표지 확인` : state?.pickupPoint ? `${valid ? '' : '이전 기록 · ' }선택한 장소` : '';
+  $('readyText').textContent = !valid ? '현재 미확인' : !active ? '픽업 종료' : boarded ? '탑승 완료 · 종료 대기' : !state.joined ? '탑승자 참여 대기' : state.ready ? '탑승자 준비 완료' : '탑승자 준비 중';
   const canInvite = valid && active && !state?.joined && session.role === 'driver' && !!session.invite;
   $('inviteBox').hidden = !canInvite; $('copyInvite').disabled = !canInvite;
   if (valid && (state?.joined || !active) && session.invite) { delete session.invite; save(session); }
   const url = canInvite ? `${location.origin}/#room=${session.id}&invite=${session.invite}` : '';
   $('inviteLink').href = url; $('inviteText').value = url;
   if (!canInvite) { $('inviteText').hidden = true; $('inviteStatus').textContent = ''; }
-  $('inviteHelp').textContent = location.origin.startsWith('https://') ? '링크를 탑승자에게 보내세요. 한 명만 참여할 수 있습니다.' : '같은 컴퓨터에서만 열리는 시연 링크입니다. 휴대폰에서 열려면 HTTPS 서버가 필요합니다.';
+  $('inviteHelp').hidden = !location.origin.startsWith('https://');
+  $('inviteHelp').textContent = location.origin.startsWith('https://') ? '탑승자 1명에게 링크를 보내세요.' : '같은 컴퓨터용 시연 링크 · 휴대폰 연결은 HTTPS 필요';
   $('phoneLink').textContent = session.role === 'rider' ? '내 위치 공유 · 선택' : '탑승자 위치';
   $('proximityLink').hidden = session.role === 'rider';
   $('readyButtons').hidden = session.role !== 'rider' || !active || boarded;
   document.querySelectorAll('[data-ready]').forEach(b => { b.disabled = !can || boarded; b.setAttribute('aria-pressed', String(state?.ready === (b.dataset.ready === 'true'))); });
   $('proposal').hidden = !state?.proposal || unavailable;
   if (state?.proposal) {
-    $('proposedPlace').textContent = state.proposal.place;
+    $('proposedPlace').textContent = placeLabel(state.proposal.place, true);
     const own = state.proposal.by === session.role;
     $('proposalLabel').textContent = !valid ? '이전 제안 · 현재 미확인' : own ? '내 제안 · 응답 대기' : '상대 제안';
-    $('proposalText').textContent = !valid ? '마지막으로 확인한 제안입니다. 현재 상태는 미확인입니다.' : own ? '상대가 수락할 때까지 기존 장소를 유지합니다.' : '상대가 이 장소로 바꾸자고 합니다.';
+    $('proposalText').textContent = !valid ? '마지막으로 확인한 제안입니다. 현재 상태는 미확인입니다.' : own ? '상대가 수락할 때까지 기존 장소를 유지합니다.' : '이 장소에서 만날까요?';
     $('withdraw').hidden = !own; $('withdraw').disabled = !can;
     $('decisions').hidden = own; $('accept').disabled = $('reject').disabled = !can;
   }
   $('normalActions').hidden = !active || !state?.joined || !!state?.proposal || unavailable;
   $('openPlace').hidden = boarded; $('openPlace').disabled = !can || boarded;
-  $('progressHelp').textContent = boarded ? '탑승 완료. 픽업을 종료하세요.' : arrived ? (session.role === 'driver' ? '탑승자의 탑승 확인을 기다립니다.' : '차에 탄 뒤 탑승했어요를 누르세요.') : (session.role === 'driver' ? '픽업 장소에 도착하면 누르세요.' : '운전자가 도착하면 여기에 표시됩니다.');
+  $('progressHelp').textContent = boarded ? '모두 탔다면 픽업을 종료하세요.' : arrived ? (session.role === 'driver' ? '탑승 확인 대기' : '차에 탔다면 ‘탑승했어요’를 누르세요.') : (session.role === 'driver' ? '' : '운전자 도착 대기');
   for (const [id, show] of [['arrive', session.role === 'driver' && !arrived && !boarded], ['boarded', session.role === 'rider' && arrived], ['undoArrival', session.role === 'driver' && arrived], ['undoBoarding', session.role === 'rider' && boarded]]) {
     $(id).hidden = !active || !state?.joined || !show; $(id).disabled = !can || !!state?.proposal;
   }
-  $('editingCurrent').textContent = `${valid ? '현재 장소' : '이전 장소 · 현재 미확인'}: ${state?.place || '확인 전'}`;
+  $('editingCurrent').textContent = `${valid ? '현재 장소' : '이전 장소 · 현재 미확인'}: ${placeLabel(state?.place)}`;
   document.querySelectorAll('[data-place]').forEach(b => { b.disabled = !can || boarded || b.dataset.place === state?.place; b.textContent = b.dataset.place + (b.dataset.place === state?.place ? ' · 현재' : ''); });
   $('nextPlace').disabled = !can;
   $('end').hidden = !active || unavailable; $('end').disabled = !can;
+  $('completePickup').hidden = !active || !boarded || unavailable || session.role !== 'driver';
+  $('completePickup').disabled = !can;
   $('end').textContent = boarded ? '픽업 완료' : '픽업 취소';
   $('endTitle').textContent = boarded ? '픽업을 완료할까요?' : '탑승 없이 픽업을 취소할까요?';
   $('endDescription').textContent = boarded ? '완료로 기록합니다. 이후에는 되돌릴 수 없습니다.' : '미탑승 취소로 기록합니다. 이후에는 되돌릴 수 없습니다.';
@@ -105,7 +117,10 @@ function render() {
   $('confirmEnd').disabled = !can || ending !== state?.version;
   $('new').hidden = !unavailable && state?.status !== 'ended';
   const eventText = state ? `${valid ? '' : '마지막 확인 기록 · 현재 미확인: '}${state.lastEvent}` : '';
-  if ($('lastEvent').textContent !== eventText) $('lastEvent').textContent = eventText;
+  if ($('lastEvent').textContent !== eventText) {
+    $('lastEvent').textContent = eventText;
+    $('actionAnnouncement').textContent = eventText;
+  }
 }
 async function refresh() {
   if (!session || polling || busy) return;
@@ -124,15 +139,15 @@ async function act(type, extra = {}) {
 let homeGeneration=0, homeCandidates=[], homeSelected=null, homeCreating=false, homePlace=null, homeResults=[];
 const homeButtons=[...document.querySelectorAll('[data-home-candidate]')];
 function renderHomeCandidates() {
-  homeButtons.forEach((b,i)=>{const c=homeCandidates[i];b.hidden=!c;b.disabled=homeCreating||!c;b.textContent=c?`${i+1}. ${c.name} · 직선 ${c.distanceM}m`:'';b.setAttribute('aria-pressed',String(!!c&&c===homeSelected));});
+  homeButtons.forEach((b,i)=>{const c=homeCandidates[i];b.hidden=!c;b.disabled=homeCreating||!c;b.textContent=c?`${i+1}. ${c.name} · 검색 장소에서 직선 ${c.distanceM}m`:'';b.setAttribute('aria-pressed',String(!!c&&c===homeSelected));});
   $('homeStart').disabled=homeCreating||!homeSelected;
-  $('homeStart').textContent=homeSelected?'이 후보로 픽업 시작':'후보지를 선택하세요';
+  $('homeStart').textContent=homeSelected?'여기서 픽업':'픽업 장소를 선택하세요';
   for(const id of ['placeQuery','searchPlaces','homeManual'])$(id).disabled=homeCreating;
 }
 function resetHomeSearch() {
   homeGeneration++;homeCandidates=[];homeSelected=null;homePlace=null;homeResults=[];
   $('searchResults').replaceChildren();
-  $('homeResults').hidden=true;$('homeCandidates').hidden=true;renderHomeCandidates();
+  $('homeResults').hidden=true;$('homeResults').open=true;$('homeCandidates').hidden=true;renderHomeCandidates();
 }
 async function searchPlaces() {
   if(homeCreating||session||incoming)return;resetHomeSearch();
@@ -148,7 +163,7 @@ async function searchPlaces() {
     for(const place of homeResults){
       const button=document.createElement('button');button.type='button';button.className='secondary search-result';
       const title=document.createElement('strong'),detail=document.createElement('span');
-      title.textContent=place.name;detail.textContent=[place.kind,place.address||'양재 주변'].join(' · ');
+      title.textContent=place.name;detail.textContent=[place.kind,place.address||'양재 주변'].filter(Boolean).join(' · ');
       button.append(title,detail);button.onclick=()=>selectHomePlace(place);$('searchResults').append(button);
     }
   }catch(e){if(generation!==homeGeneration)return;$('searchStatus').textContent=`검색하지 못했습니다. ${e.message}`;}
@@ -158,22 +173,23 @@ $('placeQuery').onkeydown=e=>{if(e.key==='Enter'&&e.isComposing)e.preventDefault
 $('create').onsubmit=e=>{e.preventDefault();return searchPlaces();};
 async function selectHomePlace(place){
   if(homeCreating||!homeResults.includes(place))return;homePlace=place;
-  $('homeCandidateHeading').textContent=`${place.name} 주변 후보`;
+  $('homeResults').open=false;
+  $('homeCandidateHeading').textContent=`${place.name} 주변 픽업 장소`;
   const generation=++homeGeneration;homeCandidates=[];homeSelected=null;
-  $('homeCandidates').hidden=false;$('homeCandidateStatus').textContent='주변 후보를 불러오는 중…';renderHomeCandidates();$('homeCandidateHeading').focus();
+  $('homeCandidates').hidden=false;$('homeCandidateStatus').textContent='주변 픽업 장소를 불러오는 중…';renderHomeCandidates();$('homeCandidateHeading').focus();
   try {const data=await api(`/api/map?place=${encodeURIComponent(place.id)}`,undefined,false);if(generation!==homeGeneration)return;
     homeCandidates=data.available?data.recommendations.slice(0,3):[];
-    $('homeCandidateStatus').textContent=homeCandidates.length?`주변 후보 ${homeCandidates.length}곳 · 실제 지도 기반, 현장 표지 확인 필요`:data.available?'이 장소 주변에는 추천할 후보가 없습니다. 직접 지도에서 확인해 주세요.':'지도 데이터 갱신이 필요합니다.';
-  }catch(e){if(generation!==homeGeneration)return;$('homeCandidateStatus').textContent=`후보를 불러오지 못했습니다. 검색 결과를 다시 눌러 주세요. ${e.message}`;}
+    $('homeCandidateStatus').textContent=homeCandidates.length?`주변 픽업 장소 ${homeCandidates.length}곳`:data.available?'이 장소 주변에는 추천할 장소가 없습니다. 직접 지도에서 확인해 주세요.':'지도 데이터 갱신이 필요합니다.';
+  }catch(e){if(generation!==homeGeneration)return;$('homeCandidateStatus').textContent=`장소를 불러오지 못했습니다. 검색 결과를 펼쳐 다시 선택해 주세요. ${e.message}`;}
   renderHomeCandidates();
 };
 homeButtons.forEach((b,i)=>b.onclick=()=>{if(homeCreating)return;homeSelected=homeCandidates[i]||null;renderHomeCandidates();});
-$('homeManual').onclick=()=>{if(!homeCreating&&homePlace&&!$('homeCandidates').hidden)location.assign(`/map?place=${encodeURIComponent(homePlace.id)}`);};
+$('homeManual').onclick=()=>{if(!homeCreating&&homePlace&&!$('homeCandidates').hidden)location.assign(`/map?place=${encodeURIComponent(homePlace.id)}${homeSelected ? '&candidate='+homeCandidates.indexOf(homeSelected) : ''}`);};
 $('homeStart').onclick=async()=>{
   if(homeCreating||!homeSelected||session||incoming)return;
   homeCreating=true;$('error').textContent='';renderHomeCandidates();
   try{save(await api('/api/rooms',{point:homeSelected.point},false));await refresh();}
-  catch(e){$('error').textContent=e.message;if([400,409].includes(e.status)){homeSelected=null;homeCandidates=[];$('homeCandidateStatus').textContent='후보가 변경되었습니다. 검색 결과를 다시 눌러 최신 후보를 확인하세요.';}}
+  catch(e){$('error').textContent=e.message;if([400,409].includes(e.status)){homeSelected=null;homeCandidates=[];$('homeCandidateStatus').textContent='선택 가능한 장소가 바뀌었습니다. 검색 결과를 펼쳐 다시 선택해 최신 장소 목록을 확인하세요.';}}
   finally{homeCreating=false;renderHomeCandidates();}
 };
 $('join').onclick = async () => { $('join').disabled = true;
@@ -219,6 +235,7 @@ $('accept').onclick = () => act('accept', { proposalId: state.proposal.id });
 $('reject').onclick = () => act('reject', { proposalId: state.proposal.id });
 $('withdraw').onclick = () => act('withdraw', { proposalId: state.proposal.id });
 $('end').onclick = () => { if (fresh() && !busy) { ending = state.version; render(); } };
+$('completePickup').onclick = () => $('end').onclick();
 $('cancelEnd').onclick = () => { ending = null; render(); };
 $('confirmEnd').onclick = () => { if (ending === state?.version) return act('end'); };
 $('refresh').onclick = () => { actionError = ''; $('error').textContent = ''; refresh(); };
@@ -232,3 +249,11 @@ document.addEventListener('visibilitychange', () => { online = false; render(); 
 setInterval(() => { if (!document.hidden) refresh(); }, 2000);
 setInterval(render, 500);
 render(); refresh();
+
+// Preview does not consume the invite or change an existing session.
+if (incoming && validInvite(incoming) && !$('join').disabled) {
+  const pending = incoming;
+  api(`/api/rooms/${pending.id}/preview`, { invite: pending.invite }, false)
+    .then(value => { if (incoming === pending) $('invitePlace').textContent = `픽업 장소 · ${placeLabel(value.place)}`; })
+    .catch(error => { if (incoming === pending) $('invitePlace').textContent = error.status === 403 ? '이미 사용했거나 만료된 초대입니다. 참여를 재시도 중이면 참여 버튼을 다시 눌러 주세요.' : '장소를 확인하지 못했습니다. 보낸 사람에게 확인해 주세요.'; });
+}

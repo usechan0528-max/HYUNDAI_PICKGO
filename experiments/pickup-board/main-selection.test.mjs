@@ -3,7 +3,9 @@ import assert from 'node:assert/strict';
 import vm from 'node:vm';
 import { readFile } from 'node:fs/promises';
 const html = await readFile(new URL('./index.html', import.meta.url), 'utf8');
-const source = await readFile(new URL('./app.mjs', import.meta.url), 'utf8');
+const labelSource = (await readFile(new URL('./place-label.mjs', import.meta.url), 'utf8')).replace('export function', 'function');
+const rawSource = await readFile(new URL('./app.mjs', import.meta.url), 'utf8');
+const source = rawSource.replace("import { placeLabel } from './place-label.mjs';", labelSource);
 function page(deferSearch=false) {
   const element = () => ({children:[],append(...els){this.children.push(...els);},replaceChildren(...els){this.children=els;},value:'', hidden:false, disabled:false, textContent:'', focus(){}, getBoundingClientRect(){return {left:0,top:0,width:500,height:300};}, setAttribute(k,v){this[k]=v;}, classList:{toggle(){}}});
   const nodes = new Map([...html.matchAll(/id="([^"]+)"/g)].map(m => [m[1],element()]));

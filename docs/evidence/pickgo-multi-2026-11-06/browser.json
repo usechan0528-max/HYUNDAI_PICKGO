@@ -1,0 +1,12 @@
+{
+  "checks": [
+    "3 riders / 2 stops, recommendation apply, individual boarding, shared stop lock, completion and reload",
+    "stale cancel rejected and dialog closed, manual recommendation unavailable, explicit all-cancel outcome",
+    "partial completion distinguishes boarded and cancelled participants",
+    "offline error and explicit reconnect preserves trip; mobile scrolling",
+    "server-side session loss returns to setup with recovery guidance"
+  ],
+  "status": "passed",
+  "driverErrors": [],
+  "riderErrors": []
+}

@@ -3,7 +3,9 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import vm from 'node:vm';
 import { readFile } from 'node:fs/promises';
-const source = await readFile(new URL('./app.mjs', import.meta.url), 'utf8');
+const labelSource = (await readFile(new URL('./place-label.mjs', import.meta.url), 'utf8')).replace('export function', 'function');
+const rawSource = await readFile(new URL('./app.mjs', import.meta.url), 'utf8');
+const source = rawSource.replace("import { placeLabel } from './place-label.mjs';", labelSource);
 const html = await readFile(new URL('./index.html', import.meta.url), 'utf8');
 async function harness(initialFailure = null) {
   let now=100, failure=initialFailure, actionFailure=null;
@@ -27,7 +29,7 @@ test('HTTP error then successful refresh removes the accidental new-session esca
   assert.equal(h.nodes.get('end').hidden,true); assert.equal(h.nodes.get('proposal').hidden,true);
   h.fail(null); await h.refresh(); assert.equal(h.nodes.get('new').hidden,true);
   assert.equal(h.nodes.get('error').textContent,''); assert.equal(h.nodes.get('proposal').hidden,false);
-  assert.equal(h.nodes.get('readyText').textContent,'참여 대기');
+  assert.equal(h.nodes.get('readyText').textContent,'탑승자 참여 대기');
 });
 test('connection failure labels every stale fact and locks all mutation controls',async()=>{
   const h=await harness(); h.fail('network'); await h.refresh();
@@ -87,4 +89,30 @@ test('rejected action remains explained across successful polling until explicit
  assert.match(h.nodes.get('error').textContent,/다른 변경/);
  h.nodes.get('refresh').onclick(); await new Promise(setImmediate);
  assert.equal(h.nodes.get('error').textContent,'');
+});
+
+test('place confirmation appears only for fresh joined active room without pending proposal',async()=>{
+ const h=await harness(); const mark=h.nodes.get('placeConfirmed'); assert.equal(mark.hidden,true);
+ h.state.proposal=null; await h.refresh(); assert.equal(mark.hidden,true);
+ h.state.joined=true; await h.refresh(); assert.equal(mark.hidden,false);
+ h.state.proposal={id:'pending',by:'rider',place:'다른 장소'}; await h.refresh(); assert.equal(mark.hidden,true);
+ h.state.proposal=null; await h.refresh(); assert.equal(mark.hidden,false);
+ h.advance(6000);h.render();assert.equal(mark.hidden,true);
+ await h.refresh();assert.equal(mark.hidden,false);
+ h.fail('network');await h.refresh();assert.equal(mark.hidden,true);
+ h.fail(null);await h.refresh();assert.equal(mark.hidden,false);
+ for(const outcome of ['cancelled','completed']) {h.state.status='ended';h.state.outcome=outcome;await h.refresh();assert.equal(mark.hidden,true);}
+});
+
+test('map point labels hide coordinates in current, proposed and stale views without changing state',async()=>{
+  const h=await harness();
+  const current='지도 핀 (37.4639150, 127.0351004)', proposed='지도 핀 (37.4661039, 127.0358465)';
+  h.state.place=current;h.state.mapPoint=[127.0351004,37.4639150];h.state.proposal.place=proposed;await h.refresh();
+  assert.equal(h.nodes.get('place').textContent,'지도에서 선택한 장소');
+  assert.equal(h.nodes.get('proposedPlace').textContent,'지도에서 제안한 장소');
+  assert.equal(h.state.place,current);assert.equal(h.state.proposal.place,proposed);
+  h.fail('network');await h.refresh();
+  assert.equal(h.nodes.get('place').textContent,'지도에서 선택한 장소');
+  assert.match(h.nodes.get('placeLabel').textContent,/현재 미확인/);
+  assert.equal(h.nodes.get('accept').disabled,true);
 });

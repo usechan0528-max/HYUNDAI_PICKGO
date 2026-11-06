@@ -1,12 +1,13 @@
 // Directed, complete matrix; exhaustive search is deliberately bounded to six stops.
-export function bestOrder(order, matrix, { final = false, active = null } = {}) {
+export function bestOrder(order, matrix, { final = false, active = null, arrived = false } = {}) {
   if (!Array.isArray(order) || order.length > 6 || new Set(order).size !== order.length) throw new Error('INVALID_ORDER');
   const nodes = ['origin', ...order, ...(final ? ['destination'] : [])];
   for (const a of nodes) for (const b of nodes) if (a !== b) {
     if (!Number.isSafeInteger(matrix?.[a]?.[b]) || matrix[a][b] < 0 || matrix[a][b] > 604800) throw new Error('ROUTE_MISSING');
   }
   const cost = list => {
-    const route = ['origin', ...list, ...(final ? ['destination'] : [])];
+    // Manual arrival means the origin-to-active leg has already been travelled.
+    const route = [...(active && arrived ? [] : ['origin']), ...list, ...(final ? ['destination'] : [])];
     return route.slice(1).reduce((sum, to, i) => sum + matrix[route[i]][to], 0);
   };
   let best = [...order], total = cost(order);

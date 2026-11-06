@@ -2,7 +2,9 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import vm from 'node:vm';
-const source=(await readFile(new URL('./recommendation/page.mjs',import.meta.url),'utf8')).replace("import { ContinuousShare } from './controller.mjs';",'');
+const labelSource = (await readFile(new URL('./place-label.mjs', import.meta.url), 'utf8')).replace('export function', 'function');
+const rawSource=(await readFile(new URL('./recommendation/page.mjs',import.meta.url),'utf8')).replace("import { ContinuousShare } from './controller.mjs';",'');
+const source = rawSource.replace("import { placeLabel } from '../place-label.mjs';", labelSource);
 const flush=()=>new Promise(r=>setImmediate(r));
 async function harness(candidate={}){
  let now=100, pending=null;const timers=[],events={},elements=new Map();

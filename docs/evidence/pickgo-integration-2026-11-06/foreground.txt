@@ -1,0 +1,4 @@
+    topResumedActivity=ActivityRecord{58976e8 u10 org.example.pickgonavigation/.NavigationActivity t1000142}
+    * Hist  #0: ActivityRecord{58976e8 u10 org.example.pickgonavigation/.NavigationActivity t1000142}
+    topResumedActivity=ActivityRecord{f8a398b u10 ai.umos.drivingview/.DrivingViewActivity t1000138}
+      topResumedActivity=ActivityRecord{c484e43 u10 ai.umos.homescreen/.HomeActivity t1000136}

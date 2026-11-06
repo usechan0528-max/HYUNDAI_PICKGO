@@ -95,3 +95,20 @@ test('join, manual order, next, arrive, cancel, board all invalidate recommendat
     assert.throws(()=>f.act('apply',{recommendationId:rec.id}),/만료/);
   }
 });
+test('arrival updates provider origin and recommendation excludes the travelled active leg',async()=>{
+  let received;
+  const f=fixture({demo:false,provider:input=>{
+    received=input;
+    const m=matrix(['origin',...input.order,'destination'],10);
+    m.origin[input.order[0]]=500;
+    return {mode:'real',source:'injected test fixture, not live traffic',observedAt:100000,expiresAt:110000,matrix:m};
+  }});
+  const p=f.add('가');f.add('나',p.stopId);f.add('다');f.act('next');f.act('arrive');
+  const rec=(await f.b.recommend(f.d.id,f.d.token,f.cmd(f.d,'recommend'))).recommendation;
+  assert.deepEqual(received.origin,[127.01,37.01]);assert.equal(rec.currentSeconds,10);assert.equal(rec.seconds,10);
+  assert.equal(rec.order[0],p.stopId);
+  const m=matrix(['origin','a','b','destination'],10);m.origin.a=500;
+  assert.equal(bestOrder(['a','b'],m,{active:'a',arrived:true,final:true}).seconds,20);
+  assert.equal(bestOrder(['a'],m,{active:'a',arrived:true}).seconds,0);
+  assert.equal(bestOrder(['a','b'],m,{active:'a'}).seconds,510);
+});

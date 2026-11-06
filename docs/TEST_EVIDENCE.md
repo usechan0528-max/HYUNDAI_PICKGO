@@ -310,3 +310,20 @@ OSM검색 전체246/246 + 시험시간고정 보완후 집중12/12, 최종 Chrom
 
 ## 2026-11-04 · 다인 픽업 검증
 node --test experiments/pickup-board/*.test.mjs: 현재작업트리254/254, exit0. 신규21(도메인12/HTTP1/fakeDOM8), 기존단일및동시검색담당시험포함. node --check 신규mjs3개/git diff --check exit0. 실제Chrome3인2지점공동승차/순서추천/모두탑승종료·새로고침복원확인. 마지막409/저장실패보완은fakeDOM검증. 캡처2회실패,실차/실제경로/내비다중경유/물리폰HTTPS미실행. ClaudeOpus설계1회/Haiku초기timeout후읽기검수와후속2회성공·지적수정. docs/evidence/pickgo-multi-2026-11-04/ 및전용보고참조.
+
+
+## 2026-11-06 · 다인 픽업 마무리
+node --test "experiments/pickup-board/*.test.mjs":258/258 exit0. 실제headlessChrome3인2지점·공동탑승잠금·오래된취소409·전체/부분종료·오프라인/만료복구·1440/390 검증통과. work/pickgo-osm-search/verify.mjs 두크기통과,RouteGate43통과. 증거 docs/evidence/pickgo-multi-2026-11-06/. 실제내비재시험/물리폰미실행. 상세 PICKGO_MULTI_CLOSURE_2026-11-06.md.
+
+## 2026-11-06 · 최신 통합본 실기
+최신4194서버·재빌드설치APK17835102…75b4b에서 에뮬레이터 다인기본흐름 및 단일OSM검색→독립Chrome참여→native1회→목적지일치/ROUTE_GUIDING→45초결과유지/반복Activity1개 통과. 웹258/258,RouteGate43,assembleDebug/lintDebug exit0(0오류3경고). 시험스크립트 초기실패는 attempt1~4에보존,최종exit0. 물리폰·실차·다중경유·연결단절전체재시험미실행. 상세 PICKGO_INTEGRATION_2026-11-06.md 및 evidence/pickgo-integration-2026-11-06/.
+
+2026-11-06 디자인후속: node --test pickup-board/*.test.mjs 259/259; Chrome체크조건/3폭검증; 홈 inspector 0FAIL/0WARN. 상세 PICKGO_DESIGN_SIMPLE_2026-11-06.md. 새APK/실기미실행.
+
+2026-11-06 compact UI: 259/259,기본진행4폭무스크롤,지도확인버튼화면내,체크전이브라우저통과. APK미실행. PICKGO_COMPACT_UI_2026-11-06.md.
+
+2026-11-06 공모전 시연자료: node --test pickup-board/*.test.mjs 259/259 exit0. 실제Chrome최종단일/다인3인2지점완료·공동지점잠금확인. PNG22장디코딩·시각검토,MP4 126초1920x1080 H264 전체decode exit0/오류없음. 문서상대링크66개누락0. ClaudeHaiku5.5두회/지적처리. docs/evidence/pickgo-showcase-2026-11-06 및 docs/showcase/VERIFICATION.md. native영상은이전별도촬영재사용/이번실기미실행.
+
+2026-11-06 좌표표시 수정: node --test experiments/pickup-board/*.test.mjs 최종260/260 exit0. 기존VM하네스 import실행 초기40실패 후 실제공유표시함수 로드로 보완; assertion제거없음. 전용verify-fix.mjs 실제Chrome 정상/stale자동시험·제안수락 mapPoint보존 검증. 전용browser.log/tests-final.log, 시각캡처4장. 내비실기/APK재검증미실행. docs/PICKGO_DESIGN_REVIEW_2026-11-06.md 참조.
+
+2026-11-06 화면비율/보고서 개선: node --test pickup-board 루트/map/multi/recommendation = 261/261 exit0. work/pickgo-layout/verify.mjs = 89개 실제 Chrome 상태/접근 검사 exit0. extra.mjs = 초대3크기/preview미소모/driver중지숨김/formatter200. 실제 emulator5556 WebView1224×760 마지막버튼 접근true, 가로넘침false. lint0FAIL8WARN, inspect0FAIL2WARN. 실패·수정·검수처리·미실행은 PICKGO_LAYOUT_2026-11-06.md 및 evidence/pickgo-layout-2026-11-06 참조.

@@ -1,6 +1,7 @@
 const $ = id => document.getElementById(id);
 const storage = 'pickgo-multi-session-v1';
 let session = null, state = null, busy = false, candidates = [], pendingCancel = null, invite = null, joinId = null;
+let addContext = null;
 let queue = Promise.resolve(), queued = 0, recoveringJoin = false;
 try { session = JSON.parse(sessionStorage.getItem(storage) || 'null'); } catch { /* No persisted session. */ }
 const fragment = new URLSearchParams(location.hash.slice(1));
@@ -43,6 +44,7 @@ function render() {
   $('setup').hidden = true; $('invitation').hidden = true; $('trip').hidden = false;
   const driver = state.role === 'driver', ended = state.status !== 'active';
   $('driver').hidden = !driver; $('rider').hidden = driver;
+  $('title').textContent = driver ? '픽업 순서' : '내 픽업';
   $('mode').textContent = state.demo ? '데모 모드 · 이동시간은 합성 데이터이며 실제 도로·교통과 무관합니다.' : '수동 계획 · 실제 경로 데이터 미연결';
   $('tripStatus').textContent = { active: '진행 중', completed: '모두 탑승 완료', partial: '종료 · 일부 탑승 / 일부 취소', cancelled: '모두 취소' }[state.status];
   if (!driver) {
@@ -50,15 +52,27 @@ function render() {
     $('myPlace').textContent = `${p.name} · ${state.stop.label}`;
     $('myStatus').textContent = `${done ? (p.state === 'boarded' ? '탑승 완료' : '취소됨') : `${state.ordinal}번째 픽업 · ${state.arrived ? '차량 도착' : '도착 전'}`} · ${p.ready ? '준비 완료' : '준비 중'}`;
     for (const id of ['ready','notReady','cancelSelf']) $(id).disabled = ended || done;
+    $('ready').setAttribute('aria-pressed', String(p.ready));
+    $('notReady').setAttribute('aria-pressed', String(!p.ready));
+    $('boardingHelp').textContent = done ? '탑승 상태가 반영되었습니다.' : state.arrived ? '차에 탔다면 탑승을 확인해 주세요.' : '운전자 도착 후 탑승을 확인할 수 있습니다.';
     $('board').disabled = ended || done || !state.arrived; return;
   }
   $('addPanel').hidden = ended;
+  const addKey = `${state.id}:${!!state.active}:${state.participants.length === 0}`;
+  if (addContext !== addKey) { $('addPanel').open = !state.participants.length; addContext = addKey; }
+  const current = state.stops.find(s => s.id === (state.active || state.order[0]));
+  const here = current ? state.participants.filter(p => p.stopId === current.id && p.state !== 'cancelled') : [];
+  const waiting = here.filter(p => p.state !== 'boarded');
+  $('currentStopTitle').textContent = ended ? '픽업 결과' : current ? current.label : '픽업 준비';
+  $('currentStopStatus').textContent = ended ? $('tripStatus').textContent : current ?
+    `${here.length}명 중 ${here.length-waiting.length}명 탑승${state.active && current.arrived && waiting.length ? ' · '+waiting.map(p => p.name).join(', ')+' 탑승 확인 대기' : ''}` : '탑승자를 추가해 주세요.';
+  $('nextHelp').textContent = ended ? '' : state.active ? (current?.arrived ? '이 지점의 모두가 탑승하거나 취소하면 다음 지점으로 진행합니다.' : '실제 도착 후 도착 표시를 눌러 주세요.') : state.order.length ? '선택한 순서대로 다음 지점의 픽업을 시작합니다.' : state.participants.length ? '모두 확인했습니다. 픽업 회차를 종료해 주세요.' : '';
   $('addPerson').querySelector('button').disabled = !!state.active || state.participants.length >= 6;
   const previous = $('pickup').value; $('pickup').replaceChildren();
   for (const id of state.order) option($('pickup'), `stop:${id}`, `같은 지점 함께 승차 · ${stopLabel(id)}`);
-  candidates.forEach((c, i) => option($('pickup'), `point:${i}`, `${c.name} · 후보 ${i + 1}`));
+  candidates.forEach((c, i) => option($('pickup'), `point:${i}`, `${c.name} · 장소 ${i + 1}`));
   if ([...$('pickup').options].some(o => o.value === previous)) $('pickup').value = previous;
-  $('routeSummary').textContent = `남은 지점 ${state.order.length}곳 · 최종 목적지 ${state.destination ? state.destination.map(v => v.toFixed(5)).join(', ') : '없음'}`;
+  $('routeSummary').textContent = `남은 지점 ${state.order.length}곳 · 최종 목적지 ${state.destination ? '설정됨' : '없음'}`;
   $('stops').replaceChildren();
   state.order.forEach((id, i) => {
     const stop = state.stops.find(s => s.id === id), li = document.createElement('li'), title = document.createElement('strong');
@@ -85,6 +99,7 @@ function render() {
   }
   $('recommend').disabled = ended || !state.order.length;
   $('next').disabled = ended || !!state.active || !state.order.length;
+  $('arrive').className = state.active ? 'primary' : '';
   $('arrive').disabled = ended || !state.active || !!state.stops.find(s => s.id === state.active)?.arrived;
   $('end').disabled = ended || !state.participants.length || state.participants.some(p => !['boarded','cancelled'].includes(p.state));
   const r = state.recommendation;
@@ -97,12 +112,22 @@ function render() {
 }
 async function refresh() {
   if (!session) return;
-  const next = await api(`/api/trips/${session.id}`);
+  let next;
+  try { next = await api(`/api/trips/${session.id}`); }
+  catch (e) {
+    if ([401,403,404].includes(e.status)) {
+      session = null; state = null;
+      try { sessionStorage.removeItem(storage); } catch { /* In-memory recovery still works. */ }
+      $('trip').hidden = true; $('setup').hidden = false;
+      $('message').textContent = '이전 회차가 만료되었거나 참여 권한이 없습니다. 운전자는 새 회차를 만들고, 탑승자는 새 초대를 받아 주세요.';
+    }
+    throw e;
+  }
   const changed = !state || state.version !== next.version || state.recommendation?.id !== next.recommendation?.id;
   state = next; if (changed) render();
 }
 $('createTrip').onsubmit = e => { e.preventDefault(); run(async () => { session = await api('/api/trips', { origin: candidates[Number($('origin').value)].point, destination: $('destination').value === '' ? null : candidates[Number($('destination').value)].point, demo: $('demo').checked }, false); save(); await refresh(); }); };
-$('addPerson').onsubmit = e => { e.preventDefault(); const name = $('personName').value, selected = $('pickup').value; run(async s => { const [kind, value] = selected.split(':'); const c = candidates[Number(value)]; await act('add', { name, ...(kind === 'stop' ? {stopId:value} : {point:c.point,label:`${c.name} · 후보 ${Number(value)+1}`}) }, s); $('personName').value = ''; }); };
+$('addPerson').onsubmit = e => { e.preventDefault(); const name = $('personName').value, selected = $('pickup').value; run(async s => { const [kind, value] = selected.split(':'); const c = candidates[Number(value)]; await act('add', { name, ...(kind === 'stop' ? {stopId:value} : {point:c.point,label:`${c.name} · 장소 ${Number(value)+1}`}) }, s); $('personName').value = ''; }); };
 $('refresh').onclick = () => run(refresh);
 $('recommend').onclick = () => run(async s => { state = await api(`/api/trips/${session.id}/recommend`, command('recommend', {}, s)); render(); });
 $('apply').onclick = () => run(s => act('apply', { recommendationId: s.recommendation.id }, s));
@@ -116,7 +141,16 @@ $('join').onclick = () => run(async () => {
   // Persist the retry key BEFORE consuming a one-use invite. A lost response is recoverable for five minutes.
   try { sessionStorage.setItem('pickgo-multi-join', JSON.stringify({ ...invite, joinId })); }
   catch { throw new Error('이 브라우저에 참여 복구 정보를 저장할 수 없습니다. 초대는 아직 사용하지 않았습니다. 브라우저 저장을 허용한 뒤 다시 참여하세요.'); }
-  const joined = await api(`/api/trips/${invite.id}/join`, { invite:invite.invite, joinId }, false);
+  let joined;
+  try { joined = await api(`/api/trips/${invite.id}/join`, { invite:invite.invite, joinId }, false); }
+  catch (e) {
+    if ([403,404,409].includes(e.status)) {
+      try { sessionStorage.removeItem('pickgo-multi-join'); } catch { /* Do not retry an invalid invite in this page. */ }
+      recoveringJoin = false; $('join').disabled = true;
+      $('invitationText').textContent = '이 초대로는 참여를 복구할 수 없습니다. 운전자에게 기존 픽업 취소와 새 초대를 요청하세요. 회차 총 6명 한도에 도달했다면 새 회차가 필요합니다.';
+    }
+    throw e;
+  }
   session = joined;
   try {
     sessionStorage.setItem(storage, JSON.stringify(joined)); sessionStorage.removeItem('pickgo-multi-join');
@@ -129,12 +163,12 @@ await run(async () => {
   let data;
   try { data = await api('/api/map', undefined, false); } catch { data = { available: false }; }
   candidates = data.available ? data.recommendations : [];
-  candidates.forEach((c, i) => { option($('origin'), String(i), `${c.name} · 후보 ${i+1}`); option($('destination'), String(i), `${c.name} · 후보 ${i+1}`); });
+  candidates.forEach((c, i) => { option($('origin'), String(i), `${c.name} · 장소 ${i+1}`); option($('destination'), String(i), `${c.name} · 장소 ${i+1}`); });
   $('createTrip').querySelector('button').disabled = !candidates.length;
-  if (!candidates.length) $('message').textContent = '사용 가능한 지도 후보가 없습니다. 새 회차 생성은 잠시 사용할 수 없습니다.';
+  if (!candidates.length) $('message').textContent = '사용 가능한 지도에 표시된 장소가 없습니다. 새 회차 생성은 잠시 사용할 수 없습니다.';
   if (invite) {
     $('setup').hidden = true; $('invitation').hidden = false; $('join').disabled = true;
-    try { const p = await api(`/api/trips/${invite.id}/preview`, {invite: invite.invite}, false); $('invitationText').textContent = `${p.name} · ${p.stop.label} · ${p.stop.point.join(', ')}${p.demo ? ' · 합성 이동시간 시연' : ''}`; }
+    try { const p = await api(`/api/trips/${invite.id}/preview`, {invite: invite.invite}, false); $('invitationText').textContent = `${p.name} · ${p.stop.label}${p.demo ? ' · 합성 이동시간 시연' : ''}`; }
     catch (e) { if (!recoveringJoin) throw e; $('invitationText').textContent = '이 브라우저에서 시작한 참여를 다시 확인합니다. 첫 참여 요청 후 5분 이내에 복원할 수 있습니다.'; }
     $('join').disabled = false;
   }

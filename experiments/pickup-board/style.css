@@ -66,3 +66,122 @@ button:focus-visible,a:focus-visible{outline-offset:-5px}
 @media(max-width:479px){.search-home .welcome-copy h2{font-size:30px}.search-home .search-row input{font-size:20px}}
 
 .search-result{flex-direction:column;align-items:flex-start;gap:6px}.search-result span,.search-attribution{font-size:16px;color:var(--muted)}.search-attribution{margin-top:12px}.search-attribution a{color:inherit}.search-home:has(#homeResults:not([hidden])){justify-content:flex-start;padding-block:24px}
+
+/* Place confirmation is a server-backed state, separate from readiness and boarding. */
+.place-title{display:flex;align-items:center;flex-wrap:wrap;gap:12px 20px;margin-top:12px}
+.place .place-title h2{margin:0;overflow-wrap:anywhere}
+.confirmed-mark{display:inline-flex;align-items:center;gap:8px;color:#92d5b0;font-size:18px;font-weight:600;white-space:nowrap}
+.confirmed-mark svg{flex:none}
+.activity-details{margin-top:12px;color:var(--muted);font-size:18px}
+.activity-details summary{cursor:pointer;min-height:48px;display:flex;align-items:center;list-style:none}
+.activity-details summary::before{content:'+';margin-right:10px}
+.activity-details[open] summary::before{content:'−'}
+.activity-details .event{margin:0 0 12px}
+#progressHelp:empty,#notice:empty{display:none}
+#inviteBox #inviteLink{background:transparent;border-color:transparent;font-size:18px;min-height:56px;margin-top:12px}
+.search-home>a.button{border-color:transparent;font-size:20px;min-height:56px}
+main>section:not([hidden]){animation:none}
+@media(max-width:899px){.place-title{gap:10px 16px}.confirmed-mark{font-size:16px}.confirmed-mark svg{width:24px;height:24px}}
+
+/* Keep one pickup decision on screen. Secondary tools are disclosed on demand. */
+.pickup-tools{flex:none;margin-top:16px;color:var(--muted);font-size:18px}
+.pickup-tools>summary,#homeResults>summary{cursor:pointer;min-height:48px;display:flex;align-items:center;gap:10px;list-style:none}
+.pickup-tools>summary::after,#homeResults>summary::after{content:'+'}
+.pickup-tools[open]>summary::after,#homeResults[open]>summary::after{content:'−'}
+.pickup-tools .bottom{position:static;flex-wrap:wrap}
+.pickup-tools .event{display:block}
+.workgrid{flex:0 0 auto;min-height:0}
+.facts,.readiness,.place,.action-area{flex:none}
+.panel{padding:24px}
+.progress-actions{margin-top:0;padding-top:0}
+.normal-actions{justify-content:center}
+.normal-actions #progressHelp:empty{margin:0}
+.readiness{min-height:150px}
+.place{min-height:150px}
+.search-home:has(#homeCandidates:not([hidden])){justify-content:flex-start;gap:12px;padding-block:8px}
+.search-home:has(#homeCandidates:not([hidden])) .welcome-copy,
+.search-home:has(#homeCandidates:not([hidden]))>a{display:none}
+#homeCandidates .place-options{gap:8px}
+#homeCandidates .place-options button{min-height:56px;font-size:20px;padding:12px 16px}
+#homeCandidates .create-action{min-height:56px;font-size:20px;margin-top:12px}
+#homeCandidateStatus{font-size:16px;margin:8px 0}
+@media(max-width:899px){
+ .cockpit{grid-template-rows:56px minmax(0,1fr) 40px;padding-inline:20px}
+ .cockpit main{padding-top:4px}
+ .cockpit .workgrid{gap:16px}
+ .cockpit .facts{gap:12px}
+ .cockpit .readiness{min-height:0;padding:16px 20px}
+ .cockpit .place{min-height:0;padding:20px}
+ .cockpit .panel{padding:16px 20px}
+ .cockpit .readiness #pickupText{font-size:24px}
+ .cockpit .readiness #readyText{font-size:16px}
+ .cockpit .section-label{font-size:16px}
+ .cockpit .place h2{font-size:24px}
+ .cockpit #readyButtons button,.cockpit .progress-actions button,.cockpit #decisions button{min-height:56px;font-size:20px;padding:12px 16px}
+ .cockpit #decisions{gap:12px}
+ .cockpit .proposal p{display:block;font-size:16px}
+ .cockpit .progress-actions{gap:12px}
+ .cockpit .invite button{min-height:56px;font-size:20px}
+ .cockpit .invite p{font-size:16px}
+ .cockpit .invite h2{font-size:24px}
+ .cockpit .invite #inviteLink{min-height:48px;margin-top:4px;padding:8px}
+ .cockpit .pickup-tools{margin-top:12px;font-size:16px}
+ .cockpit .search-row input{min-height:64px;font-size:20px;padding-block:12px}
+ .cockpit .search-row button{padding:12px}
+ .cockpit footer{font-size:14px}
+ .cockpit #selectedPoint{font-size:16px}
+}
+
+/* Developer diagnostics are not part of the pickup task. */
+.developer-only{display:none!important}
+
+/* Responsive pickup frame: header + one scrollport + footer, never nested clipped sections. */
+.cockpit{grid-template-rows:64px minmax(0,1fr) 36px;padding-inline:clamp(16px,3vw,40px)}
+.cockpit>main{display:block;overflow:auto;padding:12px 4px 24px;scrollbar-gutter:stable;scrollbar-width:thin;scrollbar-color:#737373 #202020;scroll-padding-block:16px 24px;overscroll-behavior:contain;touch-action:pan-y pinch-zoom}
+.cockpit #board,.cockpit .welcome,.cockpit .edit-place,.cockpit .end-confirm{height:auto;min-height:0;overflow:visible;flex:none}
+.cockpit .welcome.search-home{min-height:100%;justify-content:safe center;padding-block:24px}
+.cockpit .welcome.search-home:has(#homeResults:not([hidden])),.cockpit .welcome.search-home:has(#homeCandidates:not([hidden])){justify-content:flex-start}
+.cockpit .search-home>*{flex-shrink:0}
+.cockpit .search-home:has(#joinBox:not([hidden]))>a{display:none}
+.cockpit .join-panel{justify-self:auto;max-width:650px;margin-inline:auto}
+.cockpit .join-panel button+button{margin-top:12px}
+.cockpit .edit-place,.cockpit .end-confirm{min-height:100%;align-items:safe center}
+.cockpit .workgrid{align-items:start}
+.cockpit .action-area .panel{min-height:100%;gap:12px}
+.cockpit #progressHelp{margin:0}
+.cockpit .progress-actions button{margin-top:0}
+.cockpit .topline{flex-wrap:wrap}
+.cockpit #notice:not(:empty){padding-block:12px;overflow-wrap:anywhere}
+.cockpit .pickup-tools .bottom{position:static}
+.cockpit #inviteText{width:100%;min-width:0}
+.cockpit h2,.cockpit h3,.cockpit button{overflow-wrap:anywhere}
+@media(max-width:899px){
+ .cockpit{grid-template-rows:56px minmax(0,1fr) 32px}
+ .cockpit>main{padding-top:8px}
+ .cockpit .edit-place,.cockpit .end-confirm{justify-content:flex-start;align-items:stretch;gap:24px;padding-block:12px}
+ .cockpit .join-panel{padding:24px 20px}
+ .cockpit .join-panel button{min-height:56px;font-size:20px}
+}
+@media(max-height:500px){
+ .cockpit{grid-template-rows:48px minmax(0,1fr) 28px}
+ .cockpit .welcome.search-home{justify-content:flex-start;gap:16px;padding-block:12px}
+ .cockpit .welcome-copy h2{font-size:28px}
+ .cockpit .workgrid{gap:16px}
+}
+/* Rider views keep a phone-sized reading column even when opened on a wide display. */
+.cockpit:has(#role[data-role=rider]),.cockpit:has(#joinBox:not([hidden])){max-width:520px;margin-inline:auto;grid-template-rows:56px minmax(0,1fr) 28px;padding-inline:max(16px,env(safe-area-inset-left)) max(16px,env(safe-area-inset-right))}
+.cockpit:has(#role[data-role=rider]) .workgrid{display:flex;flex-direction:column;align-items:stretch;gap:16px}
+.cockpit:has(#role[data-role=rider]) .facts{gap:12px}
+.cockpit:has(#role[data-role=rider]) .panel{padding:16px;min-height:0}
+.cockpit:has(#role[data-role=rider]) .readiness{display:flex;flex-direction:column;align-items:stretch;gap:8px}
+.cockpit:has(#role[data-role=rider]) h1{font-size:24px}
+.cockpit:has(#role[data-role=rider]) .topline,.cockpit:has(#role[data-role=rider]) .section-label,.cockpit:has(#role[data-role=rider]) #readyText,.cockpit:has(#role[data-role=rider]) #selectedPoint{font-size:16px}
+.cockpit:has(#role[data-role=rider]) #pickupText,.cockpit:has(#role[data-role=rider]) .place h2{font-size:24px}
+.cockpit:has(#role[data-role=rider]) button{min-height:56px;font-size:18px;padding:12px;min-width:0}
+.cockpit:has(#role[data-role=rider]) #readyButtons{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;width:100%}
+.cockpit:has(#role[data-role=rider]) .bottom{flex-wrap:wrap}
+.cockpit:has(#role[data-role=rider]) p{font-size:16px;word-break:keep-all;overflow-wrap:anywhere}
+.cockpit:has(#role[data-role=rider]) footer{font-size:14px}
+.cockpit:has(#role[data-role=rider]) .edit-place,.cockpit:has(#role[data-role=rider]) .end-confirm{display:flex;flex-direction:column;align-items:stretch;justify-content:flex-start;gap:24px;padding-block:16px}
+.cockpit:has(#role[data-role=rider]) .edit-place h2,.cockpit:has(#role[data-role=rider]) .end-confirm h2{font-size:28px}
+.cockpit:has(#role[data-role=rider]) .confirm-actions{width:100%}

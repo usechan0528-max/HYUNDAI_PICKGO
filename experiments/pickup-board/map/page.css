@@ -81,3 +81,33 @@
 .map-page .selection h2{font-size:22px}
 @media(max-width:899px){.map-page aside{padding:0;overflow:visible}.map-options{overflow:visible;padding:24px}.map-page .selection{max-height:none;overflow:visible;padding:24px}}
 @media(max-width:479px){.map-options,.map-page .selection{padding:20px 16px}}
+
+/* The map and selected place stay visible; settings no longer precede the decision. */
+.map-page details.map-options{flex:none;margin:0;border:0;padding:0 20px;overflow:auto}
+.map-options>summary{font-size:18px}
+.map-options[open]{max-height:55%;padding-bottom:16px}
+.map-page .selection{border:0;max-height:none;padding:16px 20px}
+.map-page #confirm{min-height:56px;margin-top:12px;font-size:20px}
+.map-page #coordinates:empty,.map-page #roomState:empty{display:none}
+@media(max-width:899px){
+ .map-shell{height:100dvh;min-height:0;grid-template-rows:56px minmax(0,1fr) 36px;padding:0 16px}
+ .map-page header{min-height:0;padding:0;flex-wrap:nowrap}
+ .map-page .back-link{min-height:44px;padding:8px;font-size:16px}
+ .map-page main{min-height:0;overflow:auto;gap:12px;padding:0}
+ .maparea{height:auto;min-height:220px;flex:1 0 220px}
+ .map-heading{padding:8px 12px}.map-heading h2{font-size:18px}
+ .map-page #mapNotice{font-size:14px;padding:8px 12px}
+ .map-page aside{flex:none;display:flex;flex-direction:column}
+ .map-page .selection{order:0;padding:12px 16px}
+ .map-page .selection h2{font-size:20px}
+ .map-page .selection p{font-size:16px;margin-top:4px}
+ .map-page details.map-options{order:1;max-height:none;padding:0 16px}
+ .map-page footer{min-height:0;padding:0;font-size:12px}
+}
+
+.map-page aside{overflow-y:auto;overflow-x:hidden;scrollbar-gutter:stable;scrollbar-width:thin;scrollbar-color:#737373 #202020;scroll-padding:16px;overscroll-behavior:contain}
+.map-page details.map-options,.map-page .map-options[open],.map-page .selection{overflow:visible;max-height:none;flex:none}
+.map-page .selection{order:0}.map-page details.map-options{order:1}
+.map-page main{scrollbar-width:thin;scrollbar-color:#737373 #202020;scroll-padding:16px}
+@media(max-width:899px){.map-page aside{overflow:visible;scrollbar-gutter:auto}.maparea{height:clamp(240px,42dvh,400px);min-height:240px;flex:none}.map-page main{padding-bottom:20px}.map-page .map-shell{grid-template-rows:56px minmax(0,1fr) 32px}}
+@media(max-height:500px) and (min-width:700px){.map-page main{display:grid;grid-template-columns:minmax(260px,1fr) minmax(0,1.4fr);overflow:hidden}.map-page aside{order:0;overflow:auto}.map-page .maparea{order:1;height:100%;min-height:0}.map-page .map-shell{grid-template-rows:48px minmax(0,1fr) 28px}}

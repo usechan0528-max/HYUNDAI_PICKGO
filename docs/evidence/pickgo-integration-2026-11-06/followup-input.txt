@@ -1,0 +1,56 @@
+Follow-up read-only, no tools/edits, <=500 Korean words. Prior session55c41480 P1 none, P2-1 proposal missing fail-closed; P2-2 count scope; P2-3 timestamps/provenance. Disposition: keep missing-proposal fail-closed deliberately, since invalid/incomplete response must not enable navigation. domain.mjs read() always serializes proposal: r.proposal ? {...r.proposal} : null (line54). Actual authenticated response attached hasProposal=true,proposal=null; same selected mapPoint/version after return. Do NOT recommend relaxing invalid server response into agreement. Entire PID27004 log has exactly1 USER_START and1 REQUEST_ROUTE_SENT. Booleans are assertions reached; no-nav-taps is harness action record, not global input surveillance. Device PST UTC-8 vs KST UTC+9 explains date, not stale evidence. Server restart and fresh build precede screenshot by timestamps below. APK pulled from device matches rebuilt artifact. No app source edits. Confirm these three dispositions or identify concrete remaining acceptance blocker. Physical phone/real car/multi-navigation/SDK disconnection/lifecycle termination remain explicitly untested. Build lint warnings: dependency update, dataExtractionRules, missing icon; 0errors.
+
+environment.json
+{
+  "dateKST": "2026-11-06",
+  "head": "25a30be009e906c5c3e0bb80c55f2c5ed2e74cd4",
+  "serverPid": 56964,
+  "port": 4194,
+  "device": "emulator-5556",
+  "apkVersion": "0.1-local-demo",
+  "versionCode": 1,
+  "installedSHA256": "17835102F6CF7B564482D1AEFD43A71CA8B8938B5385B7325903349CB8E75B4B",
+  "builtSHA256": "17835102F6CF7B564482D1AEFD43A71CA8B8938B5385B7325903349CB8E75B4B",
+  "previousInstalledSHA256": "434A9FB0EFB3AA57B91103706FE6E4F2246CCE32EEA641DCC0989C1C3B356D84",
+  "deviceClock": "Device PST (UTC-8); report KST (UTC+9); 17-hour timezone difference, not an old execution.",
+  "deviceDate": "Thu Nov  5 07:43:34 PST 2026",
+  "reverse": "host-18 tcp:4194 tcp:4194",
+  "serverStartedKST": "2026-11-06T00:34:14.676031+09:00",
+  "apkBuiltUTC": "2026-11-05T15:35:24.4053749Z",
+  "navigationScreenshotUTC": "2026-11-05T15:39:01.054201Z",
+  "sourceSHA256": {
+    "experiments\\pickup-board\\server.mjs": "ce58c8da404e176e7d1a8426c924e76f830eca2c7f709d03226a240211f4a127",
+    "experiments\\pickup-board\\multi\\board.mjs": "849c31ad20578fb8474631b6259ef13685d13c798cbc892ef76100973c1b29b3",
+    "experiments\\pickup-board\\multi\\planner.mjs": "72ee15f14804ea2ae660fb97cf7fe2605cc446e3219c2143a66e3aafca9cf42d",
+    "experiments\\pickup-board\\domain.mjs": "89291e36ef4cf7bfd604a2f0566dcf593a7fdf4c199d050ca7d61d11405e58e1"
+  }
+}
+contract.json
+{"result":{"type":"object","value":{"hasProposal":true,"proposal":null,"mapPoint":[127.0351004,37.463915],"joined":true,"version":3}}}
+
+summary.json
+{
+  "multiBasicFlow": true,
+  "singleSearchSelectJoin": true,
+  "point": [
+    127.0351004,
+    37.463915
+  ],
+  "routeRequests": 1,
+  "destinationMatches": true,
+  "routeGuiding": true,
+  "retainedAfter45Seconds": true,
+  "repeatLaunchOneActivity": true,
+  "participant": "headless Chrome UI; not physical phone",
+  "navigationTapsAfterNativeStart": 0,
+  "fullPidRouteRequests": 1,
+  "fullPidUserStarts": 1,
+  "apkSHA256": "17835102F6CF7B564482D1AEFD43A71CA8B8938B5385B7325903349CB8E75B4B",
+  "serverHead": "25a30be009e906c5c3e0bb80c55f2c5ed2e74cd4",
+  "scope": "One emulator acceptance run; booleans follow completed assertions, navigation tap count reflects harness actions, not OS-wide input surveillance."
+}
+foreground.txt
+    topResumedActivity=ActivityRecord{58976e8 u10 org.example.pickgonavigation/.NavigationActivity t1000142}
+    * Hist  #0: ActivityRecord{58976e8 u10 org.example.pickgonavigation/.NavigationActivity t1000142}
+    topResumedActivity=ActivityRecord{f8a398b u10 ai.umos.drivingview/.DrivingViewActivity t1000138}
+      topResumedActivity=ActivityRecord{c484e43 u10 ai.umos.homescreen/.HomeActivity t1000136}

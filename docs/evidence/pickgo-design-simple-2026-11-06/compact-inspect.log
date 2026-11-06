@@ -1,0 +1,28 @@
+TASTESKILL · INSPECT   http://127.0.0.1:4198
+
+MEASURED (first viewport listed)
+  hero headline   "PICKGO"  1 words · 1 line(s) · 26px (1.8vw) · Asta 650 · tracking 0em · leading 1.2
+  @768px          1 line(s) · 24px
+  @390px          1 line(s) · 22px
+  typefaces       Asta 100%
+  sizes in use    18 / 20 / 26 / 42 px
+  colour          page #121212
+  page            1 screens · 14 words · 0 images · hero media none
+  headings        1 · longest 1 line(s) · median - words
+
+WARN — fix, or be able to defend
+  [hero-void] @1440px  29% of the first screen is one empty block (1260×300px at 180,600).
+      → Place the void on purpose or fill it: move the picture, the film or one fact into it, grow the headline to meet it, or shrink the screen to its content. A void reads as placed only when something closes it on the far side and it is the screen's one rest.
+  [unused-canvas] @1440px  The content stops 340px short of the right edge while it starts 40px from the sidebar.
+      → Let the grid fill the canvas (columns in fr units), or centre a capped canvas with equal margins. A dead strip on one side reads as unfinished.
+
+LOOK AT THE RENDER — open these with your image viewer / Read tool before saying anything about quality:
+  desktop 1440px  work/pickgo-design-simple/compact-inspect/desktop-fold.jpg
+                  work/pickgo-design-simple/compact-inspect/desktop-page-01.jpg
+  tablet 768px    work/pickgo-design-simple/compact-inspect/tablet-fold.jpg
+                  work/pickgo-design-simple/compact-inspect/tablet-page-01.jpg
+  mobile 390px    work/pickgo-design-simple/compact-inspect/mobile-fold.jpg
+                  work/pickgo-design-simple/compact-inspect/mobile-page-01.jpg
+
+report: work/pickgo-design-simple/compact-inspect/report.json
+RESULT: 0 FAIL, 2 WARN — measurements pass. Passing the meter is the floor, not the grade: score the screenshots with references/critique.md.

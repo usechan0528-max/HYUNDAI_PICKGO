@@ -15,7 +15,7 @@ export class Board {
   } }
   create(place, pickupPoint = null) {
     this.prune();
-    requireThat(this.isPlaceAllowed(place), 400, '후보 목록 또는 지도에서 선택 가능한 장소를 고르세요.');
+    requireThat(this.isPlaceAllowed(place), 400, '장소 목록 또는 지도에서 선택 가능한 장소를 고르세요.');
     requireThat(pickupPoint === null || (typeof pickupPoint === 'object' && !Array.isArray(pickupPoint) &&
       pickupPoint.mode === 'synthetic-diagram' && Number.isInteger(pickupPoint.x) && pickupPoint.x >= 0 && pickupPoint.x <= 1000 &&
       Number.isInteger(pickupPoint.y) && pickupPoint.y >= 0 && pickupPoint.y <= 600 &&
@@ -29,6 +29,11 @@ export class Board {
     return { id: room.id, token: room.driver, invite: room.invite, role: 'driver' };
   }
   room(id) { this.prune(); const r = this.rooms.get(id); requireThat(r, 404, '없거나 만료된 픽업입니다. 서버를 다시 켜면 픽업이 사라집니다.'); return r; }
+  preview(id, invite) {
+    const r = this.room(id);
+    requireThat(r.status === 'active' && !r.joined && typeof invite === 'string' && invite === r.invite, 403, '초대가 유효하지 않거나 이미 사용되었습니다.');
+    return { place: r.place };
+  }
   join(id, invite, joinId) {
     const r = this.room(id);
     if (joinId !== undefined) requireThat(typeof joinId === 'string' && /^[a-f0-9]{8}-[a-f0-9]{4}-4[a-f0-9]{3}-[89ab][a-f0-9]{3}-[a-f0-9]{12}$/i.test(joinId), 400, '참여 요청 식별자가 올바르지 않습니다.');

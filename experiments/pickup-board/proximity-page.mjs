@@ -1,3 +1,4 @@
+import { placeLabel } from './place-label.mjs';
 import { ProximityDetector } from './proximity/detector.mjs';
 const $ = id => document.getElementById(id);
 const detector = new ProximityDetector();
@@ -11,7 +12,7 @@ function render() {
   if (state?.status === 'ended') { clearTimeout(demoTimer); generation = null; detector.end(); }
   else if (state && (state.stage !== 'waiting' || state.proposal)) cancel('manual-stage');
   $('proximityConnection').textContent = fresh() ? '방금 서버에서 확인' : '현재 회차 미확인';
-  $('proximityPlace').textContent = fresh() ? state.place : '현재 승차지점 미확인';
+  $('proximityPlace').textContent = fresh() ? placeLabel(state.place) : '현재 승차지점 미확인';
   $('manualStage').textContent = !fresh() ? '직접 확인 상태: 미확인' : `직접 확인 상태: ${state.status === 'ended' ? '약속 종료' : state.stage === 'boarded' ? '탑승 확인됨' : state.stage === 'arrived' ? '운전자 도착 알림' : '도착 알림 전'}`;
   const value = detector.read();
   $('proximityState').textContent = value.state === 'near' ? '근처입니다 · 합성 좌표' : value.state === 'far' ? '아직 멀어요 · 합성 좌표' : '현재 미확인';

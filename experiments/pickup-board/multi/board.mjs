@@ -131,7 +131,8 @@ export class MultiBoard {
       }
       case 'arrive': {
         ok(t.active, 409, '다음 픽업을 먼저 선택하세요.');
-        const stop = t.stops.find(s => s.id === t.active); ok(!stop.arrived, 409, '이미 도착 표시되었습니다.'); stop.arrived = true; break;
+        const stop = t.stops.find(s => s.id === t.active); ok(!stop.arrived, 409, '이미 도착 표시되었습니다.');
+        stop.arrived = true; t.origin = [...stop.point]; break;
       }
       case 'board': {
         ok(actor.role === 'rider', 403, '탑승은 본인이 확인합니다.'); const p = person();
@@ -164,7 +165,8 @@ export class MultiBoard {
       ok(data && data.mode === (t.demo ? 'demo' : 'real') && typeof data.source === 'string' && data.source.length > 0 &&
         Number.isFinite(data.observedAt) && data.observedAt <= this.now() && Number.isFinite(data.expiresAt) && data.expiresAt > this.now() && this.now() - data.observedAt < 60000,
       503, '경로 데이터가 오래되었거나 유효하지 않습니다.');
-      const result = bestOrder(t.order, data.matrix, { final: !!t.destination, active: t.active });
+      const result = bestOrder(t.order, data.matrix, { final: !!t.destination, active: t.active,
+        arrived: !!t.stops.find(s => s.id === t.active)?.arrived });
       t.recommendation = { ...result, id: token(), version, source: data.source, mode: data.mode, observedAt: data.observedAt,
         expiresAt: Math.min(data.expiresAt, data.observedAt + 60000) };
       return this.read(id, credential);

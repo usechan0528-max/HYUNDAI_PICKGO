@@ -3,7 +3,9 @@ import assert from 'node:assert/strict';
 import vm from 'node:vm';
 import { readFile } from 'node:fs/promises';
 import { ProximityDetector } from './proximity/detector.mjs';
-const source=(await readFile(new URL('./proximity-page.mjs',import.meta.url),'utf8')).replace("import { ProximityDetector } from './proximity/detector.mjs';",'');
+const labelSource = (await readFile(new URL('./place-label.mjs', import.meta.url), 'utf8')).replace('export function', 'function');
+const rawSource=(await readFile(new URL('./proximity-page.mjs',import.meta.url),'utf8')).replace("import { ProximityDetector } from './proximity/detector.mjs';",'');
+const source = rawSource.replace("import { placeLabel } from './place-label.mjs';", labelSource);
 async function setup(role='driver') {
   let now=1000, timer, hold;
   const events={}, nodes=Object.fromEntries(['proximityConnection','proximityPlace','manualStage','proximityState','proximityReason','proximityNotice','proximityError','demoNear','demoFar','demoDenied'].map(id=>[id,{textContent:'',disabled:false}]));

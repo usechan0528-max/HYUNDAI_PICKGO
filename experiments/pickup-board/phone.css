@@ -38,3 +38,18 @@
 }
 .support-page .primary:focus-visible { outline-color:#161616; }
 .support-page .secondary { border-color:#767676; }
+
+/* Support pages use document scrolling, so long consent text is never an inner clipped pane. */
+.support-page{height:auto;min-height:100dvh;overflow-x:clip;overscroll-behavior-y:auto}
+.support-page main{height:auto;min-height:100dvh;overflow:visible;gap:20px}
+.support-page main>*{flex-shrink:0;min-width:0}
+.support-page .support-header{min-height:64px;height:auto;padding-block:8px}
+.support-page .consent-details summary{cursor:pointer;min-height:48px;display:flex;align-items:center;font-size:18px;list-style:revert}
+.support-page .consent-details p{margin-block:12px;font-size:16px}
+.support-page #consent .support-actions{grid-template-columns:repeat(2,minmax(0,1fr))}
+.support-page #consent .support-actions button{min-height:64px;font-size:18px;padding:12px;overflow-wrap:anywhere}
+@media(max-width:479px){.support-page section{padding:16px}.support-page main{gap:16px}.support-page p{font-size:16px}}
+.phone-page main{max-width:520px;padding-inline:max(16px,env(safe-area-inset-left)) max(16px,env(safe-area-inset-right));padding-bottom:max(24px,env(safe-area-inset-bottom))}
+.phone-page p{word-break:keep-all;overflow-wrap:anywhere}
+.phone-page #consent .support-actions{grid-template-columns:1fr;gap:12px}
+.phone-page #consent .support-actions button{min-height:56px}

@@ -434,3 +434,21 @@ routo 준비 최종 검수: 실제 Claude claude-haiku-5-5, session646ed4ec-9aac
 
 ## 2026-11-04 · 다인 픽업 로컬 구현
 main 기존미커밋보존. multi/**, multi*.test.mjs 추가; server/index최소삽입후검색담당에게소유반환·메시지확인. 로컬다인21시험/전체254통과, Chrome3인2지점완료. Opus설계/Haiku고정검수·후속지적반영. 별도4196서버사용,Android/기기작업없음. 상세 PICKGO_MULTI_PICKUP_2026-11-04.md와증거폴더. 실도로시간·내비다중경유·차량UX·물리폰·장소재합의남음으로전체원안완료표시하지않음. 다음범위: 실제경로공급자확보와기존Android담당소유조율뒤경유어댑터연결. 공개/push없음.
+
+
+## 2026-11-06 · 다인 픽업 로컬 마무리 및 통합 점검 착수
+사용자 2번마무리/통합검증시작 승인. main 기존전용보고 미커밋보존. multi board/planner/page.mjs/html 및 domain/client시험 수정. 도착구간중복합계·만료세션복구·만료초대재시도 보완,총6명정책문구명시.258/258·실제Chrome다인3명2지점/부분·전체취소/동시취소거부/새로고침·연결복구 통과. 실제Haiku5.5 최초/후속 검수 P2처리와근거검증 완료. 단일OSM브라우저와RouteGate43 통합점검통과,emulator5556 연결확인만(미조작). 실제내비다중경유미연동유지. 상세 PICKGO_MULTI_CLOSURE_2026-11-06.md. 소스편집종료·소유반환,공개/push없음.
+
+## 2026-11-06 · 최신 통합 실기 검증 완료
+Codex01a1ac52: 기존다인미커밋보존·앱소스변경없음. 오래된4194서버를최신PID56964로교체,현재소스debug빌드/설치해시17835102…75b4b일치. 웹258/RouteGate43/build/lint통과. 실제에뮬레이터다인기본및단일OSM검색/독립Chrome참여/native안내1회/목적지일치/ROUTE_GUIDING/45초복귀유지/Activity1개통과. 실제Haiku5.5검수2회P1없음,응답계약fail-closed유지·전체PID카운트·PST/KST/버전출처보완. 상세 PICKGO_INTEGRATION_2026-11-06.md. 기기PICKGO결과화면·서버유지,편집/기기소유반환. 아이폰Safari는원채팅별도검증,공개/push없음.
+
+2026-11-06 디자인·픽업 문구 정리: 기존초안/Opus협의 회수, 확정체크/안내축소/행동문구/접힘밖 알림 반영. 실제Haiku5.5검수 지적처리,259시험 및Chrome3폭통과. API/Android 미수정. PICKGO_DESIGN_SIMPLE_2026-11-06.md 참조.
+
+2026-11-06 한화면UI후속: 장소/버튼축약/좌표제거/개발멘트숨김,관리·지도설정접기.259시험/4폭기본스크롤없음/체크전이통과.실제Haiku검수지적처리. PICKGO_COMPACT_UI_2026-11-06.md 참조.
+
+## 2026-11-06 · 공모전 화면 중심 소개·사용 시연
+사용자 요청으로 README 재구성, 개조식 전체 기능/기술스택/사용법, 가상 단일·다인 시연 제작. 기존 README 전문 docs/showcase/README_BEFORE_2026-11-06.md 보존. 앱 소스 변경 없음. 원본 PNG22장+소개 배치1장, 126초1080p무음한국어설명MP4, 대본/SRT. 현재Chrome 단일완료/3명2지점공동승차완료,웹259/259,미디어전체decode0/오류없음,상대링크66누락0. 초기병렬캡처오류는순차촬영으로해결(recordError null). 기존native2026-11-04영상10~26초를별도촬영명시재사용. ClaudeHaiku5.5실제2회 검수·설정숨김/포트과거구분/편집본/안전·좌표제약보완. 세부 docs/showcase/VERIFICATION.md. 기존DotR010종료확인/새질문없음. 실제폰·실차·새APK·release·외부제출·push미실행. main기존미커밋보존,자료편집소유반환.
+
+2026-11-06 독립 디자인 검토·좌표 표시 수정: 사용자 별도 검토 요청 및 후속 좌표노출 수정 승인. 원본 PNG22/JPG1·영상35프레임 직접검토, 전용 보고 PICKGO_DESIGN_REVIEW_2026-11-06.md 작성. 좌표형 장소명 UI formatter만 추가, canonical place/mapPoint/API/Android 불변. 실제Chrome 운전자/탑승자/변경/위치/제안/수락·좌표보존 통과. VM import 초기40실패 후 실제formatter harness 보완, 신규stale좌표회귀 포함260/260. 실제Haiku5.5 독립검수·지적별처리 기록. 원본미디어해시변경0. 나머지디자인개선 미구현·공개/push없음.
+
+2026-11-06 보고서 개선 및 휴대폰 UI: 사용자 승인 범위 구현, 261시험/89레이아웃 검사/최신 서버 추가검사 통과. 실제 앱1224×760 /multi 스크롤 검증. Claude Haiku5.5 읽기검수, P0/P1 없음; P2표시/초대안내 보완 및 나머지 근거 기록. 상세 PICKGO_LAYOUT_2026-11-06.md. 최신 로컬4199 실행 유지, 기존4194 세션/adb reverse 보존(구라우팅으로 전체 최신 흐름에는 재시작 또는 전환 필요). 물리폰/실차 미실행. 원본영상·SDK·Android 불변.

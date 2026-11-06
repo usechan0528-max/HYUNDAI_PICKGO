@@ -75,7 +75,7 @@ export class RecommendationBoard extends PhoneBoard {
         this.context(r,credential,input);
         const s=e.snapshot;
         check(s&&s.id===input.snapshotId&&s.version===r.version&&s.revision===e.revision,409,'추천이 만료되었습니다. 다시 계산해 주세요.');
-        selected=s.candidates.find(c=>c.id===input.candidateId);check(selected,400,'추천 후보를 선택해 주세요.');
+        selected=s.candidates.find(c=>c.id===input.candidateId);check(selected,400,'추천 장소를 선택해 주세요.');
       }
       if(accepting){this.context(r,credential,input);check(r.proposal?.origin==='recommendation'&&e.proposal&&e.proposal.proposalId===r.proposal.id&&input.proposalId===r.proposal.id&&r.proposal.by!==role,409,'상대의 현재 추천 제안을 확인해 주세요.');}
       if(this.provider===unavailableProvider)return {...this.status(e,role),status:'provider-unavailable'};

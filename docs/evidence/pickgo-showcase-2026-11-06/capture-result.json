@@ -1,0 +1,31 @@
+{
+  "status": "passed",
+  "shots": [
+    "01-home",
+    "02-search",
+    "03-candidates",
+    "04-map",
+    "05-invite",
+    "06-rider-invitation",
+    "07-ready-driver",
+    "08-ready-rider",
+    "09-location-consent",
+    "10-change-place",
+    "11-change-proposal",
+    "12-agreed",
+    "13-arrival",
+    "14-rider-arrival",
+    "15-boarded",
+    "16-completed",
+    "17-multi-setup",
+    "18-multi-plan",
+    "19-multi-ready",
+    "20-multi-rider",
+    "21-shared-stop",
+    "22-multi-completed"
+  ],
+  "scenario": "single UI complete; multi 3 people 2 stops complete",
+  "driverConsoleErrors": [],
+  "frameCount": 153,
+  "recordError": null
+}

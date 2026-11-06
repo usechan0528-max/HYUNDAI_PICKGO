@@ -3,7 +3,9 @@ import assert from 'node:assert/strict';
 import vm from 'node:vm';
 import { readFile } from 'node:fs/promises';
 import { PhoneShare } from './phone-controller.mjs';
-const source=(await readFile(new URL('./phone-page.mjs',import.meta.url),'utf8')).replace("import { PhoneShare } from './phone-controller.mjs';",'');
+const labelSource = (await readFile(new URL('./place-label.mjs', import.meta.url), 'utf8')).replace('export function', 'function');
+const rawSource=(await readFile(new URL('./phone-page.mjs',import.meta.url),'utf8')).replace("import { PhoneShare } from './phone-controller.mjs';",'');
+const source = rawSource.replace("import { placeLabel } from './place-label.mjs';", labelSource);
 async function harness(role='rider') {
  const nodes=Object.fromEntries(['context','consent','share','stop','decline','message','sample'].map(id=>[id,{textContent:'',hidden:false,disabled:false}]));
  const events={},timers=new Set();let hold=null,watches=0;
