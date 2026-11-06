@@ -1,8 +1,0 @@
-{
-  "phone-domain.mjs": "06c8a0200ed2268a6b127fb063d999291cd4a9f00403857e94ca71243076ecb5",
-  "phone-page.mjs": "f50bc87933b2de0735d7f6080ad5cde6f1a4ae96aac05701fe1f9be1771e28d5",
-  "proximity-page.mjs": "a03ac3f68fa4a5eba5c3aee20f4b7f4db79a232a6b55ff0ca61966a2da9f10da",
-  "proximity-page.html": "fe9f30f5bec8f416efa2122395f5b0595004c76773ec96b04d13d715d459f725",
-  "location-integration.test.mjs": "99ca80e480e57de2f1175e9c9ade92a8460851c34f6a3883324ec9a685de6642",
-  "phone-page.test.mjs": "48e5076e7ba375e169892f2fb6c150381bf1a49a529359b15a1233afec183643"
-}

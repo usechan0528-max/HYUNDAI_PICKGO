@@ -1,7 +1,7 @@
 # PICKGO 사용 설명서
 
 - 목적: 운전자와 탑승자가 만날 장소·준비·도착·탑승 상태를 같은 픽업 회차에서 확인.
-- 기준: 2026-11-06 작업 트리의 로컬 웹 프로토타입.
+- 기준: 2026-11-06 로컬 웹 프로토타입. 캡처 이후 좌표 표시·모바일 레이아웃·초대 안내가 개선되어 일부 버튼 배치가 현재 소스와 다를 수 있음.
 - 화면: 실제 Chrome 실행 캡처. 가상 인물만 사용. 휴대폰 모양 화면은 모바일 크기의 브라우저이며 물리 휴대폰 검증 자료가 아님.
 - 조작: 주차 등 조작 가능한 상황에서만 시연. 현재 앱은 차량 주행 제한 연동을 완료한 배포본이 아님.
 - 바로가기: [화면 중심 README](../../README.md) · [시연 영상](video/PICKGO_DEMO.mp4) · [시연 대본](DEMO_SCRIPT.md).
@@ -152,9 +152,9 @@
 - 안내 결과를 45초 관찰하고 복귀 시 마지막 관찰 결과 표시.
 - 기존 내비 경로가 바뀔 수 있음. 안내 시작은 사용자의 명시 선택으로만 수행.
 - 최신 웹 디자인 캡처와 별도 시점의 native 연동 증거를 구분. 동일 최종 제출 빌드의 연속 촬영본은 아님.
-- [Android 실행 방법](../../experiments/pickgo-navigation/README.md) · [2026-11-06 검증 기록](../PICKGO_INTEGRATION_2026-11-06.md).
+- [Android 실행 방법](../../experiments/pickgo-navigation/README.md) · [2026-11-06 검증 기록](../IMPLEMENTATION_STATUS.md).
 
-![현대 내비 에뮬레이터 검증 화면, 2026-11-06](../evidence/pickgo-integration-2026-11-06/04-navigation.png)
+![현대 내비 에뮬레이터 검증 화면, 2026-11-06](screenshots/23-navigation.png)
 
 ## 6. 추천·연동 준비 기능의 정확한 범위
 
@@ -169,7 +169,7 @@
 | routo 검색·지도 | 어댑터·계약 준비 | 키·이용조건·실응답 검증 및 본 화면 통합 미완료 |
 
 - 숨겨진 시연 설정은 일반 사용자가 그대로 클릭할 수 있는 완성 기능으로 소개하지 않음.
-- 개발용 세부 안내: [다인 추천](../../experiments/pickup-board/multi/README.md) · [단일 추천](../PICKUP_RECOMMENDATION_2026-11-03.md) · [Gleo](../../experiments/pickup-board/gleo/README.md) · [routo](../../experiments/pickup-board/routo/README.md).
+- 개발용 세부 안내: [다인 추천](../../experiments/pickup-board/multi/README.md) · [단일 추천](../../experiments/pickup-board/recommendation/README.md) · [Gleo](../../experiments/pickup-board/gleo/README.md) · [routo](../../experiments/pickup-board/routo/README.md).
 
 ## 7. 연결 문제·복구
 

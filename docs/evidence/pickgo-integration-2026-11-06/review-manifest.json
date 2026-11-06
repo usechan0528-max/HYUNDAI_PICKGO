@@ -1,8 +1,0 @@
-{
-  "work/pickgo-integration/verify.mjs": "d4abf1040ea23082fc4dd8ae8d9fd131ed9a92b6f2eafc9e47e640e1fce7d568",
-  "docs/evidence/pickgo-integration-2026-11-06/verify.txt": "4af8efe1a2209a67ee02a6b9c203b875e5f7a369bf65a0571035493f19dbd44c",
-  "docs/evidence/pickgo-integration-2026-11-06/summary.json": "31ce2821ec2fe371ba213efb2b1a4aa13017f67f61883347954f9c71ddebb9bc",
-  "docs/evidence/pickgo-integration-2026-11-06/runtime.log": "932e0aec2452b830a57b6408858e6df5c4cd78a04aa51aff15042461db78fb1b",
-  "experiments/pickgo-navigation/app/src/main/java/org/example/pickgonavigation/NavigationActivity.java": "60ef4a24612d1265abdc99153dbdbec2d9b2195992211ac91454c481eefa3ddd",
-  "experiments/pickgo-navigation/app/src/main/java/org/example/pickgonavigation/RouteGate.java": "50f7d307d758bc41df5ad2845cd65084166124d1e13c91ab045c18b4af9f9b72"
-}

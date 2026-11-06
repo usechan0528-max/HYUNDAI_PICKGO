@@ -1,8 +1,0 @@
-{
-  "links": 30,
-  "missing": [],
-  "original_media_changed": [],
-  "web_tests": "260/260",
-  "browser": "exit0",
-  "claude": "claude-haiku-5-5 / exit0 / is_error=false"
-}

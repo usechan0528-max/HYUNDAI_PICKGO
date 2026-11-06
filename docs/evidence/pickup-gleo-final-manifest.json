@@ -1,7 +1,0 @@
-{
-  "experiments/pickup-board/gleo/adapter.mjs": "6ff4106bd33dce0082b316420e625d2b9895a83d36c420702d7974ae2206af4c",
-  "experiments/pickup-board/gleo/contract/schema.candidate.json": "a7c30fb7d77bd955f123379f062a5a2160186736a210b03852132f98ff1e9eed",
-  "experiments/pickup-board/gleo/README.md": "275e7e8007971f98979b0cbdc4b6dfa89ac744331443245674982baf7902be0e",
-  "experiments/pickup-board/gleo.test.mjs": "613bc43ef9a1ddff495fa60c183ac202ed3e350afff499f3e730a8bcb08f3cfb",
-  "docs/PICKUP_GLEO_READINESS_2026-11-03.md": "780ebe73457ef92d42a9171d1cb6a9d764b5353c9dd5e692e1a3ba6926dc5346"
-}

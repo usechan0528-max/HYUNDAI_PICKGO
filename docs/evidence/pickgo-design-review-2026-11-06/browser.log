@@ -1,3 +1,0 @@
-PASS supplemental screen /proximity
-PASS supplemental screen /recommendation
-PASS real Chrome: driver/rider/editor/phone/proposal/accept; canonical place and mapPoint preserved.

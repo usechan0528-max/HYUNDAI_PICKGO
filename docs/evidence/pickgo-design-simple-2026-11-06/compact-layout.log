@@ -1,6 +1,0 @@
-390 667 { height: 559, content: 559, tools: false, width: 390, inner: 390 }
-390 844 { height: 736, content: 736, tools: false, width: 390, inner: 390 }
-768 900 { height: 792, content: 792, tools: false, width: 768, inner: 768 }
-1280 720 { height: 572, content: 572, tools: false, width: 1280, inner: 1280 }
-map { page: 844, height: 844, button: 719.203125 }
-PASS main fits 4 viewports, management opens, map action visible

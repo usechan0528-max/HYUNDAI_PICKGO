@@ -1,10 +1,10 @@
 # PICKGO · OSM 확정 지점 → 현대 내비 시연
 
-기존 pickup-board 웹을 표시하는 별도 Android 시연 앱입니다. 실제 NaviHelper 3.0.5를 사용합니다. J1 코드는 사용하지 않습니다. 실제 차량용 주행 UX/CarUxRestrictions, 공개 HTTPS, 실차 검증은 포함하지 않습니다.
+기존 pickup-board 웹을 표시하는 별도 Android 시연 앱입니다. 실제 NaviHelper 3.0.5를 사용합니다. 실제 차량용 주행 UX/CarUxRestrictions, 공개 HTTPS, 실차 검증은 포함하지 않습니다.
 
 ## 실행
 
-저장소 루트 PowerShell에서 기존 확보 환경과 debug 키를 사용합니다. 새 키를 만들지 않습니다.
+저장소 루트 PowerShell에서 개발 환경에 이미 설치된 도구와 기존 debug 키를 사용하는 예시입니다. 아래 work 경로의 도구·SDK·키는 제출본에 포함되지 않으므로 그대로 복사해 실행할 수 없습니다. JDK 17, Gradle 8.9, Android SDK 34와 공식 NaviHelper 3.0.5 및 종속 AAR을 준비하고 각 경로를 본인 환경에 맞춰야 합니다. 키나 키스토어를 저장소에 추가하지 마세요.
 
 ```powershell
 $env:JAVA_HOME=(Resolve-Path work/pleos-environment/jdk/jdk-17.0.20.1+1).Path
@@ -46,4 +46,4 @@ node experiments/pickup-board/server.mjs
 & ./work/pleos-environment/jdk/jdk-17.0.20.1+1/bin/java.exe -cp work/pickgo-navigation/test-classes org.example.pickgonavigation.RouteGateTest
 ```
 
-실제 결과와 제한은 `docs/PICKGO_NAVIGATION_2026-11-04.md` 및 `docs/evidence/pickgo-navigation-2026-11-04/`를 참조합니다. OSM 선택 가능 표시는 합법 정차 인증이 아닙니다.
+실제 결과와 제한은 [구현·검증 범위](../../docs/IMPLEMENTATION_STATUS.md)와 [시연 자료](../../docs/showcase/VERIFICATION.md)를 참조합니다. OSM 선택 가능 표시는 합법 정차 인증이 아닙니다.

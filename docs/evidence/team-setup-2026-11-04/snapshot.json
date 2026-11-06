@@ -1,7 +1,0 @@
-{
-  "package.json": "9e4f543b9450aa2ecd9fd655c7117f7096c400575d83f929053c27ca5a671aa0",
-  "tools/team-setup/cli.mjs": "f38e6b0b449f8079688f5a16d952e24ee5b24fb518e16703a14e365972631172",
-  "tools/team-setup/manifest.json": "265ac3e652c07e7631b5b0771b7712b33efc6fe17985128a936cb88aa7ba2243",
-  "tools/team-setup/setup.test.mjs": "31237c922b48a1da441429d0bb80e91e37c4b0d2c59dc74524ac22ee7dd51999",
-  "tools/team-setup/README.md": "2042857a0b04062300d90c0f078796e96f81011cccf899777044d2ec982d152e"
-}

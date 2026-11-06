@@ -1,5 +1,0 @@
-4차 아이디어탐색. Opus5.5 같은세션 텍스트협업. 현재16후보 전부종합80미만. 최고63.625. 이전후보개명반복 금지. 목표는 그대로80진입후90보완,점수조정금지.
-반론: 개인구독만이사업성이 아님. 초기무제휴PoC를 선호하되 향후B2B/OEM/사회적가치유통은평가가능(협약있다고가정금지). 충전중단사건드묾/카풀인구적음 등은통계없이단정하지말것. P=하차아님. 신호API존재와실행미확인은구분.
-이번 공식조사: https://ownersmanual.hyundai.com/ivi/ccNC/AVNT/KOR/English/Diagnosis.html 현대기존원격진단은 고객센터전송후정비연계 제공. https://autoservice.hyundaiusa.com/Z01/MicroSiteTemplate/MicroSiteTemplateVINValidate/4975 특정구형차의간헐적경고공식안내 존재(이것을Pleos차량의문제빈도로일반화금지). https://static.nhtsa.gov/odi/tsbs/2023/MC-10241415-0001.pdf GM서비스자료 간헐증상재현문제사례. 그러므로 '사라지는증상 정비전달 기록'은문제사례는있지만 DTC/기존진단서비스대비추가효용을증명못하면폐기. 정확고장원인추론/운행지시/안전확신 제공금지.
-SDK 실제문서: EvBattery.getEvBatteryStateOfCharge/registerEvBatteryStateOfCharge, Odometer.getCurrentDistanceDriven/registerDistanceDriven 이름확인, 타입/권한/샘플링실행은미확인. Safety/Tire/HVAC도메인있음. 없는가속도/차량카메라/개별플러그전력API추정금지.
-요청: 1 위 '간헐증상 정비전달 기록'은차별점있는최소흐름을서술하고4점수채점. 2 그외새로운문제영역3개,각사용자/문제사건/차량필수성/최소흐름/폰대비/핵심미확인/사업가설/반증조건/4점수. 공공데이터 없는 사설주차를반복하지말고긴급행동지시·의학진단·운전자감시안제외. 자료는문제존재사례일뿐효과/수요/SDK실행없음. 3 자기최고점안의실패가능성. 차량특화/창의성/기술실현가능성/사업성각100동일가중. 이번은기획평가,80미만은폐기대상,예상보완후점수금지. 900단어내.

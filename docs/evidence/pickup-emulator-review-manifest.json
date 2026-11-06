@@ -1,8 +1,0 @@
-{
-  "experiments\\pickup-board\\style.css": "fa6a4cf420e6b7b274bbead16e34f38aceb38b75d17a82d01917d6392af7a3c1",
-  "experiments\\pickup-board\\emulator-preview\\app\\src\\main\\java\\org\\example\\pickuppreview\\PreviewActivity.java": "621d7dde3f8a104042d6f82130a4440b2bfffc82a93353b74bdc2b1b978e3bca",
-  "experiments\\pickup-board\\emulator-preview\\app\\src\\main\\AndroidManifest.xml": "38bb8e283d90d519eb0fea1aad34d359718abac6609b8f0e17c6855fc5615feb",
-  "experiments\\pickup-board\\emulator-preview\\app\\src\\main\\res\\drawable\\ic_preview.xml": "e9ce17a5076599d139c6f5a269af885acaa3246a13a70ce948bbf462a2076cdf",
-  "experiments\\pickup-board\\emulator-preview\\app\\src\\main\\res\\xml\\extraction_rules.xml": "85c2c3c8810cbffd372886dd2edbd1517d4cb73f0e84a56a633c076ff85acc42",
-  "experiments\\pickup-board\\emulator-preview\\app\\src\\main\\res\\xml\\network_security_config.xml": "ac38d1a54dba1d4183d4381d0077e898fed5691009836c549318e6b8b70bd66d"
-}

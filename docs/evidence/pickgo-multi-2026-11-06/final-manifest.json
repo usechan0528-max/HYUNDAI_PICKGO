@@ -1,8 +1,0 @@
-{
-  "experiments/pickup-board/multi/board.mjs": "849c31ad20578fb8474631b6259ef13685d13c798cbc892ef76100973c1b29b3",
-  "experiments/pickup-board/multi/planner.mjs": "72ee15f14804ea2ae660fb97cf7fe2605cc446e3219c2143a66e3aafca9cf42d",
-  "experiments/pickup-board/multi/page.mjs": "1745a7c061cc30c4c7e61a653a65f78d4041159b271c3bde4a14c3fe970b2db4",
-  "experiments/pickup-board/multi/page.html": "7bfe3e45ffde4107b713da8348a0a7d402a56f83d3cf4d9b88de7b3fc73743de",
-  "experiments/pickup-board/multi.test.mjs": "5ce83c83aa341e7b5651a55fd1ff999761b533f71197a96b84ef660264356329",
-  "experiments/pickup-board/multi-client.test.mjs": "62e8929008a51191c410ddc7091dde93d65e77e0e3195f44d3fda5f42c578e12"
-}

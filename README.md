@@ -10,7 +10,7 @@
 
 ![PICKGO 운전자와 탑승자 화면](docs/showcase/screenshots/00-overview.jpg)
 
-> 현재 단계: **로컬 웹 프로토타입 + 별도 Android 내비 연동 시연 앱**. 아래 최신 웹 화면은 2026-11-06 작업 트리에서 촬영했습니다. 모바일 화면은 같은 PC의 모바일 크기 Chrome입니다. 실제 차량·공개 서비스·물리 휴대폰 연동 완료를 뜻하지 않습니다.
+> 현재 단계: **로컬 웹 프로토타입 + 별도 Android 내비 연동 시연 앱**. 아래 웹 화면은 2026-11-06에 촬영했습니다. 이후 좌표 표시·모바일 레이아웃·초대 안내가 개선되어 현재 소스와 일부 화면 차이가 있습니다. 모바일 화면은 같은 PC의 모바일 크기 Chrome입니다. 실제 차량·공개 서비스·물리 휴대폰 연동 완료를 뜻하지 않습니다.
 
 - 주차 등 조작 가능한 상황에서만 시연. 주행 중 조작 금지, 차량 주행 제한 연동 미완료.
 - 영상은 실제 UI 화면 캡처를 편집한 설명 영상이며, 별도 2026-11-04 내비 녹화 발췌를 포함합니다. 하나의 회차를 연속 녹화한 영상은 아닙니다.
@@ -80,9 +80,9 @@
 - 다인 픽업의 현대 내비 다중 경유는 미연결.
 - 아래 화면은 **별도 2026-11-06 통합 검증** 자료. 최신 웹 디자인과 동일 빌드의 연속 촬영본은 아님.
 
-![현대 내비 안내 에뮬레이터 화면](docs/evidence/pickgo-integration-2026-11-06/04-navigation.png)
+![현대 내비 안내 에뮬레이터 화면](docs/showcase/screenshots/23-navigation.png)
 
-[Android 실행 안내](experiments/pickgo-navigation/README.md) · [연동 검증 기록](docs/PICKGO_INTEGRATION_2026-11-06.md)
+[Android 실행 안내](experiments/pickgo-navigation/README.md) · [연동 검증 기록](docs/IMPLEMENTATION_STATUS.md)
 
 ## 전체 기능 한눈에 보기
 
@@ -143,7 +143,7 @@ npm start
 npm test
 ```
 
-- 이번 실행: 웹 자동시험 **259/259 통과**.
+- 현재 소스의 마지막 웹 자동시험: **261/261 통과**. 영상 촬영 시점의 시험은 259개였으며 이후 UI 개선 회귀가 추가됐습니다.
 - 실제 Chrome 시연: 단일 픽업 완료, 다인 3명·2지점·공동 승차·전체 완료 확인.
 - 별도 2026-11-06 내비 검증: RouteGate 43 assertions, debug 빌드·lint, 에뮬레이터 목적지 일치·안내 확인. 이번 촬영에서 APK를 재빌드·재검증한 것은 아님.
 - [검증 정보·재현](docs/showcase/VERIFICATION.md) · [상세 개발 실행 안내](experiments/pickup-board/README.md).
@@ -156,15 +156,13 @@ npm test
 - 공모전 제출용 release APK 및 `apk/` 제출 경로는 아직 준비·검증되지 않음.
 - 웹 시연은 실제 SDK 연동을 요구하지 않으며, native 안내 시연은 Pleos 환경·NaviHelper가 필요.
 
-## 자료와 개발 기록
+## 제출 자료 안내
 
-- [전체 사용 설명서](docs/showcase/USER_GUIDE.md): 개조식 기능·조작·제약.
-- [시연 영상](docs/showcase/video/PICKGO_DEMO.mp4): 가상 사용 흐름의 실제 조작 화면.
-- [스크린샷 모음](docs/showcase/screenshots/): 원본 앱 화면.
-- [시연 대본](docs/showcase/DEMO_SCRIPT.md): 장면별 상황·조작·핵심 메시지.
-- [결정 기록](docs/DECISIONS.md) · [API 증거](docs/API_EVIDENCE.md) · [시험 기록](docs/TEST_EVIDENCE.md).
-- [공동작업자 환경 설정](tools/team-setup/README.md): `npm run setup:plan`, `npm run setup`, `npm run doctor`.
-- [재구성 전 README](docs/showcase/README_BEFORE_2026-11-06.md): 기존 개발 이력 보존본.
-- 앱의 이전 이름은 픽업 약속판. J-1과 과거 mvp는 현재 PICKGO 기능이 아님. [분리 기록](docs/PROJECT_SEPARATION_2026-11-04.md).
+- [전체 사용 설명서](docs/showcase/USER_GUIDE.md): 기능별 조작·오류 복구·제약.
+- [시연 영상](docs/showcase/video/PICKGO_DEMO.mp4): 2분 6초, 한국어 설명, 무음.
+- [시연 대본](docs/showcase/DEMO_SCRIPT.md): 가상 시나리오와 장면 구성.
+- [구현·검증 범위](docs/IMPLEMENTATION_STATUS.md): 웹·합성 데이터·SDK 실행 구분.
+- [촬영 정보](docs/showcase/VERIFICATION.md): 촬영 환경·편집·버전 차이.
+- [오픈소스·데이터 출처](docs/THIRD_PARTY_NOTICES.md).
 
-현재 미완료: 실차·차량 UX 제한, 공개 HTTPS 운영, 물리폰 전체 연동, 실제 도로시간 추천, 현대 내비 다중 경유, Gleo/routo 본연동, release 제출 검증. 이 자료 제작에는 외부 제출·공개·push를 포함하지 않습니다.
+현재 미완료: 실차·차량 UX 제한, 공개 HTTPS 운영, 물리폰 전체 연동, 실제 도로시간 추천, 현대 내비 다중 경유, Gleo/routo 본연동, release 제출 검증.

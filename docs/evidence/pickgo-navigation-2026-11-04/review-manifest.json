@@ -1,7 +1,0 @@
-{
-  "experiments/pickgo-navigation/app/src/main/java/org/example/pickgonavigation/NavigationActivity.java": "66d1c8527e2cdfa005dd5e4acf3afc435c05fa513878f5633448f5588a444971",
-  "experiments/pickgo-navigation/app/src/main/java/org/example/pickgonavigation/RouteGate.java": "8e5b699933b6664a291e36c055706d9e1409b0051111984b889f650ad4d0730b",
-  "experiments/pickgo-navigation/RouteGateTest.java": "f7e1328b05082bddc4244fc8107cf865d151d73eeea40a8ceca7031bebd402f9",
-  "experiments/pickgo-navigation/app/src/main/AndroidManifest.xml": "762c8f57e4d4e5a1b70f95beb34bc67c7d6ad28675c1b7b1fad4c1da2f2dc751",
-  "experiments/pickup-board/map/board.mjs": "c95fff3cf27680b65bb2a0b660d3e3913ca100819918f48ce243c481cdc3818b"
-}
